@@ -26,7 +26,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int cursor;
 	int cur_len;
 	int cwin;
+	int cend;
 	int dwin;
+	int dend;
 
 	FontMetrics _fm;
 	int _fa;
@@ -72,14 +74,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
 		}
-		cwin = 0x0100;
-		dwin = 0x0100;
-		base = 0x0100;
-		end = base + obj.length;
-		setBreaks();
 		if (dis == null) {
 			dis = new Z80DisassemblerMAC80(this);
 		}
+		base = 0x0100;
+		end = base + obj.length;
+		setBreaks();
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
@@ -116,6 +116,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
+		setCodeWin(base);
+		setDumpWin(base);
 		setCursor(base);
 	}
 
@@ -153,6 +155,53 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cur_len = getLen(c);
 		code.repaint();
 		dump.repaint();
+	}
+
+	private void setCodeWin(int a) {
+		int e = a;
+		for (int x = 0; e < end && x < clines; ++x) {
+			e += getLen(e);
+		}
+		cwin = a;
+		cend = e;
+	}
+
+	private void scrollUp() {
+		setCodeWin(cwin + getLen(cwin));
+	}
+
+	private void lineDown() {
+		int c = cursor + cur_len;
+		if (c >= end) return;
+		if (c >= cend) {
+			scrollUp();
+		}
+		if (c >= dend) {
+			setDumpWin(dend - 16);
+		}
+		setCursor(c);
+	}
+
+	private void lineUp() {
+		int c = cursor;
+		while (c - 1 >= base) {
+			--c;
+			if (getLen(c) > 0) break;
+		}
+		if (c < cwin) {
+			setCodeWin(c);
+		}
+		if (c < dwin) {
+			// TODO: adjust for long "instructions"...
+			setDumpWin(dwin - 16);
+		}
+		setCursor(c);
+	}
+
+	private void setDumpWin(int a) {
+		// TODO: implement
+		dwin = a;
+		dend = a + 16 * dlines;
 	}
 
 	public void paintCode(Graphics2D g2d) {
@@ -245,16 +294,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
 		if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
-			if (cursor + cur_len < end) {
-				setCursor(cursor + cur_len);
-			}
+			lineDown();
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
-			int c = cursor;
-			while (c - 1 >= base) {
-				--c;
-				if (getLen(c) > 0) break;
-			}
-			setCursor(c);
+			lineUp();
 		} else if (k == KeyEvent.VK_LEFT || k == KeyEvent.VK_KP_LEFT) {
 			if (cursor - 1 >= base) {
 				setCursor(cursor - 1);
