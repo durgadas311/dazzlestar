@@ -149,6 +149,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private int oneBack(int a) {
+		if (a > end) a = end;
+		if (a < base) a = base;
+		while (a - 1 >= base) {
+			--a;
+			if (getLen(a) > 0) break;
+		}
+		return a;
+	}
+
 	private void setCursor(int c) {
 		cursor = c;
 		// TODO: break type...
@@ -183,11 +193,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void lineUp() {
-		int c = cursor;
-		while (c - 1 >= base) {
-			--c;
-			if (getLen(c) > 0) break;
-		}
+		int c = oneBack(cursor);
 		if (c < cwin) {
 			setCodeWin(c);
 		}
@@ -196,6 +202,40 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			setDumpWin(dwin - 16);
 		}
 		setCursor(c);
+	}
+
+	private void pageDown() {
+		int c = oneBack(cend);
+		if (c == cursor) return;
+		setCodeWin(c);
+		if (c < dwin) {
+			setDumpWin(c & ~0x0f);
+		} else if (c >= dend) {
+			setDumpWin(dend - 16);	// enough?
+		}
+		setCursor(c);
+	}
+
+	private void pageUp() {
+		int c = cwin;
+		int x = clines - 1;
+		while (x > 0 && c > base) {
+			c = oneBack(c);
+			--x;
+		}
+		setCodeWin(c);
+		if (c < dwin) {
+			setDumpWin(c & ~0x0f);
+		} else if (c >= dend) {
+			setDumpWin(dend - 16);
+		}
+		setCursor(c);
+	}
+
+	private void goAdr(int a) {
+		setCodeWin(a);
+		setDumpWin(a & ~0x0f);
+		setCursor(a);
 	}
 
 	private void setDumpWin(int a) {
@@ -305,6 +345,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			if (cursor + 1 < end) {
 				setCursor(cursor + 1);
 			}
+		} else if (k == KeyEvent.VK_PAGE_DOWN) {
+			pageDown();
+		} else if (k == KeyEvent.VK_PAGE_UP) {
+			pageUp();
+		} else if (k == KeyEvent.VK_HOME) {
+			goAdr(base);
+		} else if (k == KeyEvent.VK_END) {
+			int c = end;
+			int x = clines;
+			while (x > 0 && c > base) {
+				c = oneBack(c);
+				--x;
+			}
+			goAdr(c);
 		}
 	}
 	public void keyReleased(KeyEvent e) {}
