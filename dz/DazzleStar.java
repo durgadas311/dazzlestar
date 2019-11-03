@@ -7,7 +7,7 @@ import java.io.*;
 import java.util.Properties;
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
-			ActionListener {
+			KeyListener, ActionListener {
 	static DazzleStar _us;
 	String com;
 	byte[] obj;
@@ -76,6 +76,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
+		frame.addKeyListener(this);
 		// This allows TAB to be sent
 		frame.setFocusTraversalKeysEnabled(false);
 		JMenuBar mb = new JMenuBar();
@@ -213,6 +214,31 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			System.exit(1);
 		}
 	}
+
+	public void keyTyped(KeyEvent e) {}
+	public void keyPressed(KeyEvent e) {
+		int k = e.getKeyCode();
+		int m = e.getModifiers();
+		if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
+			if (cursor + cur_len < obj.length) {
+				setCursor(cursor + cur_len);
+			}
+		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
+			// TODO: backup one *instruction*...
+			if (cursor - 1 >= base) {
+				setCursor(cursor - 1);
+			}
+		} else if (k == KeyEvent.VK_LEFT || k == KeyEvent.VK_KP_LEFT) {
+			if (cursor - 1 >= base) {
+				setCursor(cursor - 1);
+			}
+		} else if (k == KeyEvent.VK_RIGHT || k == KeyEvent.VK_KP_RIGHT) {
+			if (cursor + 1 < obj.length) {
+				setCursor(cursor + 1);
+			}
+		}
+	}
+	public void keyReleased(KeyEvent e) {}
 
 	// Memory interface:
 	public int read(boolean rom, int bank, int adr) {
