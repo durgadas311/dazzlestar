@@ -19,12 +19,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int clines;
 	int dlines;
 
-	int addr;
 	int base;
+	int cursor;
+	int cur_len;
+	int cwin;
+	int dwin;
 
 	FontMetrics _fm;
 	int _fa;
 	int _fw;
+	int _fw2;
 	int _fh;
 	int bd_width = 3; // some number
 
@@ -63,7 +67,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
 		}
-		addr = 0x0100;
+		cwin = 0x0100;
+		dwin = 0x0100;
 		base = 0x0100;
 		if (dis == null) {
 			dis = new Z80DisassemblerMAC80(this);
@@ -103,17 +108,29 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
+		setCursor(base);
 	}
 
 	private void setupFont() {
 		_fm = code.getFontMetrics(font);
 		_fa = _fm.getAscent();
 		_fw = _fm.charWidth('M');
+		_fw2 = _fw / 2;
 		_fh = _fm.getHeight();
 	}
 
+	private void setCursor(int c) {
+		cursor = c;
+		// TODO: break type...
+		String s = dis.disas(c);
+		int n = dis.instrLen();
+		cur_len = n;
+		code.repaint();
+		dump.repaint();
+	}
+
 	public void paintCode(Graphics2D g2d) {
-		int a = addr;
+		int a = cwin;
 		int x = bd_width;
 		int y = _fa + bd_width;
 		String s;
@@ -123,6 +140,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			i = dis.disas(a);
 			n = dis.instrLen();
 			s = String.format("? %04x ", a);
+			if (a == cursor) {
+				g2d.setColor(Color.yellow);
+				g2d.fillRect(x, y - _fa, 80 * _fw, _fh);
+				g2d.setColor(code.getForeground());
+			}
 			for (int z = 0; z < 4; ++z) {
 				if (z < n) {
 					s += String.format(" %02x", read(a));
@@ -138,9 +160,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void paintHighlight(Graphics2D g2d, int a, int x, int y, int n) {
+		if (a < cursor || a >= cursor + cur_len) {
+			return;
+		}
+		g2d.setColor(Color.yellow);
+		g2d.fillRect(x, y, n * _fw, _fh);
+		g2d.setColor(code.getForeground());
+	}
+
 	public void paintDump(Graphics2D g2d) {
 		g2d.setFont(font);
-		int a = addr;	// TODO: diff range from code...
+		int a = dwin;	// TODO: diff range from code...
 		String s;
 		int x = bd_width;
 		int y = _fa + bd_width;
@@ -148,6 +179,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		for (int l = 0; l < dlines; ++l) {
 			s = String.format("%04x ", a);
 			for (int z = 0; z < 16; ++z) {
+				paintHighlight(g2d, a + z, x + s.length() * _fw + _fw2, y - _fa, 3);
 				if (a + z < obj.length) {
 					s += String.format(" %02x", read(a + z));
 				} else {
@@ -156,6 +188,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			s += "  ";
 			for (int z = 0; z < 16; ++z) {
+				paintHighlight(g2d, a + z, x + s.length() * _fw, y - _fa, 1);
 				if (a + z < obj.length) {
 					c = read(a + z);
 					if (c < ' ' || c > '~') c = '.';
