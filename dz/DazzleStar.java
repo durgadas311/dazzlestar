@@ -18,6 +18,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	DZCodePane code;
 	DZDumpPane dump;
 	Font font;
+	JTextField dest;
+	JPanel gopn;
+	Color hilite;
+	Color liter;
 	int clines;
 	int dlines;
 
@@ -86,6 +90,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.addKeyListener(this);
 		// This allows TAB to be sent
 		frame.setFocusTraversalKeysEnabled(false);
+
 		JMenuBar mb = new JMenuBar();
 		// File menu...
 		JMenu mu = new JMenu("File");
@@ -95,7 +100,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mb.add(mu);
 		// done with File menu
 		frame.setJMenuBar(mb);
+		// This is the main container of everything (exc. menus)
+		JPanel pan = new JPanel();
+		pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
+
 		// TODO: get Properties...
+		hilite = Color.yellow;
+		liter = hilite.darker();
+
+		dest = new JTextField();
+		dest.setPreferredSize(new Dimension(50, 20));
+		dest.setEditable(true);
+		JPanel pn = new JPanel();
+		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(dest);
+		gopn = pn;
+
 		font = new Font("Monospaced", Font.PLAIN, 10);
 		clines = 24;
 		dlines = 6;
@@ -108,8 +128,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dump.setFont(font);
 		dump.setPreferredSize(new Dimension(_fw * 80 + 2 * bd_width,
 						_fh * dlines + 2 * bd_width));
-		JPanel pan = new JPanel();
-		pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
 		pan.add(code);
 		pan.add(dump);
 		frame.add(pan);
@@ -163,6 +181,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cursor = c;
 		// TODO: break type...
 		cur_len = getLen(c);
+		if (cur_len == 0) cur_len = 1;
 		code.repaint();
 		dump.repaint();
 	}
@@ -204,6 +223,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		setCursor(c);
 	}
 
+	private void byteUp() {
+		int c = cursor - 1;
+		if (c < base) return;
+		goAdr(c);
+	}
+
+	private void byteDown() {
+		int c = cursor + 1;
+		if (c >= end) return;
+		goAdr(c);
+	}
+
 	private void pageDown() {
 		int c = oneBack(cend);
 		if (c == cursor) return;
@@ -233,9 +264,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void goAdr(int a) {
+		int c = a;
+		while (a > base && getLen(a) == 0) --a;
 		setCodeWin(a);
 		setDumpWin(a & ~0x0f);
-		setCursor(a);
+		setCursor(c);
 	}
 
 	private void setDumpWin(int a) {
@@ -255,8 +288,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			i = dis.disas(a);
 			n = dis.instrLen();
 			s = String.format("? %04x ", a);
-			if (a == cursor) {
-				g2d.setColor(Color.yellow);
+			if (cursor >= a && cursor < a + n) {
+				if (a == cursor) {
+					g2d.setColor(hilite);
+				} else {
+					g2d.setColor(liter);
+				}
 				g2d.fillRect(x, y - _fa, 80 * _fw, _fh);
 				g2d.setColor(code.getForeground());
 			}
@@ -279,7 +316,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (a < cursor || a >= cursor + cur_len) {
 			return;
 		}
-		g2d.setColor(Color.yellow);
+		g2d.setColor(hilite);
 		g2d.fillRect(x, y, n * _fw, _fh);
 		g2d.setColor(code.getForeground());
 	}
@@ -318,14 +355,37 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	public void actionPerformed(ActionEvent e) {
-		if (!(e.getSource() instanceof JMenuItem)) {
-			return;
-		}
-		JMenuItem m = (JMenuItem)e.getSource();
+	private void menuAction(JMenuItem m) {
 		int key = m.getMnemonic();
 		if (key == KeyEvent.VK_Q) {
 			System.exit(1);
+		}
+	}
+
+	private void buttonAction(JButton b) {
+	}
+
+	private void adrDialog() {
+		String title = "GoTo Address";
+		int res = JOptionPane.showOptionDialog(frame, dest, title,
+			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+			null, null, null);
+		if (res != JOptionPane.OK_OPTION) return;
+		if (dest.getText().length() == 0) return;
+		int a = -1;
+		try {
+			a = Integer.valueOf(dest.getText(), 16);
+		} catch (Exception ee) {}
+		dest.setText("");
+		if (a < base || a >= end) return;
+		goAdr(a);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() instanceof JMenuItem) {
+			menuAction((JMenuItem)e.getSource());
+		} else if (e.getSource() instanceof JButton) {
+			buttonAction((JButton)e.getSource());
 		}
 	}
 
@@ -338,13 +398,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
 			lineUp();
 		} else if (k == KeyEvent.VK_LEFT || k == KeyEvent.VK_KP_LEFT) {
-			if (cursor - 1 >= base) {
-				setCursor(cursor - 1);
-			}
+			byteUp();
 		} else if (k == KeyEvent.VK_RIGHT || k == KeyEvent.VK_KP_RIGHT) {
-			if (cursor + 1 < end) {
-				setCursor(cursor + 1);
-			}
+			byteDown();
 		} else if (k == KeyEvent.VK_PAGE_DOWN) {
 			pageDown();
 		} else if (k == KeyEvent.VK_PAGE_UP) {
@@ -359,6 +415,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				--x;
 			}
 			goAdr(c);
+		} else if (k == KeyEvent.VK_A) {
+			adrDialog();
 		}
 	}
 	public void keyReleased(KeyEvent e) {}
