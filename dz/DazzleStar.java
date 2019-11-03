@@ -11,6 +11,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	static DazzleStar _us;
 	String com;
 	byte[] obj;
+	byte[] brk;	// breaks
+	byte[] len;	// length of "instructions" (lines)
 	Z80Disassembler dis;
 	JFrame frame;
 	DZCodePane code;
@@ -20,6 +22,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int dlines;
 
 	int base;
+	int end;
 	int cursor;
 	int cur_len;
 	int cwin;
@@ -49,6 +52,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		try {
 			InputStream f = new FileInputStream(args[0]);
 			obj = new byte[f.available()];
+			brk = new byte[f.available()];
+			len = new byte[f.available()];
 			f.read(obj);
 			f.close();
 		} catch (Exception ee) {
@@ -70,6 +75,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cwin = 0x0100;
 		dwin = 0x0100;
 		base = 0x0100;
+		end = base + obj.length;
+		setBreaks();
 		if (dis == null) {
 			dis = new Z80DisassemblerMAC80(this);
 		}
@@ -120,12 +127,30 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		_fh = _fm.getHeight();
 	}
 
+	private int getLen(int a) {
+		return len[a - base] & 0xff;
+	}
+
+	private void setLen(int a, int n) {
+		len[a - base] = (byte)n;
+	}
+
+	// Setup/rescan breaks and lengths...
+	private void setBreaks() {
+		// TODO: default to "I"... but handle all...
+		for (int x = base; x < end;) {
+			// TODO: check brk[]...
+			String i = dis.disas(x);
+			int n = dis.instrLen();
+			setLen(x, n);
+			x += n;
+		}
+	}
+
 	private void setCursor(int c) {
 		cursor = c;
 		// TODO: break type...
-		String s = dis.disas(c);
-		int n = dis.instrLen();
-		cur_len = n;
+		cur_len = getLen(c);
 		code.repaint();
 		dump.repaint();
 	}
@@ -181,7 +206,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			s = String.format("%04x ", a);
 			for (int z = 0; z < 16; ++z) {
 				paintHighlight(g2d, a + z, x + s.length() * _fw + _fw2, y - _fa, 3);
-				if (a + z < obj.length) {
+				if (a + z < end) {
 					s += String.format(" %02x", read(a + z));
 				} else {
 					s += " --";
@@ -190,7 +215,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			s += "  ";
 			for (int z = 0; z < 16; ++z) {
 				paintHighlight(g2d, a + z, x + s.length() * _fw, y - _fa, 1);
-				if (a + z < obj.length) {
+				if (a + z < end) {
 					c = read(a + z);
 					if (c < ' ' || c > '~') c = '.';
 					s += (char)c;
@@ -220,20 +245,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
 		if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
-			if (cursor + cur_len < obj.length) {
+			if (cursor + cur_len < end) {
 				setCursor(cursor + cur_len);
 			}
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
-			// TODO: backup one *instruction*...
-			if (cursor - 1 >= base) {
-				setCursor(cursor - 1);
+			int c = cursor;
+			while (c - 1 >= base) {
+				--c;
+				if (getLen(c) > 0) break;
 			}
+			setCursor(c);
 		} else if (k == KeyEvent.VK_LEFT || k == KeyEvent.VK_KP_LEFT) {
 			if (cursor - 1 >= base) {
 				setCursor(cursor - 1);
 			}
 		} else if (k == KeyEvent.VK_RIGHT || k == KeyEvent.VK_KP_RIGHT) {
-			if (cursor + 1 < obj.length) {
+			if (cursor + 1 < end) {
 				setCursor(cursor + 1);
 			}
 		}

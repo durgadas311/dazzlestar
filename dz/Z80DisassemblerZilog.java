@@ -1018,7 +1018,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 			}
 		} else if (opCode < 0x80) {
 			instr = String.format("bit %d,(i%c+%d)",
-					cbops[(opCode >> 3) & 7], regIXY, address);
+					(opCode >> 3) & 7, regIXY, address);
 		} else if (opCode < 0xc0) {
 			if ((opCode & 7) == 6) {
 				instr = String.format("res %d,(i%c+%d)",
