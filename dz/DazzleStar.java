@@ -83,7 +83,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		base = 0x0100;
 		end = base + obj.length;
-		setBreaks();
+		resetBreaks(base);
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
@@ -151,20 +151,94 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return len[a - base] & 0xff;
 	}
 
-	private void setLen(int a, int n) {
+	private void putLen(int a, int n) {
 		len[a - base] = (byte)n;
 	}
 
-	// Setup/rescan breaks and lengths...
-	private void setBreaks() {
-		// TODO: default to "I"... but handle all...
-		for (int x = base; x < end;) {
-			// TODO: check brk[]...
-			String i = dis.disas(x);
-			int n = dis.instrLen();
-			setLen(x, n);
+	private int getBrk(int a) {
+		return brk[a - base] & 0xff;
+	}
+
+	private void putBrk(int a, int b) {
+		brk[a - base] = (byte)b;
+	}
+
+	// returns last break seen
+	private int setLen(int a, int n) {
+		int bk = getBrk(a);
+		int b = bk;
+		putLen(a++, n--);
+		while (a < end && n > 0) {
+			b = getBrk(a);
+			if (b != 0) bk = b;
+			putLen(a++, 0);
+			--n;
+		}
+		return b;
+	}
+
+	private int lenTo(int a, int c) {
+		// TODO: some max length...
+		int x = a;
+		while (x < end && read(x++) != c);
+		return x - a;
+	}
+
+	private int lenToBit7(int a) {
+		// TODO: some max length...
+		int x = a;
+		while (x < end && (read(x++) & 0x80) == 0);
+		return x - a;
+	}
+
+	// Setup/rescan breaks and lengths... stop at next break
+	private void resetBreaks(int a) {
+		int n;
+		int b;
+		int ba = activeBreak(a);
+		int bk = getBrk(ba);
+		if (bk == 0) bk = 'I';
+		for (int x = a; x < end;) {
+			b = getBrk(x);
+			if (b != 0) {
+				if (x != a) break;
+				bk = b;
+			}
+			switch (bk) {
+			case 'I':
+				dis.disas(x);
+				n = dis.instrLen();
+				break;
+			case 'B':
+				// TODO: what length?
+				n = 1;
+				break;
+			case 'L':
+			case 'W':
+			case 'X':
+			case 'R':
+				n = 2;
+				break;
+			case '$':
+				n = lenTo(x, '$');
+				break;
+			case '0':
+				n = lenTo(x, 0);
+				break;
+			case '7':
+				n = lenToBit7(x);
+				break;
+			default:
+				n = 1;
+				break;
+			}
+			b = setLen(x, n);
+			if (b != 0) bk = b;
 			x += n;
 		}
+	}
+
+	private void setBreak(int a, int bk) {
 	}
 
 	private int oneBack(int a) {
@@ -277,17 +351,92 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dend = a + 16 * dlines;
 	}
 
+	// returns address of first break before or at address 'a'
+	private int activeBreak(int a) {
+		while (a > base && getBrk(a) == 0) --a;
+		return a;
+	}
+
+	private String lookup(int a) {
+		// TODO: symtab
+		return String.format("L%04x", a);
+	}
+
+	private String disLine(int a, int n, int bk) {
+		int z;
+		String s;
+		switch (bk) {
+		case 'I':
+			// assert: n == dis.intrLen()
+			return dis.disas(a);
+		case 'L':
+			// assert: n == 2
+			z = read(a) | (read(a + 1) << 8);
+			return String.format("dw %s", lookup(z));
+		case 'W':
+			// assert: n == 2
+			z = read(a) | (read(a + 1) << 8);
+			return String.format("dw %d", z); // TODO: radix
+		case 'X':
+			// assert: n == 2
+			z = read(a + 1) | (read(a) << 8);
+		case 'R':
+			// assert: n == 2
+			z = read(a) | (read(a + 1) << 8);
+			z += a;
+			z &= 0xffff;
+			return String.format("dw %s-$", lookup(z));
+		case 'B':
+			// TODO: radix
+			s = "db ";
+			for (z = 0; z < n; ++z) {
+				if (z != 0) s += ',';
+				s += String.format("%d", read(a++));
+			}
+			return s;
+		case '0':
+			// assert read(a + n - 1) == 0
+			// TODO: non-ASCII and ' handling
+			s = "db '";
+			s += new String(obj, a - base, n - 1);
+			s += "',0";
+			return s;
+		case '$':
+			// assert read(a + n - 1) == '$'
+			// TODO: non-ASCII and ' handling
+			s = "db '";
+			s += new String(obj, a - base, n);
+			s += '\'';
+			return s;
+		case '7':
+			// assert read(a + n - 1) & 0x80 == 0x80
+			// TODO: non-ASCII and ' handling
+			s = "db '";
+			s += new String(obj, a - base, n);
+			s += "'+80H";
+			return s;
+		}
+		return "?"; // or dis.disas()?
+	}
+
 	public void paintCode(Graphics2D g2d) {
 		int a = cwin;
 		int x = bd_width;
 		int y = _fa + bd_width;
 		String s;
-		String i;
+		int b;
+		int z;
 		int n;
+		int ba = activeBreak(a);
+		int bk = getBrk(ba);
+		if (bk == 0) bk = 'I';
 		for (int l = 0; l < clines; ++l) {
-			i = dis.disas(a);
-			n = dis.instrLen();
-			s = String.format("? %04x ", a);
+			b = getBrk(a);
+			if (b != 0) bk = b;
+			else b = ' ';
+			s = String.format("%c %04x ", (char)b, a);
+			n = getLen(a);
+			if (n == 0) n = 1;
 			if (cursor >= a && cursor < a + n) {
 				if (a == cursor) {
 					g2d.setColor(hilite);
@@ -297,18 +446,28 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				g2d.fillRect(x, y - _fa, 80 * _fw, _fh);
 				g2d.setColor(code.getForeground());
 			}
-			for (int z = 0; z < 4; ++z) {
+			for (z = 0; z < 4; ++z) {
 				if (z < n) {
-					s += String.format(" %02x", read(a));
-					++a;
+					s += String.format(" %02x", read(a + z));
 				} else {
 					s += "   ";
 				}
 			}
-			s += "  ";
-			s += i;
+			if (z < n) {
+				s += "...";
+			} else {
+				s += "   ";
+			}
+			s += disLine(a, n, bk);
 			g2d.drawString(s, x, y);
 			y += _fh;
+			++a;	// already got this break, if any
+			--n;	//
+			while (n > 0) {
+				b = getBrk(a++);
+				if (b != 0) bk = b;
+				--n;
+			}
 		}
 	}
 
@@ -381,6 +540,39 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		goAdr(a);
 	}
 
+	private boolean doBrkKey(int k) {
+		int bk = 0;
+		if (k == 'B') {
+			bk = 'B';
+		} else if (k == 'I') {
+			bk = 'I';
+		} else if (k == 'L') {
+			bk = 'L';
+		} else if (k == 'W') {
+			bk = 'W';
+		} else if (k == 'X') {
+			bk = 'X';
+		} else if (k == 'R') {
+			bk = 'R';
+		} else if (k == '0') {
+			bk = '0';
+		} else if (k == '$') {
+			bk = '$';
+		} else if (k == '7') {
+			bk = '7';
+		} else if (k == ' ') {
+			bk = ' ';
+		}
+		if (bk == 0) return false;
+		if (bk == ' ') bk = 0;	// clear break
+		putBrk(cursor, bk);
+		resetBreaks(cursor);
+		cur_len = getLen(cursor);
+		code.repaint();
+		dump.repaint();
+		return true;
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			menuAction((JMenuItem)e.getSource());
@@ -389,7 +581,17 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	public void keyTyped(KeyEvent e) {}
+	public void keyTyped(KeyEvent e) {
+		int c = Character.toUpperCase(e.getKeyChar());
+		if (c == 'A') {
+			adrDialog();
+		} else if (doBrkKey(c)) {
+			return;
+		} else {
+			// more keys
+		}
+	}
+
 	public void keyPressed(KeyEvent e) {
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
@@ -415,8 +617,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				--x;
 			}
 			goAdr(c);
-		} else if (k == KeyEvent.VK_A) {
-			adrDialog();
 		}
 	}
 	public void keyReleased(KeyEvent e) {}
