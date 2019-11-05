@@ -209,8 +209,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			switch (bk) {
 			case 'I':
-				dis.disas(x);
-				n = dis.instrLen();
+				n = dis.disas(x).len;
 				break;
 			case 'B':
 				// TODO: what length?
@@ -366,32 +365,44 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private String disLine(int a, int n, int bk) {
+		Z80Dissed d;
 		int z;
 		String s;
 		switch (bk) {
 		case 'I':
 			// assert: n == dis.intrLen()
-			return dis.disas(a);
+			d = dis.disas(a);
+			if (d.addr < 0) {
+				if (d.fmt == null) {
+					return String.format("%s", d.op);
+				} else {
+					return String.format("%-8s%s", d.op, d.fmt);
+				}
+			} else {
+				return String.format("%-8s%s", d.op,
+					String.format(d.fmt, lookup(d.addr)));
+			}
 		case 'L':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw %s", lookup(z));
+			return String.format("dw      %s", lookup(z));
 		case 'W':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw %d", z); // TODO: radix
+			return String.format("dw      %d", z); // TODO: radix
 		case 'X':
 			// assert: n == 2
 			z = read(a + 1) | (read(a) << 8);
+			return String.format("dw      %d", z); // TODO: radix
 		case 'R':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
-			return String.format("dw %s-$", lookup(z));
+			return String.format("dw      %s-$", lookup(z));
 		case 'B':
 			// TODO: radix
-			s = "db ";
+			s = "db      ";
 			for (z = 0; z < n; ++z) {
 				if (z != 0) s += ',';
 				s += String.format("%d", read(a++));
@@ -400,21 +411,21 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '0':
 			// assert read(a + n - 1) == 0
 			// TODO: non-ASCII and ' handling
-			s = "db '";
+			s = "db      '";
 			s += new String(obj, a - base, n - 1);
 			s += "',0";
 			return s;
 		case '$':
 			// assert read(a + n - 1) == '$'
 			// TODO: non-ASCII and ' handling
-			s = "db '";
+			s = "db      '";
 			s += new String(obj, a - base, n);
 			s += '\'';
 			return s;
 		case '7':
 			// assert read(a + n - 1) & 0x80 == 0x80
 			// TODO: non-ASCII and ' handling
-			s = "db '";
+			s = "db      '";
 			s += new String(obj, a - base, n);
 			s += "'+80H";
 			return s;
