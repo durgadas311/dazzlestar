@@ -635,6 +635,25 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return true;
 	}
 
+	private void follow() {
+		int a = -1;
+		int ba = activeBreak(cursor);
+		int bk = getBrk(ba);
+		if (bk == 0) bk = 'I';
+		if (bk == 'I') {
+			Z80Dissed d = dis.disas(cursor);
+			a = d.addr;
+		} else if (bk == 'L') {
+			a = read(cursor) | (read(cursor + 1) << 8);
+		} else if (bk == 'R') {
+			a = read(cursor) | (read(cursor + 1) << 8);
+			a += cursor;
+			a &= 0xffff;
+		}
+		if (a < base || a >= end) return;
+		goAdr(a);
+	}
+
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
 			menuAction((JMenuItem)e.getSource());
@@ -647,6 +666,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int c = Character.toUpperCase(e.getKeyChar());
 		if (c == 'A') {
 			adrDialog();
+		} else if (c == 'F') {
+			follow();
 		} else if (doBrkKey(c)) {
 			return;
 		} else {
