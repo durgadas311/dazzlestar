@@ -9,7 +9,7 @@ import java.util.Properties;
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
 	static DazzleStar _us;
-	String com;
+	File comFile;
 	byte[] obj;
 	byte[] brk;	// breaks
 	byte[] len;	// length of "instructions" (lines)
@@ -56,18 +56,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			help();	// does not return
 		}
 		try {
-			InputStream f = new FileInputStream(args[0]);
+			File fi = new File(args[0]);
+			InputStream f = new FileInputStream(fi);
 			obj = new byte[f.available()];
 			brk = new byte[f.available()];
 			len = new byte[f.available()];
 			f.read(obj);
 			f.close();
+			comFile = fi;
 		} catch (Exception ee) {
 			ee.printStackTrace();
 			System.exit(1);
 		}
-		// file must exist... assume a COM file...
-		com = args[0];
 		for (int x = 1; x < args.length; ++x) {
 			if (args[x].equalsIgnoreCase("ZILOG")) {
 				dis = new Z80DisassemblerZilog(this);
@@ -94,7 +94,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		JMenuBar mb = new JMenuBar();
 		// File menu...
 		JMenu mu = new JMenu("File");
-		JMenuItem mi = new JMenuItem("Quit (no save)", KeyEvent.VK_Q);
+		JMenuItem mi = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("Quit (no save)", KeyEvent.VK_Q);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -514,10 +517,58 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void generatePRN(File prn, int first, int last) throws Exception {
+		PrintStream ps = new PrintStream(prn);
+		int b;
+		int z;
+		int n;
+		int ba = activeBreak(first);
+		int bk = getBrk(ba);
+		if (bk == 0) bk = 'I';
+		for (int a = first; a < last;) {
+			b = getBrk(a);
+			if (b != 0) bk = b;
+			ps.format("%04x ", a);
+			n = getLen(a);
+			if (n == 0) n = 1;
+			for (z = 0; z < 4; ++z) {
+				if (z < n) {
+					ps.format(" %02x", read(a + z));
+				} else {
+					ps.format("   ");
+				}
+			}
+			if (z < n) {
+				ps.format("...");
+			} else {
+				ps.format("   ");
+			}
+			ps.format(disLine(a, n, bk));
+			ps.format("\n");
+			++a;	// already got this break, if any
+			--n;	//
+			while (n > 0) {
+				b = getBrk(a++);
+				if (b != 0) bk = b;
+				--n;
+			}
+		}
+		ps.close();
+	}
+
 	private void menuAction(JMenuItem m) {
 		int key = m.getMnemonic();
 		if (key == KeyEvent.VK_Q) {
 			System.exit(1);
+		}
+		if (key == KeyEvent.VK_P) {
+			File prn = new File(comFile.getName().replace(".com", ".prn"));
+			try {
+				generatePRN(prn, base, end);
+			} catch (Exception ee) {
+				// TODO: pop-up warning
+				ee.printStackTrace();
+			}
 		}
 	}
 
