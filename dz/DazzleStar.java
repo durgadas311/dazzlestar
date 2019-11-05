@@ -231,8 +231,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			case 'I':
 				n = dis.disas(x).len;
 				break;
-			case 'B':
-				// TODO: what length?
+			case 'B': // TODO: what length?
+			case 'C':
 				n = 1;
 				break;
 			case 'L':
@@ -490,21 +490,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				s += String.format("%d", read(a++));
 			}
 			return s;
-		case '0':
-			// assert read(a + n - 1) == 0
+		case 'C':
+		case '0': // assert read(a + n - 1) == 0
+		case '$': // assert read(a + n - 1) == '$'
+		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db      ";
 			s += asmString(a, n);
-			return s;
-		case '$':
-			// assert read(a + n - 1) == '$'
-			s = "db      ";
-			s += asmString(a, n);
-			return s;
-		case '7':
-			// assert read(a + n - 1) & 0x80 == 0x80
-			s = "db      ";
-			s += asmString(a, n);
-			// TODO: comment showing last char?
+			// TODO: '7' comment showing last char?
 			return s;
 		}
 		return "?"; // or dis.disas()?
@@ -554,21 +546,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				s += String.format("%d", read(a++));
 			}
 			return s;
-		case '0':
-			// assert read(a + n - 1) == 0
-			// TODO: non-ASCII and ' handling
-			s = "db\t'";
-			s += asmString(a, n);
-			return s;
-		case '$':
-			// assert read(a + n - 1) == '$'
-			// TODO: non-ASCII and ' handling
-			s = "db\t'";
-			s += asmString(a, n);
-			return s;
-		case '7':
-			// assert read(a + n - 1) & 0x80 == 0x80
-			// TODO: non-ASCII and ' handling
+		case 'C':
+		case '0': // assert read(a + n - 1) == 0
+		case '$': // assert read(a + n - 1) == '$'
+		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db\t'";
 			s += asmString(a, n);
 			return s;
@@ -892,6 +873,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int bk = 0;
 		if (k == 'B') {
 			bk = 'B';
+		} else if (k == 'C') {
+			bk = 'C';
 		} else if (k == 'I') {
 			bk = 'I';
 		} else if (k == 'L') {
