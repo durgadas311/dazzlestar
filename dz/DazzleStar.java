@@ -23,7 +23,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	DZDumpPane dump;
 	Font font;
 	JTextField dest;
-	JTextField stat;
+	JLabel stat;
 	Color hilite;
 	Color liter;
 	int clines;
@@ -55,6 +55,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void help() {
 		System.err.format("Usage: DazzleStar <com-file>\n");
 		System.exit(1);
+	}
+
+	private void setStatus() {
+		String s = String.format("File: %s", comFile.getName());
+		stat.setText(s);
 	}
 
 	private DazzleStar(String[] args) {
@@ -178,10 +183,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dest.setEditable(true);
 		dest.setEnabled(false);
 		dest.addActionListener(this);
-		stat = new JTextField();
+		stat = new JLabel();
 		stat.setPreferredSize(new Dimension(300, 20));
-		stat.setEditable(false);
-		stat.setEnabled(false);
 		JPanel pn = new JPanel();
 		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
 		pn.add(new JLabel("A(ddr):"));
@@ -204,6 +207,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
+		File dz = new File(comFile.getName().replace(".com", ".dz"));
+		if (dz.exists()) {
+			try {
+				loadDZ(dz);
+			} catch (Exception ee) {}
+		}
 		setCodeWin(base);
 		setDumpWin(base);
 		setCursor(base);
@@ -605,6 +614,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	public void paintCode(Graphics2D g2d) {
+		if (cwin < base) return;
 		int a = cwin;
 		int x = bd_width;
 		int y = _fa + bd_width;
@@ -666,7 +676,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	public void paintDump(Graphics2D g2d) {
-		g2d.setFont(font);
+		if (dwin < base) return;
 		int a = dwin;	// TODO: diff range from code...
 		String s;
 		int x = bd_width;
@@ -712,6 +722,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
+		String s = String.format("Saved: %s", dz.getName());
+		stat.setText(s);
 	}
 
 	private void loadDZ(File dz) throws Exception {
@@ -738,6 +750,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		lin.close();
 		resetBreaks(base, true);
 		setCursor(base);
+		s = String.format("Loaded: %s", dz.getName());
+		stat.setText(s);
 	}
 
 	// TODO: address range?
@@ -803,6 +817,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
+		String s = String.format("Written: %s", asm.getName());
+		stat.setText(s);
 	}
 
 	private void generatePRN(File prn, int first, int last) throws Exception {
@@ -842,6 +858,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
+		String s = String.format("Written: %s", prn.getName());
+		stat.setText(s);
 	}
 
 	private void menuAction(JMenuItem m) {
