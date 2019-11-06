@@ -23,7 +23,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	DZDumpPane dump;
 	Font font;
 	JTextField dest;
-	JPanel gopn;
+	JTextField stat;
 	Color hilite;
 	Color liter;
 	int clines;
@@ -176,10 +176,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dest = new JTextField();
 		dest.setPreferredSize(new Dimension(50, 20));
 		dest.setEditable(true);
+		dest.setEnabled(false);
+		dest.addActionListener(this);
+		stat = new JTextField();
+		stat.setPreferredSize(new Dimension(300, 20));
+		stat.setEditable(false);
+		stat.setEnabled(false);
 		JPanel pn = new JPanel();
 		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
+		pn.add(new JLabel("A(ddr):"));
 		pn.add(dest);
-		gopn = pn;
+		pn.add(stat);
+		pan.add(pn);
 
 		code = new DZCodePane(this);
 		code.setFont(font);
@@ -892,22 +900,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void buttonAction(JButton b) {
 	}
 
-	private void adrDialog() {
-		String title = "GoTo Address";
-		int res = JOptionPane.showOptionDialog(frame, dest, title,
-			JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
-			null, null, null);
-		if (res != JOptionPane.OK_OPTION) return;
-		if (dest.getText().length() == 0) return;
-		int a = -1;
-		try {
-			a = Integer.valueOf(dest.getText(), 16);
-		} catch (Exception ee) {}
-		dest.setText("");
-		if (a < base || a >= end) return;
-		goAdr(a);
-	}
-
 	private boolean doBrkKey(int k) {
 		int bk = 0;
 		if (k == 'B') {
@@ -967,13 +959,25 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			menuAction((JMenuItem)e.getSource());
 		} else if (e.getSource() instanceof JButton) {
 			buttonAction((JButton)e.getSource());
+		} else if (e.getSource() instanceof JTextField) {
+			frame.requestFocus();
+			dest.setEnabled(false);
+			if (dest.getText().length() == 0) return;
+			int a = -1;
+			try {
+				a = Integer.valueOf(dest.getText(), 16);
+			} catch (Exception ee) {}
+			dest.setText("");
+			if (a < base || a >= end) return;
+			goAdr(a);
 		}
 	}
 
 	public void keyTyped(KeyEvent e) {
 		int c = Character.toUpperCase(e.getKeyChar());
 		if (c == 'A') {
-			adrDialog();
+			dest.setEnabled(true);
+			dest.requestFocus();
 		} else if (c == 'F') {
 			follow();
 		} else if (doBrkKey(c)) {
