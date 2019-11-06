@@ -45,6 +45,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int _fh;
 	int bd_width = 3; // some number
 
+	Properties props = new Properties();
+
 	public static void main(String[] args) {
 		_us = new DazzleStar(args);
 		// _us.start(); ??
@@ -56,8 +58,23 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private DazzleStar(String[] args) {
+		String rc = null;
 		if (args.length < 1) {
 			help();	// does not return
+		}
+		File ff = new File("./dzrc");
+		if (ff.exists()) {
+			rc = ff.getAbsolutePath();
+		}
+		if (rc == null) {
+			rc = System.getProperty("user.home") + "/.dzrc";
+		}
+		try {
+			FileInputStream cfg = new FileInputStream(rc);
+			props.load(cfg);
+			cfg.close();
+		} catch(Exception ee) {
+			rc = null;
 		}
 		try {
 			File fi = new File(args[0]);
@@ -129,6 +146,31 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 		// TODO: get Properties...
 		hilite = Color.yellow;
+		float fz = (float)10.0;
+		String fn = "Monospaced";
+		clines = 24;
+		dlines = 6;
+		String s = props.getProperty("code_win");
+		if (s != null) {
+			clines = Integer.valueOf(s);
+		}
+		s = props.getProperty("dump_win");
+		if (s != null) {
+			dlines = Integer.valueOf(s);
+		}
+		s = props.getProperty("cursor_color");
+		if (s != null) {
+			hilite = new Color(Integer.valueOf(s, 16));
+		}
+		s = props.getProperty("font_name");
+		if (s != null) {
+			fn = s;
+		}
+		s = props.getProperty("font_size");
+		if (s != null) {
+			fz = Float.valueOf(s);
+		}
+		font = new Font(fn, Font.PLAIN, (int)fz);
 		liter = hilite.darker();
 
 		dest = new JTextField();
@@ -139,9 +181,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		pn.add(dest);
 		gopn = pn;
 
-		font = new Font("Monospaced", Font.PLAIN, 10);
-		clines = 24;
-		dlines = 6;
 		code = new DZCodePane(this);
 		code.setFont(font);
 		setupFont();	// needs 'code' JPanel
