@@ -1,0 +1,118 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar TNG Help</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar TNG Help</H2>
+
+<P>The JAR file DazzleStar.jar implements a modern version of
+the famous DazzleStar disassembler.
+
+<UL><PRE>java -jar DazzleStar.jar [options]</PRE></UL>
+
+<P>The configuration of the virtual computer is driven by the configuration
+file, which  is searched in the following way:
+<OL>
+<LI>The current directory is searched for "dzrc"
+<LI>The path "~/.dzrc" is used (user's home directory)
+</OL>
+This file is plain text and consists
+of lines in the format "property = value". Long values may be extended to
+subsequent lines by using the back-slash to cause the subsequent line
+to be attached to the value.
+
+<P>The following properties control the basic functioning of the virtual
+computer:
+
+<DL>
+<DT>code_win</DT>
+<DD>The number of lines to display in the "Code Window" (disassemble code).
+Default is 24.
+</DD>
+
+<DT>dump_win</DT>
+<DD>The number of lines to display in the "Dump Window" (hex dump).
+Default is 6.
+</DD>
+
+<DT>cursor_color</DT>
+<DD>This selects the color to use for the "cursor" highlights in
+the Code and Dump windows. Pick a color that works well with black text.
+Default is yellow.
+</DD>
+
+<DT>font_name</DT>
+<DD>This specifies the style or exact name for the font to use
+in the Code and Dump windows. This font should be monospaced.
+Default is "Monospaced".
+</DD>
+
+<DT>font_size</DT>
+<DD>Define the font size to use. May be specified independently of
+font_name. Default is 10.0.
+</DD>
+</DL>
+
+<P>Basic operational functions are supplied in the menus.
+Navigation is provided through modern keyboard commands:
+
+<DL>
+<DT>Home</DT>
+<DD>Jump to the first "window" in the program.</DD>
+<DT>End</DT>
+<DD>Jump to the last "window" in the program.</DD>
+<DT>Page Up</DT>
+<DD>Move one screen-full up (back) in the program.</DD>
+<DT>Page Down</DT>
+<DD>Move one screen-full down (forward) in the program.</DD>
+<DT>(Up Arrow)</DT>
+<DD>Move one screen-line up (back) in the program.</DD>
+<DT>(Down Arrow)</DT>
+<DD>Move one screen-line down (forward) in the program.</DD>
+<DT>(Left Arrow)</DT>
+<DD>Move one byte up (back) in the program.
+Note that this can
+(temporarely) throw-off the code display, as indicated by a darker cursor.</DD>
+<DT>(Down Arrow)</DT>
+<DD>Move one byte down (forward) in the program.
+Note that this can
+(temporarely) throw-off the code display, as indicated by a darker cursor.</DD>
+</DL>
+
+<P>The following disassembly keyboard commands are recognized:
+
+<DL>
+<DT>A</DT>
+<DD>goto an Address. This activated the "A(ddr):" text box
+below the menu bar, which can only be deactivated by pressing ENTER.
+Type the 4-digit hex address desired, or leave empty to cancel.</DD>
+<DT>F</DT>
+<DD>Follow the address in the current instruction or DW (if a label).</DD>
+<DT>I</DT>
+<DD>Set an Instruction break.</DD>
+<DT>B</DT>
+<DD>Set a DB break. Length of each DB is currently one byte.</DD>
+<DT>C</DT>
+<DD>Set a DB character break. Value is displayed as quoted character, if printable.</DD>
+<DT>L</DT>
+<DD>Set a DW label (address) break.</DD>
+<DT>W</DT>
+<DD>Set a DW numeric break.</DD>
+<DT>X</DT>
+<DD>Set a DW numeric break, big-endian.</DD>
+<DT>R</DT>
+<DD>Set a DW relative address break.</DD>
+<DT>$</DT>
+<DD>Set a DB '$'-terminated string break.</DD>
+<DT>0</DT>
+<DD>Set a DB 0-terminated string break.</DD>
+<DT>7</DT>
+<DD>Set a DB 7th-bit-terminated string break.</DD>
+</DL>
+
+This program is still very preliminary, and exact functionality is still being worked out.
+But it is possible to examine COM files and generate usable ASM or PRN output.
+Currently, only COM files ORGed at 0100H can be used.
+
+</BODY>
+</HTML>

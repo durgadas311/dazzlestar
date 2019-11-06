@@ -15,7 +15,8 @@ src: $(SOURCE)
 
 DazzleStar.jar: all
 	echo "Main-Class: DazzleStar" >Manifest.txt
-	jar -cmf Manifest.txt DazzleStar.jar *.class 
+	jar -cmf Manifest.txt DazzleStar.jar *.class \
+		docs/*.html
 
 dz.tgz: __FRC__
 	cd ..; tar -czf dz/dz.tgz dz/Makefile \

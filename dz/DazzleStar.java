@@ -26,6 +26,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JMenuItem mi_cls;
 	JMenuItem mi_sym;
 	JMenuItem mi_dis;
+	GenericHelp help;
 	JFrame frame;
 	DZCodePane code;
 	DZDumpPane dump;
@@ -107,6 +108,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.addKeyListener(this);
 		// This allows TAB to be sent
 		frame.setFocusTraversalKeysEnabled(false);
+		java.net.URL url = this.getClass().getResource("docs/dzhelp.html");
+		if (url != null) {
+			help = new GenericHelp(frame.getTitle() + " Help", url);
+		}
 
 		JMenuBar mb = new JMenuBar();
 		// File menu...
@@ -144,6 +149,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mb.add(mu);
 		disHint();
 		// done with Disas menu
+		// Help is always last... far right.
+		mu = new JMenu("Help");
+		mi = new JMenuItem("Show Help", KeyEvent.VK_H);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mb.add(mu);
+		// done with Help menu
 		frame.setJMenuBar(mb);
 		jobActive(false);
 		// This is the main container of everything (exc. menus)
@@ -995,6 +1007,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			base = end = 0;
 			// TODO: discard obj[], brk[], len[] ?
 			// TODO: symtab.clear()?
+			return;
+		}
+		if (key == KeyEvent.VK_H) {
+			if (help != null) {
+				help.setVisible(true);
+			}
 			return;
 		}
 	}
