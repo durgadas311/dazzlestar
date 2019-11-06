@@ -18,12 +18,21 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	byte[] len;	// length of "instructions" (lines)
 	Map<Integer,String> symtab;
 	Z80Disassembler dis;
+	Font font2;
+	JMenuItem mi_ld;
+	JMenuItem mi_sav;
+	JMenuItem mi_asm;
+	JMenuItem mi_prn;
+	JMenuItem mi_cls;
+	JMenuItem mi_sym;
+	JMenuItem mi_dis;
 	JFrame frame;
 	DZCodePane code;
 	DZDumpPane dump;
 	Font font;
 	JTextField dest;
 	JLabel stat;
+	String statBase;
 	Color hilite;
 	Color liter;
 	int clines;
@@ -33,10 +42,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int end;
 	int cursor;
 	int cur_len;
-	int cwin;
-	int cend;
-	int dwin;
-	int dend;
+	int cwin = -1;
+	int cend = -1;
+	int dwin = -1;
+	int dend = -1;
 
 	FontMetrics _fm;
 	int _fa;
@@ -57,16 +66,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		System.exit(1);
 	}
 
-	private void setStatus() {
-		String s = String.format("File: %s", comFile.getName());
-		stat.setText(s);
-	}
-
 	private DazzleStar(String[] args) {
 		String rc = null;
-		if (args.length < 1) {
-			help();	// does not return
-		}
 		File ff = new File("./dzrc");
 		if (ff.exists()) {
 			rc = ff.getAbsolutePath();
@@ -81,20 +82,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		} catch(Exception ee) {
 			rc = null;
 		}
-		try {
-			File fi = new File(args[0]);
-			InputStream f = new FileInputStream(fi);
-			obj = new byte[f.available()];
-			brk = new byte[f.available()];
-			len = new byte[f.available()];
-			f.read(obj);
-			f.close();
-			comFile = fi;
-		} catch (Exception ee) {
-			ee.printStackTrace();
-			System.exit(1);
-		}
-		for (int x = 1; x < args.length; ++x) {
+		File fi = null;
+		for (int x = 0; x < args.length; ++x) {
 			if (args[x].equalsIgnoreCase("ZILOG")) {
 				dis = new Z80DisassemblerZilog(this);
 				continue;
@@ -102,15 +91,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				// default is this, done later...
 				continue;
 			}
-			System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
+			fi = new File(args[0]);
+			if (!fi.exists()) {
+				System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
+				help();	// does not return
+			}
 		}
 		if (dis == null) {
 			dis = new Z80DisassemblerMAC80(this);
 		}
 		symtab = new HashMap<Integer,String>();
-		base = 0x0100;
-		end = base + obj.length;
-		resetBreaks(base, true);
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
@@ -121,16 +111,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		JMenuBar mb = new JMenuBar();
 		// File menu...
 		JMenu mu = new JMenu("File");
-		JMenuItem mi = new JMenuItem("Generate ASM", KeyEvent.VK_A);
+		JMenuItem mi = new JMenuItem("New", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi = mi_cls = new JMenuItem("Close", KeyEvent.VK_C);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Save DZ", KeyEvent.VK_S);
+		mi = mi_asm = new JMenuItem("Generate ASM", KeyEvent.VK_A);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("Load DZ", KeyEvent.VK_L);
+		mi = mi_prn = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_sav = new JMenuItem("Save DZ", KeyEvent.VK_S);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_L);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Quit (no save)", KeyEvent.VK_Q);
@@ -139,12 +135,17 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mb.add(mu);
 		// done with File menu
 		mu = new JMenu("Disas");
-		mi = new JMenuItem("Regen Symtab", KeyEvent.VK_G);
+		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_G);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_dis = new JMenuItem("Use -----", KeyEvent.VK_M);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
+		disHint();
 		// done with Disas menu
 		frame.setJMenuBar(mb);
+		jobActive(false);
 		// This is the main container of everything (exc. menus)
 		JPanel pan = new JPanel();
 		pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
@@ -178,16 +179,21 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		font = new Font(fn, Font.PLAIN, (int)fz);
 		liter = hilite.darker();
 
+		font2 = new Font("Sans-serif", Font.PLAIN, 10);
 		dest = new JTextField();
 		dest.setPreferredSize(new Dimension(50, 20));
 		dest.setEditable(true);
 		dest.setEnabled(false);
+		dest.setFont(font2);
 		dest.addActionListener(this);
 		stat = new JLabel();
-		stat.setPreferredSize(new Dimension(300, 20));
+		stat.setPreferredSize(new Dimension(400, 20));
+		stat.setFont(font2);
+		JLabel lb = new JLabel("A(ddr):");
+		lb.setFont(font2);
 		JPanel pn = new JPanel();
 		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
-		pn.add(new JLabel("A(ddr):"));
+		pn.add(lb);
 		pn.add(dest);
 		pn.add(stat);
 		pan.add(pn);
@@ -207,15 +213,62 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
-		File dz = new File(comFile.getName().replace(".com", ".dz"));
+
+		if (fi != null) {
+			newJob(fi);
+		} else {
+			comFile = new File(System.getProperty("user.dir"));
+		}
+	}
+
+	private void jobActive(boolean act) {
+		mi_ld.setEnabled(act);
+		mi_sav.setEnabled(act);
+		mi_asm.setEnabled(act);
+		mi_prn.setEnabled(act);
+		mi_cls.setEnabled(act);
+		mi_sav.setEnabled(act);
+	}
+
+	private void disHint() {
+		if (dis instanceof Z80DisassemblerMAC80) {
+			mi_dis.setText("Use Zilog");
+		} else {
+			mi_dis.setText("Use MAC80");
+		}
+	}
+
+	private boolean newJob(File com) {
+		jobActive(false);
+		try {
+			InputStream f = new FileInputStream(com);
+			obj = new byte[f.available()];
+			brk = new byte[f.available()];
+			len = new byte[f.available()];
+			f.read(obj);
+			f.close();
+			comFile = com;
+		} catch (Exception ee) {
+			ee.printStackTrace();
+			return false;
+		}
+		statBase = String.format("Work: %s", com.getName());
+		stat.setText(statBase);
+		base = 0x0100;
+		end = base + obj.length;
+		symtab.clear();
+		resetBreaks(base, true);
+		File dz = new File(com.getName().replace(".com", ".dz"));
 		if (dz.exists()) {
 			try {
-				loadDZ(dz);
+				loadDZ(dz);	// resets statBase...
 			} catch (Exception ee) {}
 		}
+		jobActive(true);
 		setCodeWin(base);
 		setDumpWin(base);
 		setCursor(base);
+		return true;
 	}
 
 	private void setupFont() {
@@ -606,7 +659,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '0': // assert read(a + n - 1) == 0
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
-			s = "db\t'";
+			s = "db\t";
 			s += asmString(a, n);
 			return s;
 		}
@@ -722,8 +775,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
-		String s = String.format("Saved: %s", dz.getName());
-		stat.setText(s);
+		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
+		stat.setText(statBase + " Saved");
 	}
 
 	private void loadDZ(File dz) throws Exception {
@@ -750,8 +803,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		lin.close();
 		resetBreaks(base, true);
 		setCursor(base);
-		s = String.format("Loaded: %s", dz.getName());
-		stat.setText(s);
+		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
+		stat.setText(statBase);
 	}
 
 	// TODO: address range?
@@ -817,8 +870,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
-		String s = String.format("Written: %s", asm.getName());
-		stat.setText(s);
+		stat.setText(statBase + " ASM saved");
 	}
 
 	private void generatePRN(File prn, int first, int last) throws Exception {
@@ -858,8 +910,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		ps.close();
-		String s = String.format("Written: %s", prn.getName());
-		stat.setText(s);
+		stat.setText(statBase + " PRN saved");
 	}
 
 	private void menuAction(JMenuItem m) {
@@ -911,6 +962,39 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (key == KeyEvent.VK_G) {
 			regenSymtab();
+			return;
+		}
+		if (key == KeyEvent.VK_M) {
+			// switch mnemonics
+			if (dis instanceof Z80DisassemblerMAC80) {
+				dis = new Z80DisassemblerZilog(this);
+			} else {
+				dis = new Z80DisassemblerMAC80(this);
+			}
+			disHint();
+			code.repaint();
+			return;
+		}
+		if (key == KeyEvent.VK_N) {
+			// new job (disassembly)
+			SuffFileChooser sfc = new SuffFileChooser("COM file",
+				new String[]{ "com" },
+				new String[]{ "COM file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv == JFileChooser.APPROVE_OPTION) {
+				newJob(sfc.getSelectedFile());
+			}
+			return;
+		}
+		if (key == KeyEvent.VK_C) {
+			// close current
+			// TODO: auto-save?
+			cwin = -1;
+			dwin = -1;
+			base = end = 0;
+			// TODO: discard obj[], brk[], len[] ?
+			// TODO: symtab.clear()?
 			return;
 		}
 	}
