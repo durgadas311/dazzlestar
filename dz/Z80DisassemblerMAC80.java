@@ -1117,10 +1117,10 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 		} else {
 			instr.op = String.format("set%c", regIXY);
 			if ((opCode & 7) == 6) {
-				instr.op = String.format("%d,%d",
+				instr.fmt = String.format("%d,%d",
 					(opCode >> 3) & 7, address);
 			} else {
-				instr.op = String.format("%d,%d,%c",
+				instr.fmt = String.format("%d,%d,%c",
 					(opCode >> 3) & 7, address,
 					regs[opCode & 7]);
 			}

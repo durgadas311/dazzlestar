@@ -381,9 +381,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private void setBreak(int a, int bk) {
-	}
-
 	private int oneBack(int a) {
 		if (a > end) a = end;
 		if (a < base) a = base;
@@ -1059,6 +1056,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		putBrk(cursor, bk);
 		resetBreaks(cursor, false);
 		cur_len = getLen(cursor);
+		setCodeWin(cwin);
 		code.repaint();
 		dump.repaint();
 		return true;
@@ -1081,6 +1079,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (a < base || a >= end) return;
 		goAdr(a);
+	}
+
+	private void keyShifted(int k) {
+		if (k == KeyEvent.VK_HOME) {
+			goAdr(base);
+		} else if (k == KeyEvent.VK_END) {
+			int c = end;
+			int x = clines;
+			while (x > 0 && c > base) {
+				c = oneBack(c);
+				--x;
+			}
+			goAdr(c);
+		}
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -1119,7 +1131,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	public void keyPressed(KeyEvent e) {
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
-		if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
+		if ((m & InputEvent.SHIFT_MASK) != 0) {
+			keyShifted(k);
+		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
 			lineDown();
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
 			lineUp();
@@ -1132,15 +1146,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		} else if (k == KeyEvent.VK_PAGE_UP) {
 			pageUp();
 		} else if (k == KeyEvent.VK_HOME) {
-			goAdr(base);
+			setCursor(cwin);
 		} else if (k == KeyEvent.VK_END) {
-			int c = end;
-			int x = clines;
-			while (x > 0 && c > base) {
-				c = oneBack(c);
-				--x;
-			}
-			goAdr(c);
+			int c = oneBack(cend);
+			setCursor(c);
 		}
 	}
 	public void keyReleased(KeyEvent e) {}

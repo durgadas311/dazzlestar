@@ -1,7 +1,7 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 SOURCE = dz.tgz
-JARS = DazzleStar.jar
+JARS = DazzleStar.jar Analyzer.jar
 SHIPS = $(SOURCE) $(JARS)
 
 all: $(CLASSES)
