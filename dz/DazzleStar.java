@@ -541,12 +541,17 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private String asmString(int a, int n) {
+	private String asmString(int a, int n, boolean bit7) {
 		String s = "";
 		boolean q = false;
+		boolean e = false;
 		int c;
 		while (n > 0) {
 			c = read(a);
+			e = (bit7 && n == 1);
+			if (e) {
+				c &= 0x7f;
+			}
 			if (c < ' ') {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
@@ -559,6 +564,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				if (!q) { s += '\''; q = true; }
 				s += (char)c;
 				if (c == '\'') s += (char)c;
+			}
+			if (e) {
+				if (q) { s += '\''; q = false; }
+				s += "+80h";
 			}
 			++a;
 			--n;
@@ -616,7 +625,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db      ";
-			s += asmString(a, n);
+			s += asmString(a, n, (bk == '7'));
 			// TODO: '7' comment showing last char?
 			return s;
 		}
@@ -672,7 +681,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db\t";
-			s += asmString(a, n);
+			s += asmString(a, n, (bk == '7'));
 			return s;
 		}
 		return "?"; // or dis.disas()?

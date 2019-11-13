@@ -18,6 +18,11 @@ DazzleStar.jar: all
 	jar -cmf Manifest.txt DazzleStar.jar *.class \
 		docs/*.html
 
+Analyzer.jar: all
+	echo "Main-Class: Analyzer" >Manifest.txt
+	jar -cmf Manifest.txt Analyzer.jar Analyzer.class \
+		Memory.class Z80*.class
+
 dz.tgz: __FRC__
 	cd ..; tar -czf dz/dz.tgz dz/Makefile \
 		dz/LICENSE dz/README dz/INSTALL \

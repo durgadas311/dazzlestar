@@ -85,6 +85,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lxi";
 				instr.fmt = "b,%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LXI;
 				break;
 			case 0x02:       /* LD (BC),A */
 				instr.op = "stax";
@@ -143,11 +144,13 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "djnz";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0x11:       /* LD DE,nn */
 				instr.op = "lxi";
 				instr.fmt = "d,%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LXI;
 				break;
 			case 0x12:       /* LD (DE),A */
 				instr.op = "stax";
@@ -176,6 +179,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jr";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.JMP;
 				break;
 			case 0x19:       /* ADD HL,DE */
 				instr.op = "dad";
@@ -208,16 +212,19 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jrnz";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0x21:       /* LD HL,nn */
 				instr.op = "lxi";
 				instr.fmt = "h,%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LXI;
 				break;
 			case 0x22:       /* LD (nn),HL */
 				instr.op = "shld";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x23:       /* INC HL */
 				instr.op = "inx";
@@ -242,6 +249,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jrz";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0x29:       /* ADD HL,HL */
 				instr.op = "dad";
@@ -251,6 +259,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lhld";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x2B:       /* DEC HL */
 				instr.op = "dcx";
@@ -275,16 +284,19 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jrnc";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0x31:       /* LD SP,nn */
 				instr.op = "lxi";
 				instr.fmt = "sp,%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LXI;
 				break;
 			case 0x32:       /* LD (nn),A */
 				instr.op = "sta";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x33:       /* INC SP */
 				instr.op = "inx";
@@ -309,6 +321,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jrc";
 				instr.fmt = "%s";
 				instr.addr = relAdr(pc) & 0xffff;
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0x39:       /* ADD HL,SP */
 				instr.op = "dad";
@@ -318,6 +331,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lda";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x3B:       /* DEC SP */
 				instr.op = "dcx";
@@ -342,6 +356,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			// 0x80 - 0xbf handled above...
 			case 0xC0:       /* RET NZ */
 				instr.op = "rnz";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xC1:       /* POP BC */
 				instr.op = "pop";
@@ -351,16 +366,19 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jnz";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xC3:       /* JP nn */
 				instr.op = "jmp";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.JMP;
 				break;
 			case 0xC4:       /* CALL NZ,nn */
 				instr.op = "cnz";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xC5:       /* PUSH BC */
 				instr.op = "push";
@@ -373,17 +391,22 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xC7:       /* RST 00H */
 				instr.op = "rst";
 				instr.fmt = "0";
+				instr.addr = 0;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xC8:       /* RET Z */
 				instr.op = "rz";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xC9:       /* RET */
 				instr.op = "ret";
+				instr.type = Z80Dissed.RET;
 				break;
 			case 0xCA:       /* JP Z,nn */
 				instr.op = "jz";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xCB:  
 				decodeCB(pc);
@@ -392,11 +415,13 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cz";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xCD:       /* CALL nn */
 				instr.op = "call";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xCE:       /* ADC A,n */
 				instr.op = "aci";
@@ -405,9 +430,12 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xCF:       /* RST 08H */
 				instr.op = "rst";
 				instr.fmt = "1";
+				instr.addr = 8;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xD0:       /* RET NC */
 				instr.op = "rnc";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xD1:       /* POP DE */
 				instr.op = "pop";
@@ -417,6 +445,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jnc";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xD3:       /* OUT (n),A */
 				instr.op = "out";
@@ -426,6 +455,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cnc";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xD5:       /* PUSH DE */
 				instr.op = "push";
@@ -438,9 +468,12 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xD7:       /* RST 10H */
 				instr.op = "rst";
 				instr.fmt = "2";
+				instr.addr = 16;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xD8:       /* RET C */
 				instr.op = "rc";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xD9:       /* EXX */
 				instr.op = "exx";
@@ -449,6 +482,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jc";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xDB:       /* IN A,(n) */
 				instr.op = "in";
@@ -458,6 +492,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cc";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xDD:
 				decodeDDFD(pc, 'x');
@@ -469,9 +504,12 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xDF:       /* RST 18H */
 				instr.op = "rst";
 				instr.fmt = "3";
+				instr.addr = 24;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xE0:       /* RET PO */
 				instr.op = "rpo";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xE1:       /* POP HL */
 				instr.op = "pop";
@@ -481,6 +519,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jpo";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xE3:       /* EX (SP),HL */
 				instr.op = "xthl";
@@ -489,6 +528,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cpo";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xE5:       /* PUSH HL */
 				instr.op = "push";
@@ -501,17 +541,22 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xE7:       /* RST 20H */
 				instr.op = "rst";
 				instr.fmt = "4";
+				instr.addr = 32;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xE8:       /* RET PE */
 				instr.op = "rpe";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xE9:       /* JP (HL) */
 				instr.op = "pchl";
+				instr.type = Z80Dissed.RET; // sort of...
 				break;
 			case 0xEA:       /* JP PE,nn */
 				instr.op = "jpe";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xEB:       /* EX DE,HL */
 				instr.op = "xchg";
@@ -520,6 +565,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cpe";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xED:
 				decodeED(pc);
@@ -531,9 +577,12 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xEF:       /* RST 28H */
 				instr.op = "rst";
 				instr.fmt = "5";
+				instr.addr = 40;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xF0:       /* RET P */
 				instr.op = "rp";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xF1:       /* POP AF */
 				instr.op = "pop";
@@ -543,6 +592,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jp";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xF3:       /* DI */
 				instr.op = "di";
@@ -551,6 +601,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cp";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xF5:       /* PUSH AF */
 				instr.op = "push";
@@ -563,9 +614,12 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xF7:       /* RST 30H */
 				instr.op = "rst";
 				instr.fmt = "6";
+				instr.addr = 48;
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xF8:       /* RET M */
 				instr.op = "rm";
+				instr.type = Z80Dissed.CRET;
 				break;
 			case 0xF9:       /* LD SP,HL */
 				instr.op = "sphl";
@@ -574,6 +628,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "jm";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CJMP;
 				break;
 			case 0xFB:       /* EI */
 				instr.op = "ei";
@@ -582,6 +637,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "cm";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xFD:
 				decodeDDFD(pc, 'y');
@@ -593,6 +649,8 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0xFF:       /* RST 38H */
 				instr.op = "rst";
 				instr.fmt = "7";
+				instr.addr = 56;
+				instr.type = Z80Dissed.CALL;
 				break;
 		}
 		instr.len = lastLen;
@@ -641,12 +699,14 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = String.format("lxi%c", regIXY);
 				instr.fmt = "%s";
 				instr.addr = read16(--pc);
+				instr.type = Z80Dissed.LXI;
 				--lastLen;
 				break;
 			case 0x22:       /* LD (nn),IX */
 				instr.op = String.format("si%cd", regIXY);
 				instr.fmt = "%s";
 				instr.addr = read16(--pc);
+				instr.type = Z80Dissed.LDI;
 				--lastLen;
 				break;
 			case 0x23:       /* INC IX */
@@ -674,6 +734,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = String.format("li%cd", regIXY);
 				instr.fmt = "%s";
 				instr.addr = read16(--pc);
+				instr.type = Z80Dissed.LDI;
 				--lastLen;
 				break;
 			case 0x2B:       /* DEC IX */
@@ -1015,6 +1076,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0xE9:       /* JP (IX) */
 				instr.op = String.format("pci%c", regIXY);
+				instr.type = Z80Dissed.RET; // sort of...
 				--lastLen;
 				break;
 			case 0xF9:       /* LD SP,IX */
@@ -1085,6 +1147,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "sbcd";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x44:
 			case 0x4C:
@@ -1098,6 +1161,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x4D:       /* RETI */
 				instr.op = "reti";
+				instr.type = Z80Dissed.RET;
 				break;
 			case 0x45:
 			case 0x55:
@@ -1107,6 +1171,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			case 0x75:
 			case 0x7D:       /* RETN */
 				instr.op = "retn";
+				instr.type = Z80Dissed.RET;
 				break;
 			case 0x46:
 			case 0x4E:
@@ -1133,6 +1198,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lbcd";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x4F:       /* LD R,A */
 				instr.op = "star";
@@ -1153,6 +1219,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "sded";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x56:
 			case 0x76:       /* IM 1 */
@@ -1177,6 +1244,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lded";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x5E:
 			case 0x7E:       /* IM 2 */
@@ -1201,6 +1269,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "shld*";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x67:       /* RRD */
 				instr.op = "rrd";
@@ -1221,6 +1290,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lhld*";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x6F:       /* RLD */
 				instr.op = "rld";
@@ -1239,6 +1309,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "sspd";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0x78:       /* IN A,(C) */
 				instr.op = "inp";
@@ -1256,6 +1327,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				instr.op = "lspd";
 				instr.fmt = "%s";
 				instr.addr = read16(pc);
+				instr.type = Z80Dissed.LDI;
 				break;
 			case 0xA0:       /* LDI */
 				instr.op = "ldi";
