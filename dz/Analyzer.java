@@ -13,11 +13,15 @@ import java.util.Vector;
 public class Analyzer implements Memory {
 	static Analyzer _us;
 	File comFile;
+	String baseName;
+	String basePath;
 	byte[] obj;
 	byte[] brk;	// breaks
 	byte[] len;	// length of "instructions" (lines)
 	Map<Integer,String> symtab;
 	Vector<Integer> codes;
+	Vector<Integer> orphans;
+	boolean orphanage = false;
 	Map<Integer,Integer> calls;
 	Z80Disassembler dis;
 
@@ -54,9 +58,17 @@ public class Analyzer implements Memory {
 //		}
 		symtab = new HashMap<Integer,String>();
 		codes = new Vector<Integer>();
+		orphans = new Vector<Integer>();
 		calls = new HashMap<Integer,Integer>();
 		File fi = null;
 		for (int x = 0; x < args.length; ++x) {
+			if (args[x].equalsIgnoreCase("ZILOG")) {
+				dis = new Z80DisassemblerZilog(this);
+				continue;
+			} else if (args[x].equalsIgnoreCase("MAC80")) {
+				// default is this, done later...
+				continue;
+			}
 			fi = new File(args[x]);
 			if (!fi.exists()) {
 				System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
@@ -76,14 +88,88 @@ public class Analyzer implements Memory {
 			putBrk(pc, 0);
 			analyze(pc);
 		}
+		orphanage = true;
+		while (orphans.size() > 0) {
+			Vector<Integer> orphs = orphans;
+			orphans = new Vector<Integer>();
+			for (int pc : orphs) {
+				// don't override existing break
+				analyze(pc);
+			}
+		}
 		// TODO: output options...
 		try {
-			generateDZ(new File("az.out.dz"), base, end);
-			generateASM(new File("az.out.asm"), base, end);
+			generateDZ(new File(baseName + ".az.dz"), base, end);
+			generateASM(new File(baseName + ".az.asm"), base, end);
 		} catch (Exception ee) {
 			ee.printStackTrace();
 		}
 		System.exit(0);
+	}
+
+	private int markLabel(int adr) {
+		putBrk(adr, 'L');
+		return adr + 2;
+	}
+
+	private int structLen(String str) {
+		int len = 0;
+		for (int x = 0; x < str.length(); ++x) {
+			switch (str.charAt(x)) {
+			case 'C':
+				len += 1;
+				break;
+			case 'L':
+				len += 2;
+				break;
+			}
+		}
+		return len;
+	}
+
+	private int putStruct(int adr, int chr) {
+		int lbl;
+		switch (chr) {
+		case 'C':
+			putBrk(adr, 'C');
+			adr += 1;
+			break;
+		case 'L':
+			putBrk(adr, 'L');
+			lbl = read(adr) | (read(adr + 1) << 8);
+			if (lbl >= base && lbl < end) {
+				putBrk(lbl, 'I');
+				lookup(true, lbl);
+			}
+			adr += 2;
+			break;
+		}
+		return adr;
+	}
+
+	private void markStruct(int start, int end, String str) {
+		if (str.length() < 1) {
+			return;
+		}
+		int n = structLen(str);
+		while (start + n <= end) {
+			for (int x = 0; x < str.length(); ++x) {
+				start = putStruct(start, str.charAt(x));
+			}
+		}
+		// TODO: clean this up...
+		if (start < end) {
+			int x = str.length() - 1;
+			start = putStruct(start, str.charAt(x));
+		}
+	}
+
+	private void markData(int start, int end) {
+		// Arrays.fill(brk, start - base, end - base, (byte)'B');
+		while (start < end) {
+			putBrk(start, 'B');
+			start += 16;
+		}
 	}
 
 	private boolean newJob(File com) {
@@ -99,19 +185,39 @@ public class Analyzer implements Memory {
 			ee.printStackTrace();
 			return false;
 		}
-		File in = new File(com.getAbsolutePath().replace(".com", ".in"));
+		base = 0x0100;
+		end = base + obj.length;
+		clearSymtab();
+		basePath = com.getAbsolutePath().replace(".com", "");
+		baseName = com.getName().replace(".com", "");
+		File in = new File(basePath + ".in");
 		String s;
 		String[] ss;
 		int c;
 		int a;
+		int b;
 		try {
 			BufferedReader lin = new BufferedReader(new FileReader(in));
 			while ((s = lin.readLine()) != null) {
 				if (s.length() < 5) continue;
 				c = s.charAt(0);
+				if (c == '#') continue;	// comments
 				ss = s.substring(1).split(",");
 				a = Integer.valueOf(ss[0], 16);
 				switch (c) {
+				case '!':	// data region exclusion
+					if (ss.length < 2) {
+						System.err.format("Malformed: \"%s\"\n",
+									s);
+						break;
+					}
+					b = Integer.valueOf(ss[1], 16);
+					if (ss.length > 2) {
+						markStruct(a, b, ss[2]);
+					} else {
+						markData(a, b);
+					}
+					break;
 				case '+':
 					codes.add(a);
 					break;
@@ -125,15 +231,13 @@ public class Analyzer implements Memory {
 				}
 			}
 		} catch (Exception ee) {}
-		base = 0x0100;
-		end = base + obj.length;
-		clearSymtab();
 		return true;
 	}
 
 	private void analyze(int addr) {
 		while (addr >= base && addr < end) {
 			if (getBrk(addr) != 0) {	// already been here...
+				// TODO: override 'B'?
 				break;
 			}
 			Z80Dissed d = dis.disas(addr);
@@ -156,20 +260,32 @@ public class Analyzer implements Memory {
 				continue;
 			}
 			if (d.type == Z80Dissed.RET) {
+				if (getBrk(addr) == 0) {
+					orphans.add(addr);
+				}
 				break;
 			}
 			if (d.type == Z80Dissed.JMP) {
+				if (getBrk(addr) == 0) {
+					orphans.add(addr);
+				}
 				addr = d.addr;
 				continue;
 			}
 			if (d.type == Z80Dissed.CALL && calls.containsKey(d.addr)) {
 				// must be unconditional CALL if inline params...
 				putBrk(addr, 'B');
-				addr += calls.get(d.addr);
+				int n = calls.get(d.addr);
+				if (n < 0) {
+					n = -n;
+					if ((read(addr) & 0x80) == 0) {
+						++n;
+					}
+				}
+				addr += n;
 			}
 			// Only CJMP, CALL left...
 			analyze(d.addr);
-			// TODO: inline subroutine parameters...
 		}
 		// System.out.format("Break at %04x\n", addr);
 	}
@@ -197,6 +313,16 @@ public class Analyzer implements Memory {
 		return null;
 	}
 
+	private String lookup(boolean mk, int a) {
+		String l = lookup(a);
+		if (!mk || l != null) {
+			return l;
+		}
+		l = String.format("L%04x", a);
+		symtab.put(a, l);
+		return l;
+	}
+
 	private String lookup(boolean mk, Z80Dissed d) {
 		String l = lookup(d.addr);
 		if (!mk || l != null) {
@@ -213,6 +339,16 @@ public class Analyzer implements Memory {
 
 	private void clearSymtab() {
 		symtab.clear();
+	}
+
+	private void dumpBrk(String fn) {
+		try {
+			OutputStream of = new FileOutputStream(fn);
+			of.write(brk);
+			of.close();
+		} catch (Exception ee) {
+			ee.printStackTrace();
+		}
 	}
 
 	private void generateDZ(File dz, int first, int last) throws Exception {
@@ -281,6 +417,16 @@ public class Analyzer implements Memory {
 		}
 	}
 
+	private String disLineLabel(int a) {
+		int l = read(a) | (read(a + 1) << 8);
+		String s = lookup(l);
+		if (s != null) {
+			return "dw\t" + s;
+		} else {
+			return String.format("dw\t0%04xh", l);
+		}
+	}
+
 	private String disLineData(int a, int n) {
 		String s = "";
 		boolean q = false;
@@ -324,6 +470,7 @@ public class Analyzer implements Memory {
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			if (b != 0) bk = b;
+			if (b == 0) b = ' ';
 			l = lookup(a);
 			if (l != null) ps.format("%s:", l);
 			//	if (l.length() > 7) ps.format("\n");
@@ -331,11 +478,17 @@ public class Analyzer implements Memory {
 			if (bk == 'I') {
 				Z80Dissed d = dis.disas(a);
 				ps.format(disLineInstr(d));
-				ps.format("\t;; %04x:", a);
+				ps.format("\t;; %c %04x:", b, a);
 				for (z = 0; z < d.len; ++z) {
 					ps.format(" %02x", read(a + z));
 				}
 				a += d.len;
+			} else if (bk == 'L') {
+				ps.format("%s", disLineLabel(a));
+				a += 2;
+			} else if (bk == 'C') {
+				ps.format("%s", disLineData(a, 1));
+				a += 1;
 			} else {
 				for (z = 1; z < 16 && a + z < end; ++z) {
 					if (getBrk(a + z) != 0) break;

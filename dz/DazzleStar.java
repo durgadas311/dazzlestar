@@ -92,7 +92,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				// default is this, done later...
 				continue;
 			}
-			fi = new File(args[0]);
+			fi = new File(args[x]);
 			if (!fi.exists()) {
 				System.err.format("Unrecognized argument: \"%s\"\n", args[x]);
 				help();	// does not return
