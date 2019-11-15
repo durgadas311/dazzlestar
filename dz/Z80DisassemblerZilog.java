@@ -774,15 +774,15 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x34:       /* INC (IX+d) */
 				instr.op = "inc";
-				instr.fmt = String.format("(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d)", regIXY, disp);
 				break;
 			case 0x35:       /* DEC (IX+d) */
 				instr.op = "dec";
-				instr.fmt = String.format("(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d)", regIXY, disp);
 				break;
 			case 0x36:       /* LD (IX+d),n */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),0%02xh", regIXY, disp, read8(pc));
+				instr.fmt = String.format("(i%c%+d),0%02xh", regIXY, disp, read8(pc));
 				break;
 			case 0x39:       /* ADD IX,SP */
 				instr.op = "add";
@@ -801,7 +801,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x46:       /* LD B,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("b,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("b,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x4C:       /* LD C,IXh */
 				instr.op = "ld";
@@ -815,7 +815,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x4E:       /* LD C,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("c,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("c,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x54:       /* LD D,IXh */
 				instr.op = "ld";
@@ -829,7 +829,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x56:       /* LD D,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("d,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("d,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x5C:       /* LD E,IXh */
 				instr.op = "ld";
@@ -843,7 +843,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x5E:       /* LD E,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("e,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("e,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x60:       /* LD IXh,B */
 				instr.op = "ld";
@@ -877,7 +877,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x66:       /* LD H,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("h,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("h,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x67:       /* LD IXh,A */
 				instr.op = "ld";
@@ -916,7 +916,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x6E:       /* LD L,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("l,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("l,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x6F:       /* LD IXl,A */
 				instr.op = "ld";
@@ -925,31 +925,31 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x70:       /* LD (IX+d),B */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),b", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),b", regIXY, disp);
 				break;
 			case 0x71:       /* LD (IX+d),C */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),c", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),c", regIXY, disp);
 				break;
 			case 0x72:       /* LD (IX+d),D */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),d", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),d", regIXY, disp);
 				break;
 			case 0x73:       /* LD (IX+d),E */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),e", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),e", regIXY, disp);
 				break;
 			case 0x74:       /* LD (IX+d),H */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),h", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),h", regIXY, disp);
 				break;
 			case 0x75:       /* LD (IX+d),L */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),l", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),l", regIXY, disp);
 				break;
 			case 0x77:       /* LD (IX+d),A */
 				instr.op = "ld";
-				instr.fmt = String.format("(i%c+%d),a", regIXY, disp);
+				instr.fmt = String.format("(i%c%+d),a", regIXY, disp);
 				break;
 			case 0x7C:       /* LD A,IXh */
 				instr.op = "ld";
@@ -963,7 +963,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x7E:       /* LD A,(IX+d) */
 				instr.op = "ld";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x84:       /* ADD A,IXh */
 				instr.op = "add";
@@ -977,7 +977,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x86:       /* ADD A,(IX+d) */
 				instr.op = "add";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x8C:       /* ADC A,IXh */
 				instr.op = "adc";
@@ -991,7 +991,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x8E:       /* ADC A,(IX+d) */
 				instr.op = "adc";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x94:       /* SUB IXh */
 				instr.op = "sub";
@@ -1005,7 +1005,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x96:       /* SUB (IX+d) */
 				instr.op = "sub";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0x9C:       /* SBC A,IXh */
 				instr.op = "sbc";
@@ -1019,7 +1019,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x9E:       /* SBC A,(IX+d) */
 				instr.op = "sbc";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0xA4:       /* AND IXh */
 				instr.op = "and";
@@ -1033,7 +1033,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0xA6:       /* AND (IX+d) */
 				instr.op = "and";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0xAC:       /* XOR IXh */
 				instr.op = "xor";
@@ -1047,7 +1047,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0xAE:       /* XOR (IX+d) */
 				instr.op = "xor";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0xB4:       /* OR IXh */
 				instr.op = "or";
@@ -1061,7 +1061,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0xB6:       /* OR (IX+d) */
 				instr.op = "or";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0xBC:       /* CP IXh */
 				instr.op = "cp";
@@ -1075,7 +1075,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0xBE:       /* CP (IX+d) */
 				instr.op = "cp";
-				instr.fmt = String.format("a,(i%c+%d)", regIXY, disp);
+				instr.fmt = String.format("a,(i%c%+d)", regIXY, disp);
 				break;
 			case 0xCB:  
 				opCode = read8(pc++);
@@ -1119,33 +1119,33 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 			instr.op = String.format("%s",
 					cbops[(opCode >> 3) & 7]);
 			if ((opCode & 7) == 6) {
-				instr.fmt = String.format("(i%c+%d)",
+				instr.fmt = String.format("(i%c%+d)",
 					regIXY, address);
 			} else {
-				instr.fmt = String.format("(i%c+%d),%s",
+				instr.fmt = String.format("(i%c%+d),%s",
 					regIXY, address, regs[opCode & 7]);
 			}
 		} else if (opCode < 0x80) {
 			instr.op = "bit";
-			instr.fmt = String.format("%d,(i%c+%d)",
+			instr.fmt = String.format("%d,(i%c%+d)",
 					(opCode >> 3) & 7, regIXY, address);
 		} else if (opCode < 0xc0) {
 			instr.op = "res";
 			if ((opCode & 7) == 6) {
-			instr.fmt = String.format("%d,(i%c+%d)",
+			instr.fmt = String.format("%d,(i%c%+d)",
 					(opCode >> 3) & 7, regIXY, address);
 			} else {
-			instr.fmt = String.format("%d,(i%c+%d),%s",
+			instr.fmt = String.format("%d,(i%c%+d),%s",
 					(opCode >> 3) & 7, regIXY, address,
 					regs[opCode & 7]);
 			}
 		} else {
 			instr.op = "set";
 			if ((opCode & 7) == 6) {
-			instr.fmt = String.format("%d,(i%c+%d)",
+			instr.fmt = String.format("%d,(i%c%+d)",
 					(opCode >> 3) & 7, regIXY, address);
 			} else {
-			instr.fmt = String.format("%d,(i%c+%d),%s",
+			instr.fmt = String.format("%d,(i%c%+d),%s",
 					(opCode >> 3) & 7, regIXY, address,
 					regs[opCode & 7]);
 			}

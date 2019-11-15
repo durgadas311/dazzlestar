@@ -755,15 +755,15 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x34:       /* INC (IX+d) */
 				instr.op = String.format("inr%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0x35:       /* DEC (IX+d) */
 				instr.op = String.format("dcr%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0x36:       /* LD (IX+d),n */
 				instr.op = String.format("mvi%c", regIXY);
-				instr.fmt = String.format("0%02xh,%d", read8(pc), disp);
+				instr.fmt = String.format("0%02xh,%+d", read8(pc), disp);
 				break;
 			case 0x39:       /* ADD IX,SP */
 				instr.op = String.format("dad%c", regIXY);
@@ -782,7 +782,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x46:       /* LD B,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("b,%d", disp);
+				instr.fmt = String.format("b,%+d", disp);
 				break;
 			case 0x4C:       /* LD C,IXh */
 				instr.op = String.format("mov%c", regIXY);
@@ -796,7 +796,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x4E:       /* LD C,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("c,%d", disp);
+				instr.fmt = String.format("c,%+d", disp);
 				break;
 			case 0x54:       /* LD D,IXh */
 				instr.op = String.format("mov%c", regIXY);
@@ -810,7 +810,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x56:       /* LD D,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("d,%d", disp);
+				instr.fmt = String.format("d,%+d", disp);
 				break;
 			case 0x5C:       /* LD E,IXh */
 				instr.op = String.format("mov%c", regIXY);
@@ -824,7 +824,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x5E:       /* LD E,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("e,%d", disp);
+				instr.fmt = String.format("e,%+d", disp);
 				break;
 			case 0x60:       /* LD IXh,B */
 				instr.op = String.format("mov%c", regIXY);
@@ -858,7 +858,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x66:       /* LD H,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("h,%d", disp);
+				instr.fmt = String.format("h,%+d", disp);
 				break;
 			case 0x67:       /* LD IXh,A */
 				instr.op = String.format("mov%c", regIXY);
@@ -897,7 +897,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x6E:       /* LD L,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("l,%d", disp);
+				instr.fmt = String.format("l,%+d", disp);
 				break;
 			case 0x6F:       /* LD IXl,A */
 				instr.op = String.format("mov%c", regIXY);
@@ -906,31 +906,31 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x70:       /* LD (IX+d),B */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("b,%d", disp);
+				instr.fmt = String.format("b,%+d", disp);
 				break;
 			case 0x71:       /* LD (IX+d),C */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("c,%d", disp);
+				instr.fmt = String.format("c,%+d", disp);
 				break;
 			case 0x72:       /* LD (IX+d),D */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("d,%d", disp);
+				instr.fmt = String.format("d,%+d", disp);
 				break;
 			case 0x73:       /* LD (IX+d),E */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("e,%d", disp);
+				instr.fmt = String.format("e,%+d", disp);
 				break;
 			case 0x74:       /* LD (IX+d),H */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("h,%d", disp);
+				instr.fmt = String.format("h,%+d", disp);
 				break;
 			case 0x75:       /* LD (IX+d),L */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("l,%d", disp);
+				instr.fmt = String.format("l,%+d", disp);
 				break;
 			case 0x77:       /* LD (IX+d),A */
 				instr.op = String.format("st%c", regIXY);
-				instr.fmt = String.format("a,%d", disp);
+				instr.fmt = String.format("a,%+d", disp);
 				break;
 			case 0x7C:       /* LD A,IXh */
 				instr.op = String.format("mov%c", regIXY);
@@ -944,7 +944,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x7E:       /* LD A,(IX+d) */
 				instr.op = String.format("ld%c", regIXY);
-				instr.fmt = String.format("a,%d", disp);
+				instr.fmt = String.format("a,%+d", disp);
 				break;
 			case 0x84:       /* ADD A,IXh */
 				instr.op = String.format("add%c", regIXY);
@@ -958,7 +958,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x86:       /* ADD A,(IX+d) */
 				instr.op = String.format("add%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0x8C:       /* ADC A,IXh */
 				instr.op = String.format("adc%c", regIXY);
@@ -972,7 +972,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x8E:       /* ADC A,(IX+d) */
 				instr.op = String.format("adc%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0x94:       /* SUB IXh */
 				instr.op = String.format("sub%c", regIXY);
@@ -986,7 +986,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x96:       /* SUB (IX+d) */
 				instr.op = String.format("sub%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0x9C:       /* SBC A,IXh */
 				instr.op = String.format("sbb%c", regIXY);
@@ -1000,7 +1000,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0x9E:       /* SBC A,(IX+d) */
 				instr.op = String.format("sbb%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0xA4:       /* AND IXh */
 				instr.op = String.format("ana%c", regIXY);
@@ -1014,7 +1014,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0xA6:       /* AND (IX+d) */
 				instr.op = String.format("ana%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0xAC:       /* XOR IXh */
 				instr.op = String.format("xra%c", regIXY);
@@ -1028,7 +1028,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0xAE:       /* XOR (IX+d) */
 				instr.op = String.format("xra%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0xB4:       /* OR IXh */
 				instr.op = String.format("ora%c", regIXY);
@@ -1042,7 +1042,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0xB6:       /* OR (IX+d) */
 				instr.op = String.format("ora%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0xBC:       /* CP IXh */
 				instr.op = String.format("cmp%c", regIXY);
@@ -1056,7 +1056,7 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 				break;
 			case 0xBE:       /* CP (IX+d) */
 				instr.op = String.format("cmp%c", regIXY);
-				instr.fmt = String.format("%d", disp);
+				instr.fmt = String.format("%+d", disp);
 				break;
 			case 0xCB:  
 				opCode = read8(pc++);
@@ -1095,9 +1095,9 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 			instr.op = String.format("%s%c",
 					cbops[(opCode >> 3) & 7], regIXY);
 			if ((opCode & 7) == 6) {
-				instr.fmt = String.format("%d", address);
+				instr.fmt = String.format("%+d", address);
 			} else {
-				instr.fmt = String.format("%d,%c",
+				instr.fmt = String.format("%+d,%c",
 					address, regs[opCode & 7]);
 			}
 		} else if (opCode < 0x80) {
@@ -1107,20 +1107,20 @@ public class Z80DisassemblerMAC80 implements Z80Disassembler {
 		} else if (opCode < 0xc0) {
 			instr.op = String.format("res%c", regIXY);
 			if ((opCode & 7) == 6) {
-				instr.fmt = String.format("%d,%d",
+				instr.fmt = String.format("%d,%+d",
 					(opCode >> 3) & 7, address);
 			} else {
-				instr.fmt = String.format("%d,%d,%c",
+				instr.fmt = String.format("%d,%+d,%c",
 					(opCode >> 3) & 7, address,
 					regs[opCode & 7]);
 			}
 		} else {
 			instr.op = String.format("set%c", regIXY);
 			if ((opCode & 7) == 6) {
-				instr.fmt = String.format("%d,%d",
+				instr.fmt = String.format("%d,%+d",
 					(opCode >> 3) & 7, address);
 			} else {
-				instr.fmt = String.format("%d,%d,%c",
+				instr.fmt = String.format("%d,%+d,%c",
 					(opCode >> 3) & 7, address,
 					regs[opCode & 7]);
 			}
