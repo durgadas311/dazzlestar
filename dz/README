@@ -1,0 +1,26 @@
+DazzleStar Disassembler, The Next Generation
+
+-- PRELIMINARY --
+
+DAZZLESTAR
+
+DazzleStar.jar contains a modern version of the DazzleStar Disassembler.
+It currently only operates on COM files. It uses the modern "PC" keyboard
+navigation keys to move around the file and window.  The commands
+A(ddress) and F(ollow) may also be used, as well as select "breaks"
+(without the "B" prefix). Menus perform the rest of the functions.
+
+It currently does not implement all the features of the original
+DazzleStar.
+
+
+ANALYZER
+
+Analyzer.jar contains an application to trace through a COM file
+and establish code and data regions. It may be influenced by
+a hints file. By default is uses the MAC80 (DRI Z80.LIB) mnemonics,
+but the commandline option "zilog" may be used to select Zilog mnemonics.
+It will read the COM file (.com), an optional "hints" file (.in),
+and create a DZ file (.dz) and ASM file (.asm).
+
+The hints file format is TBD.

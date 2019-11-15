@@ -23,6 +23,11 @@ Analyzer.jar: all
 	jar -cmf Manifest.txt Analyzer.jar Analyzer.class \
 		Memory.class Z80*.class
 
+ship: jar # src
+	rsync -Wuv $(JARS) README \
+		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
+	
+
 dz.tgz: __FRC__
 	cd ..; tar -czf dz/dz.tgz dz/Makefile \
 		dz/LICENSE dz/README dz/INSTALL \
