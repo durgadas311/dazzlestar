@@ -107,11 +107,6 @@ public class Analyzer implements Memory {
 		System.exit(0);
 	}
 
-	private int markLabel(int adr) {
-		putBrk(adr, 'L');
-		return adr + 2;
-	}
-
 	private int structLen(String str) {
 		int len = 0;
 		for (int x = 0; x < str.length(); ++x) {
@@ -120,7 +115,11 @@ public class Analyzer implements Memory {
 				len += 1;
 				break;
 			case 'L':
+			case 'T':
 				len += 2;
+				break;
+			case '7':
+				len += 1;	// at least 1?
 				break;
 			}
 		}
@@ -134,14 +133,22 @@ public class Analyzer implements Memory {
 			putBrk(adr, 'C');
 			adr += 1;
 			break;
+		case 'T':
+			putBrk(adr, 'T');
+			adr += 2;
+			break;
 		case 'L':
 			putBrk(adr, 'L');
 			lbl = read(adr) | (read(adr + 1) << 8);
 			if (lbl >= base && lbl < end) {
-				putBrk(lbl, 'I');
+				orphans.add(lbl);
 				lookup(true, lbl);
 			}
 			adr += 2;
+			break;
+		case '7':
+			putBrk(adr, '7');
+			while ((read(adr++) & 0x80) == 0);
 			break;
 		}
 		return adr;
@@ -172,6 +179,45 @@ public class Analyzer implements Memory {
 		}
 	}
 
+	private boolean processHint(int c, String[] ss) {
+		int a = Integer.valueOf(ss[0], 16);
+		int b;
+		switch (c) {
+		case '!':	// data region exclusion
+			if (ss.length < 2) {
+				return false;
+			}
+			b = Integer.valueOf(ss[1], 16);
+			if (ss.length > 2) {
+				markStruct(a, b, ss[2]);
+			} else {
+				markData(a, b);
+			}
+			orphans.add(b);
+			break;
+		case '+':
+			codes.add(a);
+			break;
+		case '*':
+			if (ss.length > 1) {
+				if (ss[1].matches("-*[0-9]+")) {
+					c = Integer.valueOf(ss[1]);
+				} else if (ss[1].equalsIgnoreCase("n")) {
+					c = 0; // each different
+				} else {
+					return false;
+				}
+			} else {
+				c = 1;
+			}
+			calls.put(a, c);
+			break;
+		default:
+			return false;
+		}
+		return true;
+	}
+
 	private boolean newJob(File com) {
 		try {
 			InputStream f = new FileInputStream(com);
@@ -194,8 +240,6 @@ public class Analyzer implements Memory {
 		String s;
 		String[] ss;
 		int c;
-		int a;
-		int b;
 		try {
 			BufferedReader lin = new BufferedReader(new FileReader(in));
 			while ((s = lin.readLine()) != null) {
@@ -203,31 +247,8 @@ public class Analyzer implements Memory {
 				c = s.charAt(0);
 				if (c == '#') continue;	// comments
 				ss = s.substring(1).split(",");
-				a = Integer.valueOf(ss[0], 16);
-				switch (c) {
-				case '!':	// data region exclusion
-					if (ss.length < 2) {
-						System.err.format("Malformed: \"%s\"\n",
-									s);
-						break;
-					}
-					b = Integer.valueOf(ss[1], 16);
-					if (ss.length > 2) {
-						markStruct(a, b, ss[2]);
-					} else {
-						markData(a, b);
-					}
-					break;
-				case '+':
-					codes.add(a);
-					break;
-				case '*':
-					if (ss.length > 1) c = Integer.valueOf(ss[1]);
-					else c = 1;
-					calls.put(a, c);
-					break;
-				default:
-					break;
+				if (!processHint(c, ss)) {
+					System.err.format("Malformed: \"%s\"\n", s);
 				}
 			}
 		} catch (Exception ee) {}
@@ -276,7 +297,9 @@ public class Analyzer implements Memory {
 				// must be unconditional CALL if inline params...
 				putBrk(addr, 'B');
 				int n = calls.get(d.addr);
-				if (n < 0) {
+				if (n == 0) {
+					n = read(addr) + 1;
+				} else if (n < 0) {
 					n = -n;
 					if ((read(addr) & 0x80) == 0) {
 						++n;
@@ -427,7 +450,20 @@ public class Analyzer implements Memory {
 		}
 	}
 
-	private String disLineData(int a, int n) {
+	private String disLineHex(int a, int n) {
+		String s = "";
+		int c;
+		while (n > 0) {
+			c = read(a);
+			if (s.length() > 0) s += ',';
+			s += String.format("0%02xh", c);
+			++a;
+			--n;
+		}
+		return "db\t" + s;
+	}
+
+	private String disLineData(int a, int n, boolean bit7) {
 		String s = "";
 		boolean q = false;
 		int c;
@@ -437,7 +473,7 @@ public class Analyzer implements Memory {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
 				s += String.format("%d", c);
-			} else if (c > '~') {
+			} else if (!bit7 && c > '~') {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
 				s += String.format("0%02xh", c);
@@ -447,8 +483,12 @@ public class Analyzer implements Memory {
 					s += '\'';
 					q = true;
 				}
-				s += (char)c;
-				if (c == '\'') s += (char)c;
+				s += (char)(c & 0x7f);
+				if ((c & 0x7f) == '\'') s += (char)(c & 0x7f);
+				if ((c & 0x80) != 0) {
+					s += "'+80h";
+					q = false;
+				}
 			}
 			++a;
 			--n;
@@ -487,13 +527,22 @@ public class Analyzer implements Memory {
 				ps.format("%s", disLineLabel(a));
 				a += 2;
 			} else if (bk == 'C') {
-				ps.format("%s", disLineData(a, 1));
+				ps.format("%s", disLineData(a, 1, false));
 				a += 1;
+			} else if (bk == '7') {
+				for (z = 1; a + z < last; ++z) {
+					if (getBrk(a + z) != 0) break;
+				}
+				ps.format("%s", disLineData(a, z, true));
+				a += z;
+			} else if (bk == 'T') {
+				ps.format("%s", disLineHex(a, 2));
+				a += 2;
 			} else {
 				for (z = 1; z < 16 && a + z < end; ++z) {
 					if (getBrk(a + z) != 0) break;
 				}
-				ps.format("%s", disLineData(a, z));
+				ps.format("%s", disLineData(a, z, false));
 				a += z;
 			}
 			ps.format("\n");
