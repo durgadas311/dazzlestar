@@ -10,41 +10,68 @@
 *0020,-1
 # subroutine with 2 inline parms
 *8d27,2
-# large region of data
-!5438,54a2
-+57cd
 *8c26,1
 *8c3a,1
 # variable length inline, first byte is len
 *75c9,n
 # command tables (switch)
-!19a2,19b6,CL
-!2532,2549,CL
-!2787,278f,CL
-!34cd,350e,CL
-!374b,3765,CL
-!3b98,3ba6,CL
-!3d8a,3d9b,CL
-!3f1c,3f27,CL
-!40e6,40f7,CL
-!41d9,4208,CL
-!44c1,44e4,CL
-!4903,492f,CL
-!4a98,4ab2,CL
-!5081,50d4,CL
-!52a2,52ad,CL
-!59ed,59fb,CL
-!5acf,5add,CL
-!6317,6325,CL
-!6b10,6b18,CL
-!716a,7172,CL
+!19a2,19b4,T
+-19b4,L
+!2532,2547,T
+-2547,L
+!2787,278d,T
+-278d,L
+!34cd,350c,T
+-350c,L
+!374b,3763,T
+-3763,L
+!3b98,3ba4,T
+-3ba4,L
+!3d8a,3d99,T
+-3d99,L
+!3f1c,3f25,T
+-3f25,L
+!40e6,40f5,T
+-40f5,L
+!41d9,4206,T
+-4206,L
+!44c1,44e2,T
+-44e2,L
+!4903,492d,T
+-492d,L
+!4a98,4ab0,T
+-4ab0,L
+!5081,50d2,T
+-50d2,L
+!52a2,52ab,T
+-52ab,L
+!59ed,59f9,T
+-59f9,L
+!5acf,5adb,T
+-5adb,L
+!6317,6323,T
+-6323,L
+!6b10,6b16,T
+-6b16,L
+!716a,7170,T
+-7170,L
+# large region of data
+!5438,54a2
 # disas instr table
-!54a2,55da,T7
+!54a2,55da,"7
 !55da,55dd
 !55dd,5695,7
-!5695,5718,T7
+!5695,5718,"7
 !5718,571b
-!571b,57b9,T7
+!571b,57b9,"7
 !57b9,57bc
-!57bc,57c8,T7
+!57bc,57c8,"7
 !57c8,57cd
++57cd
+;0348 keyboard scanning buffer
+;038f index for get key
+;0390 index for put key
+;042e LST: output
+;0496 scan for keyboard input
+;0f87 wait for keyboard input
+;19a2 JH Help command table
