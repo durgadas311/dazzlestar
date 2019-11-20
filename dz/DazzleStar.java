@@ -11,10 +11,34 @@ import java.util.Properties;
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
+	// Possible scheme to compress breaks, styles, radix.
+	// All must be non-zero, independent by break, style, radix.
+	static final byte BK_0 = 0x01;
+	static final byte BK_7 = 0x02;
+	static final byte BK_dol = 0x03; // '$' terminated string
+	static final byte BK_B = 0x04;
+	static final byte BK_I = 0x05;
+	static final byte BK_L = 0x06;
+	static final byte BK_W = 0x07;
+	static final byte BK_X = 0x08;
+	static final byte BK_R = 0x09;
+	static final byte BK_C = 0x0a;
+	//
+	static final byte BK_M = 0x10; // messages style
+	static final byte BK_N = 0x20; // numeric style
+	//
+	static final byte BK_2 = (byte)0x40; // binary
+	static final byte BK_D = (byte)0x80; // decimal
+	static final byte BK_H = (byte)0xc0; // hex
+
 	static DazzleStar _us;
 	File comFile;
+	String baseName;
+	String basePath;
 	byte[] obj;
 	byte[] brk;	// breaks
+	byte[] rdx;	// radix
+	byte[] sty;	// styles
 	byte[] len;	// length of "instructions" (lines)
 	Map<Integer,String> symtab;
 	Z80Disassembler dis;
@@ -271,7 +295,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		end = base + obj.length;
 		symtab.clear();
 		resetBreaks(base, true);
-		File dz = new File(com.getName().replace(".com", ".dz"));
+		basePath = com.getAbsolutePath();
+		baseName = com.getName();
+		if (baseName.matches(".*\\.[Cc][Oo][Mm]")) {
+			basePath = basePath.substring(0, basePath.length() - 4);
+			baseName = baseName.substring(0, baseName.length() - 4);
+		}
+		// TODO: ignore case, only remove tail.
+		File dz = new File(basePath + ".dz");
 		if (dz.exists()) {
 			loadDZ(dz);	// resets statBase...
 		}
@@ -350,15 +381,28 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			case 'I':
 				n = dis.disas(x).len;
 				break;
-			case 'B': // TODO: what length?
+			case 'B':
 			case 'C':
 				n = 1;
+				while (n < 16 && x + n < end && getBrk(x + n) == 0) ++n;
 				break;
 			case 'L':
 			case 'W':
 			case 'X':
 			case 'R':
 				n = 2;
+				break;
+			case 'T':
+				// TODO: interrupt at next break (how?)
+				n = 3;
+				break;
+			case 'Q':
+				// TODO: interrupt at next break (how?)
+				n = 4;
+				break;
+			case 'S':
+				n = 1;
+				while (x + n < end && getBrk(x + n) == 0) ++n;
 				break;
 			case '$':
 				n = lenTo(x, '$');
@@ -575,8 +619,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return s;
 	}
 
+	// TODO: combine disLine/disLineTab a la Z80Dissed
 	private String disLine(int a, int n, int bk) {
 		Z80Dissed d;
+		int y;
 		int z;
 		String s;
 		switch (bk) {
@@ -611,6 +657,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			z += a;
 			z &= 0xffff;
 			return String.format("dw      %s-$", lookup(true, z));
+		case 'T':
+			// assert: n == 3
+			y = read(a);
+			z = read(a + 1) | (read(a + 2) << 8);
+			// TODO: radix
+			return String.format("db %d ! dw %s", y, lookup(true, z));
+		case 'Q':
+			// assert: n == 4
+			y = read(a) | (read(a + 1) << 8);
+			z = read(a + 2) | (read(a + 3) << 8);
+			// TODO: radix
+			return String.format("dw %d ! dw %s", y, lookup(true, z));
+		case 'S':
+			return String.format("ds      %d", n);
 		case 'B':
 			// TODO: radix
 			s = "db      ";
@@ -633,6 +693,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private String disLineTab(int a, int n, int bk) {
 		Z80Dissed d;
+		int y;
 		int z;
 		String s;
 		switch (bk) {
@@ -667,7 +728,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			z += a;
 			z &= 0xffff;
 			return String.format("dw\t%s-$", lookup(true, z));
+		case 'T':
+			// assert: n == 3
+			y = read(a);
+			z = read(a + 1) | (read(a + 2) << 8);
+			// TODO: radix
+			return String.format("db %d ! dw %s", y, lookup(true, z));
+		case 'Q':
+			// assert: n == 4
+			y = read(a) | (read(a + 1) << 8);
+			z = read(a + 2) | (read(a + 3) << 8);
+			// TODO: radix
+			return String.format("dw %d ! dw %s", y, lookup(true, z));
+		case 'S':
+			return String.format("ds\t%d", n);
 		case 'B':
+		case 'C':
 			// TODO: radix
 			s = "db\t";
 			for (z = 0; z < n; ++z) {
@@ -675,7 +751,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				s += String.format("%d", read(a++));
 			}
 			return s;
-		case 'C':
 		case '0': // assert read(a + n - 1) == 0
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
@@ -939,7 +1014,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			System.exit(1);
 		}
 		if (key == KeyEvent.VK_P) {
-			File prn = new File(comFile.getName().replace(".com", ".prn"));
+			File prn = new File(basePath + ".prn");
 			try {
 				generatePRN(prn, base, end);
 			} catch (Exception ee) {
@@ -950,7 +1025,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			return;
 		}
 		if (key == KeyEvent.VK_A) {
-			File asm = new File(comFile.getName().replace(".com", ".asm"));
+			File asm = new File(basePath + ".asm");
 			try {
 				generateASM(asm, base, end);
 			} catch (Exception ee) {
@@ -962,7 +1037,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (key == KeyEvent.VK_S) {
 			// TODO: pick file? "append" option? backup existing?
-			File dz = new File(comFile.getName().replace(".com", ".dz"));
+			File dz = new File(basePath + ".dz");
 			try {
 				generateDZ(dz, base, end);
 			} catch (Exception ee) {
@@ -973,7 +1048,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			return;
 		}
 		if (key == KeyEvent.VK_L) {
-			//File dz = new File(comFile.getName().replace(".com", ".dz"));
 			SuffFileChooser sfc = new SuffFileChooser("DZ file",
 				new String[]{ "dz" },
 				new String[]{ "DZ file" },
@@ -1058,6 +1132,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			bk = 'L';
 		} else if (k == 'W') {
 			bk = 'W';
+		} else if (k == 'T') {
+			bk = 'T';
+		} else if (k == 'Q') {
+			bk = 'Q';
+		} else if (k == 'S') {
+			bk = 'S';
 		} else if (k == 'X') {
 			bk = 'X';
 		} else if (k == 'R') {

@@ -10,7 +10,7 @@ the famous DazzleStar disassembler.
 
 <UL><PRE>java -jar DazzleStar.jar [options]</PRE></UL>
 
-<P>The configuration of the virtual computer is driven by the configuration
+<P>The configuration of the disassembler is driven by the configuration
 file, which  is searched in the following way:
 <OL>
 <LI>The current directory is searched for "dzrc"
@@ -54,7 +54,55 @@ font_name. Default is 10.0.
 </DL>
 
 <P>Basic operational functions are supplied in the menus.
-Navigation is provided through modern keyboard commands:
+Certain menu items are disabled or altered based on context.
+For example, you can't "Close" a disassembly if none is open.
+
+<DL>
+<DT>File->New</DT>
+<DD>Open a dialog to load a new COM file for disassembly.
+This will discard any currently disassembly.
+</DD>
+<DT>File->Close</DT>
+<DD>This will discard any currently disassembly, effectively "closing" it.
+</DD>
+<DT>File->Generate ASM</DT>
+<DD>Generates an ASM file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Generate PRN</DT>
+<DD>Generates a PRN (listing) file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Save DZ</DT>
+<DD>Generates a DZ file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Load DZ</DT>
+<DD>Open a dialog to loads a DZ file for the current disassembly.
+This replaces any existing breaks or symbols, effectively discarding those.
+This does not affect the folder used to generate output files.
+</DD>
+<DT>File->Quit</DT>
+<DD>Discards any current disassembly and exits the program.
+</DD>
+
+<DT>Disas->Rebuild Symtab</DT>
+<DD>Discards any current symbols and rescans code according to
+current breaks, building a new symbol table.
+</DD>
+<DT>Disas->Use {MAC80|Zilog}</DT>
+<DD>Change mnemonics used for disassembly of code.
+Menu reflects the opposite of the current mnemonics, i.e.
+what the mnemonics will be changed to.
+</DD>
+
+<DT>Help->Show Help</DT>
+<DD>Display this help document.
+</DD>
+
+</DL>
+
+<P>Navigation is provided through modern keyboard commands:
 
 <DL>
 <DT>Home</DT>
@@ -95,23 +143,33 @@ Type the 4-digit hex address desired, or leave empty to cancel.</DD>
 <DT>I</DT>
 <DD>Set an Instruction break.</DD>
 <DT>B</DT>
-<DD>Set a DB break. Length of each DB is currently one byte.</DD>
+<DD>Set a DB break. Length of each DB is 16 bytes maximum,
+or until the next break change.</DD>
 <DT>C</DT>
-<DD>Set a DB character break. Value is displayed as quoted character, if printable.</DD>
+<DD>Set a DB character break. Same as 'B'.</DD>
 <DT>L</DT>
 <DD>Set a DW label (address) break.</DD>
+<DT>T</DT>
+<DD>Set a DB/DW table, char and label (address) break.</DD>
+<DT>Q</DT>
+<DD>Set a DW/DW table, word and label (address) break.</DD>
+<DT>S</DT>
+Set a DS field, until the next break change.</DD>
 <DT>W</DT>
-<DD>Set a DW numeric break.</DD>
+<DD>Set a DW (word) numeric break.</DD>
 <DT>X</DT>
 <DD>Set a DW numeric break, big-endian.</DD>
 <DT>R</DT>
 <DD>Set a DW relative address break.</DD>
 <DT>$</DT>
-<DD>Set a DB '$'-terminated string break.</DD>
+<DD>Set a DB '$'-terminated string break.
+Long lines are currently not split.</DD>
 <DT>0</DT>
-<DD>Set a DB 0-terminated string break.</DD>
+<DD>Set a DB 0-terminated string break.
+Long lines are currently not split.</DD>
 <DT>7</DT>
-<DD>Set a DB 7th-bit-terminated string break.</DD>
+<DD>Set a DB 7th-bit-terminated string break.
+Long lines are currently not split.</DD>
 </DL>
 
 This program is still very preliminary, and exact functionality is still being worked out.
