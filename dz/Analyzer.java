@@ -613,6 +613,7 @@ public class Analyzer implements Memory {
 		boolean q = false;
 		boolean bit7 = (rdx == '7');
 		// TODO: honor rdx H,D,2... and style M,N
+		// TODO: support '7' and H,D,2...
 		int c;
 		int e;
 		while (n > 0) {
@@ -625,7 +626,7 @@ public class Analyzer implements Memory {
 			if (e < ' ' || e > '~') {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
-				s += printByte(e, rdx);
+				s += printByte(e, 'D');
 			} else {
 				if (!q) {
 					if (s.length() > 0) s += ',';

@@ -227,7 +227,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.setVisible(true);
 
 		if (fi != null) {
-			newJob(fi);
+			// Assume this means commandline... stdin/out/err...
+			try {
+				newJob(fi);
+			} catch (Exception ee) {
+				ee.printStackTrace();
+				System.exit(1);
+			}
 		} else {
 			comFile = new File(System.getProperty("user.dir"));
 		}
@@ -250,20 +256,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private boolean newJob(File com) {
+	private void newJob(File com) throws Exception {
 		jobActive(false);
-		try {
-			InputStream f = new FileInputStream(com);
-			obj = new byte[f.available()];
-			brk = new byte[f.available()];
-			len = new byte[f.available()];
-			f.read(obj);
-			f.close();
-			comFile = com;
-		} catch (Exception ee) {
-			ee.printStackTrace();
-			return false;
-		}
+		InputStream f = new FileInputStream(com);
+		obj = new byte[f.available()];
+		brk = new byte[f.available()];
+		len = new byte[f.available()];
+		f.read(obj);
+		f.close();
+		comFile = com;
 		statBase = String.format("Work: %s", com.getName());
 		stat.setText(statBase);
 		base = 0x0100;
@@ -272,15 +273,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		resetBreaks(base, true);
 		File dz = new File(com.getName().replace(".com", ".dz"));
 		if (dz.exists()) {
-			try {
-				loadDZ(dz);	// resets statBase...
-			} catch (Exception ee) {}
+			loadDZ(dz);	// resets statBase...
 		}
 		jobActive(true);
 		setCodeWin(base);
 		setDumpWin(base);
 		setCursor(base);
-		return true;
 	}
 
 	private void setupFont() {
@@ -538,33 +536,37 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private String asmString(int a, int n, boolean bit7) {
+	private String asmString(int a, int n, int rdx) {
 		String s = "";
 		boolean q = false;
-		boolean e = false;
+		boolean bit7 = (rdx == '7');
+		// TODO: honor rdx H,D,2... and style M,N
 		int c;
+		int e;
 		while (n > 0) {
 			c = read(a);
-			e = (bit7 && n == 1);
-			if (e) {
-				c &= 0x7f;
-			}
-			if (c < ' ') {
-				if (q) { s += '\''; q = false; }
-				if (s.length() > 0) s += ',';
-				s += String.format("%d", c);
-			} else if (c > '~') {
-				if (q) { s += '\''; q = false; }
-				if (s.length() > 0) s += ',';
-				s += String.format("0%02xh", c);
+			if (bit7 && n == 1) {
+				e = (c & 0x7f);
 			} else {
-				if (!q) { s += '\''; q = true; }
-				s += (char)c;
-				if (c == '\'') s += (char)c;
+				e = c;
 			}
-			if (e) {
+			if (e < ' ' || e > '~') {
 				if (q) { s += '\''; q = false; }
-				s += "+80h";
+				if (s.length() > 0) s += ',';
+				// TODO: radix?
+				s += String.format("%d", c);
+			} else {
+				if (!q) {
+					if (s.length() > 0) s += ',';
+					s += '\'';
+					q = true;
+				}
+				s += (char)e;
+				if (e == '\'') s += (char)e;
+				if (bit7 && n == 1 && (c & 0x80) != 0) {
+					s += "'+80h";
+					q = false;
+				}
 			}
 			++a;
 			--n;
@@ -622,7 +624,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db      ";
-			s += asmString(a, n, (bk == '7'));
+			s += asmString(a, n, bk);
 			// TODO: '7' comment showing last char?
 			return s;
 		}
@@ -678,7 +680,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db\t";
-			s += asmString(a, n, (bk == '7'));
+			s += asmString(a, n, bk);
 			return s;
 		}
 		return "?"; // or dis.disas()?
@@ -941,8 +943,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			try {
 				generatePRN(prn, base, end);
 			} catch (Exception ee) {
-				// TODO: pop-up warning
-				ee.printStackTrace();
+				PopupFactory.warning(frame, "Generate PRN",
+					ee.getMessage());
+				//ee.printStackTrace();
 			}
 			return;
 		}
@@ -951,30 +954,40 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			try {
 				generateASM(asm, base, end);
 			} catch (Exception ee) {
-				// TODO: pop-up warning
-				ee.printStackTrace();
+				PopupFactory.warning(frame, "Generate ASM",
+					ee.getMessage());
+				//ee.printStackTrace();
 			}
 			return;
 		}
 		if (key == KeyEvent.VK_S) {
-			// TODO: pick file?
+			// TODO: pick file? "append" option? backup existing?
 			File dz = new File(comFile.getName().replace(".com", ".dz"));
 			try {
 				generateDZ(dz, base, end);
 			} catch (Exception ee) {
-				// TODO: pop-up warning
-				ee.printStackTrace();
+				PopupFactory.warning(frame, "Save DZ",
+					ee.getMessage());
+				//ee.printStackTrace();
 			}
 			return;
 		}
 		if (key == KeyEvent.VK_L) {
-			// TODO: pick file? "append" option?
-			File dz = new File(comFile.getName().replace(".com", ".dz"));
+			//File dz = new File(comFile.getName().replace(".com", ".dz"));
+			SuffFileChooser sfc = new SuffFileChooser("DZ file",
+				new String[]{ "dz" },
+				new String[]{ "DZ file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
 			try {
-				loadDZ(dz);
+				loadDZ(sfc.getSelectedFile());
 			} catch (Exception ee) {
-				// TODO: pop-up warning
-				ee.printStackTrace();
+				PopupFactory.warning(frame, "Load DZ",
+					ee.getMessage());
+				//ee.printStackTrace();
 			}
 			return;
 		}
@@ -1000,8 +1013,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				new String[]{ "COM file" },
 				comFile, null);
 			int rv = sfc.showOpenDialog(frame);
-			if (rv == JFileChooser.APPROVE_OPTION) {
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
 				newJob(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Load COM",
+					ee.getMessage());
+				//ee.printStackTrace();
 			}
 			return;
 		}
