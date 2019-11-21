@@ -78,6 +78,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int _fw2;
 	int _fh;
 	int bd_width = 3; // some number
+	int ln_width = 21 + 80; // data + asm
 
 	Properties props = new Properties();
 
@@ -237,11 +238,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		code = new DZCodePane(this);
 		code.setFont(font);
 		setupFont();	// needs 'code' JPanel
-		code.setPreferredSize(new Dimension(_fw * 80 + 2 * bd_width,
+		code.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * clines + 2 * bd_width));
 		dump = new DZDumpPane(this);
 		dump.setFont(font);
-		dump.setPreferredSize(new Dimension(_fw * 80 + 2 * bd_width,
+		dump.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * dlines + 2 * bd_width));
 		pan.add(code);
 		pan.add(dump);
@@ -285,6 +286,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		InputStream f = new FileInputStream(com);
 		obj = new byte[f.available()];
 		brk = new byte[f.available()];
+		rdx = new byte[f.available()];
+		sty = new byte[f.available()];
 		len = new byte[f.available()];
 		f.read(obj);
 		f.close();
@@ -332,22 +335,73 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return brk[a - base] & 0xff;
 	}
 
+	private int getRadix(int a) {
+		return rdx[a - base] & 0xff;
+	}
+
+	private int getStyle(int a) {
+		return sty[a - base] & 0xff;
+	}
+
+	private boolean anyBrk(int a) {
+		return (getBrk(a) != 0 || getStyle(a) != 0 || getRadix(a) != 0);
+	}
+
 	private void putBrk(int a, int b) {
 		brk[a - base] = (byte)b;
 	}
 
+	private void putRadix(int a, int b) {
+		rdx[a - base] = (byte)b;
+	}
+
+	private void putStyle(int a, int b) {
+		sty[a - base] = (byte)b;
+	}
+
 	// returns last break seen
-	private int setLen(int a, int n) {
-		int bk = getBrk(a);
-		int b = bk;
+	private void setLen(int a, int n) {
 		putLen(a++, n--);
 		while (a < end && n > 0) {
-			b = getBrk(a);
-			if (b != 0) bk = b;
 			putLen(a++, 0);
 			--n;
 		}
-		return b;
+	}
+
+	private int lastBrk(int a, int n) {
+		int bk = getBrk(a++);
+		int b;
+		--n;
+		while (a < end && n > 0) {
+			b = getBrk(a++);
+			if (b != 0) bk = b;
+			--n;
+		}
+		return bk;
+	}
+
+	private int lastStyle(int a, int n) {
+		int bk = getStyle(a++);
+		int b;
+		--n;
+		while (a < end && n > 0) {
+			b = getStyle(a++);
+			if (b != 0) bk = b;
+			--n;
+		}
+		return bk;
+	}
+
+	private int lastRadix(int a, int n) {
+		int bk = getRadix(a++);
+		int b;
+		--n;
+		while (a < end && n > 0) {
+			b = getRadix(a++);
+			if (b != 0) bk = b;
+			--n;
+		}
+		return bk;
 	}
 
 	private int lenTo(int a, int c) {
@@ -364,19 +418,25 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return x - a;
 	}
 
-	// Setup/rescan breaks and lengths... stop at next break
+	// Setup/rescan breaks and lengths...
+	// stop at next break unless 'all'.
 	private void resetBreaks(int a, boolean all) {
 		int n;
-		int b;
-		int ba = activeBreak(a);
-		int bk = getBrk(ba);
+		int b, s, r;
+		int bk = activeBreak(a);
 		if (bk == 0) bk = 'I';
+		int st = activeStyle(a);
+		if (st == 0) st = 'M';
+		int rx = activeRadix(a);
+		if (rx == 0) rx = 'H';
 		for (int x = a; x < end;) {
+			if (!all && x != a && anyBrk(x)) break;
 			b = getBrk(x);
-			if (b != 0) {
-				if (!all && x != a) break;
-				bk = b;
-			}
+			s = getStyle(x);
+			r = getRadix(x);
+			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
 			switch (bk) {
 			case 'I':
 				n = dis.disas(x).len;
@@ -384,7 +444,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			case 'B':
 			case 'C':
 				n = 1;
-				while (n < 16 && x + n < end && getBrk(x + n) == 0) ++n;
+				while (n < 16 && x + n < end && !anyBrk(x + n)) ++n;
 				break;
 			case 'L':
 			case 'W':
@@ -402,7 +462,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				break;
 			case 'S':
 				n = 1;
-				while (x + n < end && getBrk(x + n) == 0) ++n;
+				while (x + n < end && !anyBrk(x + n)) ++n;
 				break;
 			case '$':
 				n = lenTo(x, '$');
@@ -417,8 +477,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				n = 1;
 				break;
 			}
-			b = setLen(x, n);
+			// honor any breaks we skipped over...
+			setLen(x, n);
+			b = lastBrk(x, n);
+			s = lastStyle(x, n);
+			r = lastRadix(x, n);
 			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
 			x += n;
 		}
 	}
@@ -534,19 +600,46 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	// returns address of first break before or at address 'a'
 	private int activeBreak(int a) {
-		while (a > base && getBrk(a) == 0) --a;
-		return a;
+		int bk = 0;
+		while (a > base && (bk = getBrk(a)) == 0) --a;
+		return bk;
 	}
 
-	private String lookup(boolean mk, int a) {
+	// returns address of first radix before or at address 'a'
+	private int activeRadix(int a) {
+		int bk = 0;
+		while (a > base && (bk = getRadix(a)) == 0) --a;
+		return bk;
+	}
+
+	// returns address of first style before or at address 'a'
+	private int activeStyle(int a) {
+		int bk = 0;
+		while (a > base && (bk = getStyle(a)) == 0) --a;
+		return bk;
+	}
+
+	private String lookup(int a) {
 		if (symtab.containsKey(a)) {
 			return symtab.get(a);
 		}
-		if (!mk) {
-			return null;
+		return null;
+	}
+
+	private void putsym(int a, String l) {
+		if (symtab.containsKey(a)) {
+			symtab.remove(a);
 		}
-		String l = String.format("L%04x", a);
 		symtab.put(a, l);
+	}
+
+	private String mksym(int a) {
+		String l = lookup(a);
+		if (l != null) {
+			return l;
+		}
+		l = String.format("L%04x", a);
+		putsym(a, l);
 		return l;
 	}
 
@@ -562,28 +655,41 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			// assert: n == dis.intrLen()
 			d = dis.disas(a);
 			if (d.addr >= 0) {
-				lookup(true, d.addr);
+				mksym(d.addr);
 			}
 			break;
 		case 'L':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			lookup(true, z);
+			mksym(z);
 			break;
 		case 'R':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
-			lookup(true, z);
+			mksym(z);
 			break;
 		}
 	}
 
-	private String asmString(int a, int n, int rdx) {
+	private String fmtNum(int n, int rdx) {
+		if (rdx == 'H') {
+			String s = Integer.toHexString(n);
+			if (!Character.isDigit(s.charAt(0))) s = '0' + s;
+			if (s.length() > 1) s += 'h';
+			return s;
+		} else if (rdx == '2') {
+			return Integer.toBinaryString(n) + 'b';
+		}
+		// } else if (rdx == 'D') {
+		return Integer.toString(n);
+	}
+
+	private String asmString(int a, int n, int brk, int rdx) {
 		String s = "";
 		boolean q = false;
-		boolean bit7 = (rdx == '7');
+		boolean bit7 = (brk == '7');
 		// TODO: honor rdx H,D,2... and style M,N
 		int c;
 		int e;
@@ -597,8 +703,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			if (e < ' ' || e > '~') {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
-				// TODO: radix?
-				s += String.format("%d", c);
+				s += fmtNum(c, rdx);
 			} else {
 				if (!q) {
 					if (s.length() > 0) s += ',';
@@ -620,7 +725,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	// TODO: combine disLine/disLineTab a la Z80Dissed
-	private String disLine(int a, int n, int bk) {
+	private String disLine(int a, int n, int bk, int st, int rx) {
 		Z80Dissed d;
 		int y;
 		int z;
@@ -637,46 +742,45 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 			} else {
 				return String.format("%-8s%s", d.op,
-					String.format(d.fmt, lookup(true, d.addr)));
+					String.format(d.fmt, mksym(d.addr)));
 			}
 		case 'L':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw      %s", lookup(true, z));
+			return String.format("dw      %s", mksym(z));
 		case 'W':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw      %d", z); // TODO: radix
+			return "dw      " + fmtNum(z, rx);
 		case 'X':
 			// assert: n == 2
 			z = read(a + 1) | (read(a) << 8);
-			return String.format("dw      %d", z); // TODO: radix
+			return "dw      " + fmtNum(z, rx);
 		case 'R':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
-			return String.format("dw      %s-$", lookup(true, z));
+			return String.format("dw      %s-$", mksym(z));
 		case 'T':
 			// assert: n == 3
 			y = read(a);
 			z = read(a + 1) | (read(a + 2) << 8);
-			// TODO: radix
-			return String.format("db %d ! dw %s", y, lookup(true, z));
+			return "db " + fmtNum(y, rx) + " ! dw " + mksym(z);
 		case 'Q':
 			// assert: n == 4
 			y = read(a) | (read(a + 1) << 8);
 			z = read(a + 2) | (read(a + 3) << 8);
-			// TODO: radix
-			return String.format("dw %d ! dw %s", y, lookup(true, z));
+			return "dw " + fmtNum(y, rx) + " ! dw " + mksym(z);
 		case 'S':
 			return String.format("ds      %d", n);
 		case 'B':
-			// TODO: radix
 			s = "db      ";
-			for (z = 0; z < n; ++z) {
+			if (st == 'M') { // "messages"... strings
+				s += asmString(a, n, bk, rx);
+			} else for (z = 0; z < n; ++z) {
 				if (z != 0) s += ',';
-				s += String.format("%d", read(a++));
+				s += fmtNum(read(a++), rx);
 			}
 			return s;
 		case 'C':
@@ -684,14 +788,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db      ";
-			s += asmString(a, n, bk);
+			s += asmString(a, n, bk, rx);
 			// TODO: '7' comment showing last char?
 			return s;
 		}
 		return "?"; // or dis.disas()?
 	}
 
-	private String disLineTab(int a, int n, int bk) {
+	private String disLineTab(int a, int n, int bk, int st, int rx) {
 		Z80Dissed d;
 		int y;
 		int z;
@@ -708,12 +812,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 			} else {
 				return String.format("%s\t%s", d.op,
-					String.format(d.fmt, lookup(true, d.addr)));
+					String.format(d.fmt, mksym(d.addr)));
 			}
 		case 'L':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw\t%s", lookup(true, z));
+			return String.format("dw\t%s", mksym(z));
 		case 'W':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
@@ -727,19 +831,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
-			return String.format("dw\t%s-$", lookup(true, z));
+			return String.format("dw\t%s-$", mksym(z));
 		case 'T':
 			// assert: n == 3
 			y = read(a);
 			z = read(a + 1) | (read(a + 2) << 8);
 			// TODO: radix
-			return String.format("db %d ! dw %s", y, lookup(true, z));
+			return String.format("db %d ! dw %s", y, mksym(z));
 		case 'Q':
 			// assert: n == 4
 			y = read(a) | (read(a + 1) << 8);
 			z = read(a + 2) | (read(a + 3) << 8);
 			// TODO: radix
-			return String.format("dw %d ! dw %s", y, lookup(true, z));
+			return String.format("dw %d ! dw %s", y, mksym(z));
 		case 'S':
 			return String.format("ds\t%d", n);
 		case 'B':
@@ -755,7 +859,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
 			s = "db\t";
-			s += asmString(a, n, bk);
+			s += asmString(a, n, bk, rx);
 			return s;
 		}
 		return "?"; // or dis.disas()?
@@ -766,18 +870,24 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int a = cwin;
 		int x = bd_width;
 		int y = _fa + bd_width;
-		String s;
-		int b;
+		String t;
+		int b, s, r;
 		int z;
 		int n;
-		int ba = activeBreak(a);
-		int bk = getBrk(ba);
+		int bk = activeBreak(a);
 		if (bk == 0) bk = 'I';
+		int st = activeStyle(a);
+		if (st == 0) st = 'M';
+		int rx = activeRadix(a);
+		if (rx == 0) rx = 'H';
 		for (int l = 0; l < clines; ++l) {
 			b = getBrk(a);
-			if (b != 0) bk = b;
-			else b = ' ';
-			s = String.format("%c %04x ", (char)b, a);
+			s = getStyle(a);
+			r = getRadix(a);
+			if (b != 0) bk = b; else b = ' ';
+			if (s != 0) st = s; else s = ' ';
+			if (r != 0) rx = r; else r = ' ';
+			t = String.format("%c%c%c %04x ", (char)b, (char)s, (char)r, a);
 			n = getLen(a);
 			if (n == 0) n = 1;
 			if (cursor >= a && cursor < a + n) {
@@ -786,31 +896,37 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				} else {
 					g2d.setColor(liter);
 				}
-				g2d.fillRect(x, y - _fa, 80 * _fw, _fh);
+				g2d.fillRect(x, y - _fa, ln_width * _fw, _fh);
 				g2d.setColor(code.getForeground());
 			}
-			for (z = 0; z < 4; ++z) {
+			for (z = 0; z < 5; ++z) {
 				if (z < n) {
-					s += String.format(" %02x", read(a + z));
+					t += String.format("%02x", read(a + z));
 				} else {
-					s += "   ";
+					t += "  ";
 				}
 			}
 			if (z < n) {
-				s += "...";
+				t += '+';
 			} else {
-				s += "   ";
+				t += ' ';
 			}
-			s += disLine(a, n, bk);
-			g2d.drawString(s, x, y);
+			String lbl = lookup(a);
+			if (lbl != null) {
+				t += String.format("%-8s", lbl + ':');
+			} else {
+				t += "        ";
+			}
+			t += disLine(a, n, bk, st, rx);
+			g2d.drawString(t, x, y);
 			y += _fh;
-			++a;	// already got this break, if any
-			--n;	//
-			while (n > 0) {
-				b = getBrk(a++);
-				if (b != 0) bk = b;
-				--n;
-			}
+			b = lastBrk(a, n);
+			s = lastStyle(a, n);
+			r = lastRadix(a, n);
+			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
+			a += n;
 		}
 	}
 
@@ -857,16 +973,35 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	// Strip redundant breaks (radix, styles)
 	private void generateDZ(File dz, int first, int last) throws Exception {
 		PrintStream ps = new PrintStream(dz);
+		int bk = 0;
+		int st = 0;
+		int rx = 0;
 		for (int a = first; a < last; ++a) {
-			String l = lookup(false, a);
+			String l = lookup(a);
 			if (l != null) {
 				ps.format("%s\n", l);
 			}
+			String s = "";
 			int b = getBrk(a);
-			if (b != 0) {
-				ps.format("-%04x,%c\n", a, b);
+			if (b != 0 && b != bk) {
+				s += (char)b;
+				bk = b;
+			} else s += " ";
+			b = getStyle(a);
+			if (b != 0 && b != st) {
+				s += (char)b;
+				st = b;
+			} else s += " ";
+			b = getRadix(a);
+			if (b != 0 && b != rx) {
+				s += (char)b;
+				rx = b;
+			} else s += " ";
+			if (!s.equals("   ")) {
+				ps.format("-%04x,%s\n", a, s);
 			}
 		}
 		ps.close();
@@ -886,11 +1021,21 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		while ((s = lin.readLine()) != null) {
 			if (s.matches("-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F],.")) {
 				a = Integer.valueOf(s.substring(1,5), 16);
-				bk = s.charAt(6);
-				putBrk(a, bk);
-			} else if (s.matches("L[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")) {
-				a = Integer.valueOf(s.substring(1,5), 16);
-				lookup(true, a);
+				if (s.length() > 6) {
+					bk = s.charAt(6);
+					if (bk != 0) putBrk(a, bk);
+				}
+				if (s.length() > 7) {
+					bk = s.charAt(7);
+					if (bk != 0) putStyle(a, bk);
+				}
+				if (s.length() > 8) {
+					bk = s.charAt(8);
+					if (bk != 0) putRadix(a, bk);
+				}
+			} else if (s.matches("[G-Z][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")) {
+				a = Integer.valueOf(s.substring(1), 16);
+				putsym(a, s);
 			} else {
 				System.err.format("Unrecognized DZ line \"%s\"\n", s);
 			}
@@ -909,8 +1054,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int b;
 		int n;
 		clearSymtab();	// optional?
-		int ba = activeBreak(first);
-		int bk = getBrk(ba);
+		int bk = activeBreak(first);
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			if (b != 0) bk = b;
@@ -930,23 +1074,30 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void generateASM(File asm, int first, int last) throws Exception {
 		PrintStream ps = new PrintStream(asm);
 		String l;
-		int b;
+		int b, s, r;
 		int z;
 		int n;
-		int ba = activeBreak(first);
-		int bk = getBrk(ba);
+		int bk = activeBreak(first);
 		if (bk == 0) bk = 'I';
+		int st = activeStyle(first);
+		if (st == 0) st = 'M';
+		int rx = activeRadix(first);
+		if (rx == 0) rx = 'H';
 		for (int a = first; a < last;) {
 			b = getBrk(a);
+			s = getStyle(a);
+			r = getRadix(a);
 			if (b != 0) bk = b;
-			l = lookup(false, a);
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
+			l = lookup(a);
 			if (l != null) ps.format("%s:", l);
 			//	if (l.length() > 7) ps.format("\n");
 			n = getLen(a);
 			if (n == 0) n = 1;
 			ps.format("\t");
-			ps.format(disLineTab(a, n, bk));
-			// TODO: optional:
+			ps.format(disLineTab(a, n, bk, st, rx));
+			// TODO: optional: (also, more tabs as needed)
 			ps.format("\t;; %04x:", a);
 			for (z = 0; z < 4; ++z) {
 				if (z < n) {
@@ -956,13 +1107,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 			}
 			ps.format("\n");
-			++a;	// already got this break, if any
-			--n;	//
-			while (n > 0) {
-				b = getBrk(a++);
-				if (b != 0) bk = b;
-				--n;
-			}
+			b = lastBrk(a, n);
+			s = lastStyle(a, n);
+			r = lastRadix(a, n);
+			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
+			a += n;
 		}
 		ps.close();
 		stat.setText(statBase + " ASM saved");
@@ -970,19 +1121,26 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void generatePRN(File prn, int first, int last) throws Exception {
 		PrintStream ps = new PrintStream(prn);
-		int b;
+		int b, s, r;
 		int z;
 		int n;
-		int ba = activeBreak(first);
-		int bk = getBrk(ba);
+		int bk = activeBreak(first);
 		if (bk == 0) bk = 'I';
+		int st = activeStyle(first);
+		if (st == 0) st = 'M';
+		int rx = activeRadix(first);
+		if (rx == 0) rx = 'H';
 		for (int a = first; a < last;) {
 			b = getBrk(a);
+			s = getStyle(a);
+			r = getRadix(a);
 			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
 			ps.format("%04x ", a);
 			n = getLen(a);
 			if (n == 0) n = 1;
-			for (z = 0; z < 4; ++z) {
+			for (z = 0; z < 5; ++z) {
 				if (z < n) {
 					ps.format("%02x", read(a + z));
 				} else {
@@ -990,19 +1148,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 			}
 			if (z < n) {
-				ps.format("...");
+				ps.format("+ ");
 			} else {
-				ps.format("   ");
+				ps.format("  ");
 			}
-			ps.format(disLine(a, n, bk));
+			// TODO: need label...
+			ps.format(disLine(a, n, bk, st, rx));
 			ps.format("\n");
-			++a;	// already got this break, if any
-			--n;	//
-			while (n > 0) {
-				b = getBrk(a++);
-				if (b != 0) bk = b;
-				--n;
-			}
+			b = lastBrk(a, n);
+			s = lastStyle(a, n);
+			r = lastRadix(a, n);
+			if (b != 0) bk = b;
+			if (s != 0) st = s;
+			if (r != 0) rx = r;
+			a += n;
 		}
 		ps.close();
 		stat.setText(statBase + " PRN saved");
@@ -1164,8 +1323,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void follow() {
 		int a = -1;
-		int ba = activeBreak(cursor);
-		int bk = getBrk(ba);
+		int bk = activeBreak(cursor);
 		if (bk == 0) bk = 'I';
 		if (bk == 'I') {
 			Z80Dissed d = dis.disas(cursor);
