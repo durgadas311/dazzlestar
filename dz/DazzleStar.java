@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Vector;
+import java.awt.datatransfer.StringSelection;
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
@@ -36,6 +37,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	File comFile;
 	String baseName;
 	String basePath;
+	String dzExt;
+	String asmExt;
+	String prnExt;
 	byte[] obj;
 	byte[] brk;	// breaks
 	byte[] rdx;	// radix
@@ -58,6 +62,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	Font font;
 	JTextField dest;
 	JLabel stat;
+	JPanel err_pan;
+	JEditorPane err_txt;
+	JLabel err_lbl;
 	String statBase;
 	Color hilite;
 	Color liter;
@@ -253,6 +260,21 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.pack();
 		frame.setVisible(true);
 
+		err_pan = new JPanel();
+		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
+		// TODO: need better handling, don't require focus in err_txt/pan.
+		err_pan.addKeyListener(this);
+		err_lbl = new JLabel();
+		err_txt = new JEditorPane();
+		err_txt.setEditable(false);
+		// TODO: font
+		JScrollPane scroll = new JScrollPane(err_txt);
+		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		scroll.setPreferredSize(new Dimension(300, 200));
+		err_pan.add(err_lbl);
+		err_pan.add(scroll);
+
 		if (fi != null) {
 			// Assume this means commandline... stdin/out/err...
 			try {
@@ -302,12 +324,23 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
 		baseName = com.getName();
-		if (baseName.matches(".*\\.[Cc][Oo][Mm]")) {
+		if (baseName.matches(".*\\.COM")) {
 			basePath = basePath.substring(0, basePath.length() - 4);
 			baseName = baseName.substring(0, baseName.length() - 4);
+			dzExt = ".DZ";
+			asmExt = ".ASM";
+			prnExt = ".PRN";
+		} else {
+			if (baseName.matches(".*\\.com")) {
+				basePath = basePath.substring(0, basePath.length() - 4);
+				baseName = baseName.substring(0, baseName.length() - 4);
+			}
+			dzExt = ".dz";
+			asmExt = ".asm";
+			prnExt = ".prn";
 		}
 		// TODO: ignore case, only remove tail.
-		File dz = new File(basePath + ".dz");
+		File dz = new File(basePath + dzExt);
 		if (dz.exists()) {
 			loadDZ(dz);	// resets statBase...
 		}
@@ -1051,7 +1084,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		Arrays.fill(brk, (byte)0);
 		Arrays.fill(len, (byte)0);
 		clearSymtab();
+		int e = 0;
+		int l = 0;
+		String es = "";
 		while ((s = lin.readLine()) != null) {
+			++l;
 			if (s.matches("-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F],.*")) {
 				a = Integer.valueOf(s.substring(1,5), 16);
 				if (s.length() > 6) {
@@ -1070,10 +1107,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				a = Integer.valueOf(s.substring(1), 16);
 				putsym(a, s);
 			} else {
-				System.err.format("Unrecognized DZ line \"%s\"\n", s);
+				es += String.format("%d: Unrecognized DZ line \"%s\"\n", l, s);
+				++e;
 			}
 		}
 		lin.close();
+		if (e > 0) {
+			err_txt.setText(es);
+			err_txt.setCaretPosition(0);
+			err_lbl.setText(String.format("Found %d errors out of %d lines", e, l));
+			JOptionPane.showMessageDialog(frame, err_pan, "Load DZ",
+						JOptionPane.WARNING_MESSAGE);
+			// TODO: save to file?
+		}
 		resetBreaks(base, true);
 		setCursor(base);
 		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
@@ -1206,7 +1252,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			System.exit(1);
 		}
 		if (key == KeyEvent.VK_P) {
-			File prn = new File(basePath + ".prn");
+			File prn = new File(basePath + prnExt);
 			try {
 				generatePRN(prn, base, end);
 			} catch (Exception ee) {
@@ -1217,7 +1263,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			return;
 		}
 		if (key == KeyEvent.VK_A) {
-			File asm = new File(basePath + ".asm");
+			File asm = new File(basePath + asmExt);
 			try {
 				generateASM(asm, base, end);
 			} catch (Exception ee) {
@@ -1229,7 +1275,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (key == KeyEvent.VK_S) {
 			// TODO: pick file? "append" option? backup existing?
-			File dz = new File(basePath + ".dz");
+			File dz = new File(basePath + dzExt);
 			try {
 				generateDZ(dz, base, end);
 			} catch (Exception ee) {
@@ -1411,6 +1457,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void errKey(int k, int m) {
+		if (k == KeyEvent.VK_COPY) {
+			StringSelection ss = new StringSelection(err_txt.getText());
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, null);
+		}
+	}
+
 	public void keyTyped(KeyEvent e) {
 		int c = Character.toUpperCase(e.getKeyChar());
 		if (c == 'A') {
@@ -1428,6 +1481,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	public void keyPressed(KeyEvent e) {
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
+		if (e.getSource() == err_pan) {
+			errKey(k, m);
+			return;
+		}
 		if ((m & InputEvent.SHIFT_MASK) != 0) {
 			keyShifted(k);
 		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
