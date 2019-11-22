@@ -682,6 +682,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			if (s.length() > 1) s += 'h';
 			return s;
 		} else if (rdx == '2') {
+			// TODO: only for bytes...
+			// TODO: pad to 8 bits...
 			return Integer.toBinaryString(n) + 'b';
 		}
 		// } else if (rdx == 'D') {
@@ -1312,38 +1314,44 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private boolean doBrkKey(int k) {
 		int bk = 0;
-		if (k == 'B') {
-			bk = 'B';
-		} else if (k == 'C') {
-			bk = 'C';
-		} else if (k == 'I') {
-			bk = 'I';
-		} else if (k == 'L') {
-			bk = 'L';
-		} else if (k == 'W') {
-			bk = 'W';
-		} else if (k == 'T') {
-			bk = 'T';
-		} else if (k == 'Q') {
-			bk = 'Q';
-		} else if (k == 'S') {
-			bk = 'S';
-		} else if (k == 'X') {
-			bk = 'X';
-		} else if (k == 'R') {
-			bk = 'R';
-		} else if (k == '0') {
-			bk = '0';
-		} else if (k == '$') {
-			bk = '$';
-		} else if (k == '7') {
-			bk = '7';
-		} else if (k == ' ') {
-			bk = ' ';
+		int st = 0;
+		int rx = 0;
+		switch (k) {
+		case 'B':
+		case 'C':
+		case 'I':
+		case 'L':
+		case 'W':
+		case 'T':
+		case 'Q':
+		case 'S':
+		case 'X':
+		case 'R':
+		case '0':
+		case '$':
+		case '7':
+			bk = k;
+			break;
+		case 'M':
+		case 'N':
+			st = k;
+			break;
+		case 'H':
+		case 'D':
+		case '2':
+			rx = k;
+			break;
+		case ' ':
+			putBrk(cursor, 0);
+			putStyle(cursor, 0);
+			putRadix(cursor, 0);
+			break;
+		default:
+			return false;
 		}
-		if (bk == 0) return false;
-		if (bk == ' ') bk = 0;	// clear break
-		putBrk(cursor, bk);
+		if (bk != 0) putBrk(cursor, bk);
+		if (st != 0) putStyle(cursor, st);
+		if (rx != 0) putRadix(cursor, rx);
 		resetBreaks(cursor, false);
 		cur_len = getLen(cursor);
 		setCodeWin(cwin);
