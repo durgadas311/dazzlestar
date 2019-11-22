@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Vector;
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
@@ -81,6 +82,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int ln_width = 21 + 80; // data + asm
 
 	Properties props = new Properties();
+	Vector<Z80Dissed> zdv = new Vector<Z80Dissed>();
 
 	public static void main(String[] args) {
 		_us = new DazzleStar(args);
@@ -686,6 +688,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return Integer.toString(n);
 	}
 
+	// TODO: make this usable from asmString()...
+	private String asmChar(int e, int rdx) {
+		if (e < ' ' || e > '~') {
+			return fmtNum(e, rdx);
+		} else {
+			return String.format("'%c'", (char)e);
+		}
+	}
+
 	private String asmString(int a, int n, int brk, int rdx) {
 		String s = "";
 		boolean q = false;
@@ -724,145 +735,165 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return s;
 	}
 
-	// TODO: combine disLine/disLineTab a la Z80Dissed
-	private String disLine(int a, int n, int bk, int st, int rx) {
-		Z80Dissed d;
+	private String disMulti(Z80Dissed d, String sep) {
+		if (d.addr < 0) {
+			if (d.fmt == null) {
+				return d.op;
+			} else if (sep == null) {
+				return String.format("%-8s%s", d.op, d.fmt);
+			} else {
+				return d.op + sep + d.fmt;
+			}
+		} else if (sep == null) {
+			return String.format("%-8s%s", d.op,
+				String.format(d.fmt, mksym(d.addr)));
+		} else {
+			return d.op + sep +
+				String.format(d.fmt, mksym(d.addr));
+		}
+	}
+
+	private void disPseudo(int a, int n, int bk, int st, int rx,
+						Vector<Z80Dissed> zd) {
+		Z80Dissed d = new Z80Dissed();
 		int y;
 		int z;
 		String s;
 		switch (bk) {
-		case 'I':
-			// assert: n == dis.intrLen()
-			d = dis.disas(a);
-			if (d.addr < 0) {
-				if (d.fmt == null) {
-					return String.format("%s", d.op);
-				} else {
-					return String.format("%-8s%s", d.op, d.fmt);
-				}
-			} else {
-				return String.format("%-8s%s", d.op,
-					String.format(d.fmt, mksym(d.addr)));
-			}
 		case 'L':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw      %s", mksym(z));
+			d.op = "dw";
+			d.fmt = "%s";
+			d.addr = z;
+			d.type = Z80Dissed.JMP; // good enough?
+			break;
 		case 'W':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
-			return "dw      " + fmtNum(z, rx);
+			d.op = "dw";
+			d.fmt = fmtNum(z, rx);
+			break;
 		case 'X':
 			// assert: n == 2
 			z = read(a + 1) | (read(a) << 8);
-			return "dw      " + fmtNum(z, rx);
+			d.op = "dw";
+			d.fmt = fmtNum(z, rx);
+			break;
 		case 'R':
 			// assert: n == 2
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
-			return String.format("dw      %s-$", mksym(z));
+			d.op = "dw";
+			d.fmt = "%s-$";
+			d.addr = z;
+			d.type = Z80Dissed.JMP; // good enough?
+			break;
 		case 'T':
+//System.err.format("T: bk='%c' st='%c' rx='%c'\n", bk, st, rx);
 			// assert: n == 3
 			y = read(a);
 			z = read(a + 1) | (read(a + 2) << 8);
-			return "db " + fmtNum(y, rx) + " ! dw " + mksym(z);
+			d.op = "db";
+			if (st == 'M') {
+				d.fmt = asmChar(y, rx);
+			} else {
+				d.fmt = fmtNum(y, rx);
+			}
+			zd.add(d);
+			d = new Z80Dissed();
+			d.op = "dw";
+			d.fmt = "%s";
+			d.addr = z;
+			d.type = Z80Dissed.JMP; // good enough?
+			break;
 		case 'Q':
 			// assert: n == 4
 			y = read(a) | (read(a + 1) << 8);
 			z = read(a + 2) | (read(a + 3) << 8);
-			return "dw " + fmtNum(y, rx) + " ! dw " + mksym(z);
+			d.op = "dw";
+			d.fmt = fmtNum(y, rx);
+			zd.add(d);
+			d = new Z80Dissed();
+			d.op = "dw";
+			d.fmt = "%s";
+			d.addr = z;
+			d.type = Z80Dissed.JMP; // good enough?
+			break;
 		case 'S':
-			return String.format("ds      %d", n);
+			d.op = "ds";
+			d.fmt = Integer.toString(n);
+			break;
 		case 'B':
-			s = "db      ";
+			d.op = "db";
 			if (st == 'M') { // "messages"... strings
-				s += asmString(a, n, bk, rx);
-			} else for (z = 0; z < n; ++z) {
-				if (z != 0) s += ',';
-				s += fmtNum(read(a++), rx);
+				d.fmt = asmString(a, n, bk, rx);
+			} else {
+				s = "";
+				for (z = 0; z < n; ++z) {
+					if (z != 0) s += ',';
+					s += fmtNum(read(a++), rx);
+				}
+				d.fmt = s;
 			}
-			return s;
+			break;
 		case 'C':
 		case '0': // assert read(a + n - 1) == 0
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
-			s = "db      ";
-			s += asmString(a, n, bk, rx);
 			// TODO: '7' comment showing last char?
-			return s;
+			d.op = "db";
+			d.fmt = asmString(a, n, bk, rx);
+			break;
+		default:
+			d.op = "?";
+			d.fmt = String.format("'%c'", (char)bk);
+			break;
 		}
-		return "?"; // or dis.disas()?
+		zd.add(d);
+	}
+
+	private String disLine(int a, int n, int bk, int st, int rx) {
+		zdv.clear();
+		if (bk == 'I') {
+			// assert: n == dis.instrLen()
+			zdv.add(dis.disas(a));
+		} else {
+			disPseudo(a, n, bk, st, rx, zdv);
+		}
+		if (zdv.size() > 1) {
+			String s = "";
+			int x = 0;
+			for (Z80Dissed d : zdv) {
+				if (x++ > 0) s += " ! ";
+				s += disMulti(d, " ");
+			}
+			return s;
+		} else {
+			return disMulti(zdv.get(0), null);
+		}
 	}
 
 	private String disLineTab(int a, int n, int bk, int st, int rx) {
-		Z80Dissed d;
-		int y;
-		int z;
-		String s;
-		switch (bk) {
-		case 'I':
-			// assert: n == dis.intrLen()
-			d = dis.disas(a);
-			if (d.addr < 0) {
-				if (d.fmt == null) {
-					return String.format("%s", d.op);
-				} else {
-					return String.format("%s\t%s", d.op, d.fmt);
-				}
-			} else {
-				return String.format("%s\t%s", d.op,
-					String.format(d.fmt, mksym(d.addr)));
-			}
-		case 'L':
-			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw\t%s", mksym(z));
-		case 'W':
-			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
-			return String.format("dw\t%d", z); // TODO: radix
-		case 'X':
-			// assert: n == 2
-			z = read(a + 1) | (read(a) << 8);
-			return String.format("dw\t%d", z); // TODO: radix
-		case 'R':
-			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
-			z += a;
-			z &= 0xffff;
-			return String.format("dw\t%s-$", mksym(z));
-		case 'T':
-			// assert: n == 3
-			y = read(a);
-			z = read(a + 1) | (read(a + 2) << 8);
-			// TODO: radix
-			return String.format("db %d ! dw %s", y, mksym(z));
-		case 'Q':
-			// assert: n == 4
-			y = read(a) | (read(a + 1) << 8);
-			z = read(a + 2) | (read(a + 3) << 8);
-			// TODO: radix
-			return String.format("dw %d ! dw %s", y, mksym(z));
-		case 'S':
-			return String.format("ds\t%d", n);
-		case 'B':
-		case 'C':
-			// TODO: radix
-			s = "db\t";
-			for (z = 0; z < n; ++z) {
-				if (z != 0) s += ',';
-				s += String.format("%d", read(a++));
-			}
-			return s;
-		case '0': // assert read(a + n - 1) == 0
-		case '$': // assert read(a + n - 1) == '$'
-		case '7': // assert read(a + n - 1) & 0x80 == 0x80
-			s = "db\t";
-			s += asmString(a, n, bk, rx);
-			return s;
+		zdv.clear();
+		if (bk == 'I') {
+			// assert: n == dis.instrLen()
+			zdv.add(dis.disas(a));
+		} else {
+			disPseudo(a, n, bk, st, rx, zdv);
 		}
-		return "?"; // or dis.disas()?
+		if (zdv.size() > 1) {
+			String s = "";
+			int x = 0;
+			for (Z80Dissed d : zdv) {
+				if (x++ > 0) s += " ! ";
+				s += disMulti(d, " ");
+			}
+			return s;
+		} else {
+			return disMulti(zdv.get(0), "\t");
+		}
 	}
 
 	public void paintCode(Graphics2D g2d) {
@@ -1019,19 +1050,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		Arrays.fill(len, (byte)0);
 		clearSymtab();
 		while ((s = lin.readLine()) != null) {
-			if (s.matches("-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F],.")) {
+			if (s.matches("-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F],.*")) {
 				a = Integer.valueOf(s.substring(1,5), 16);
 				if (s.length() > 6) {
 					bk = s.charAt(6);
-					if (bk != 0) putBrk(a, bk);
+					if (bk != ' ') putBrk(a, bk);
 				}
 				if (s.length() > 7) {
 					bk = s.charAt(7);
-					if (bk != 0) putStyle(a, bk);
+					if (bk != ' ') putStyle(a, bk);
 				}
 				if (s.length() > 8) {
 					bk = s.charAt(8);
-					if (bk != 0) putRadix(a, bk);
+					if (bk != ' ') putRadix(a, bk);
 				}
 			} else if (s.matches("[G-Z][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")) {
 				a = Integer.valueOf(s.substring(1), 16);
