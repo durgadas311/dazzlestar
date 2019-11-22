@@ -76,7 +76,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 			}
 		} else if ((opCode & 0xc0) == 0x80) {
 			instr.op = ops[(opCode >> 3) & 7];
-			instr.fmt = String.format("%s", regs[opCode & 7]);
+			instr.fmt = String.format("a,%s", regs[opCode & 7]);
 		} else switch (opCode) {
 			case 0x00:       /* NOP */
 				instr.op = "nop";
