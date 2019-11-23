@@ -463,14 +463,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void resetBreaks(int a, boolean all) {
 		int n;
 		int b, s, r;
-		int bk = activeBreak(a);
+		int x = a;
+		while (!all && x > base && getLen(x) == 0) --x;
+		int bk = activeBreak(x);
 		if (bk == 0) bk = 'I';
-		int st = activeStyle(a);
+		int st = activeStyle(x);
 		if (st == 0) st = 'M';
-		int rx = activeRadix(a);
+		int rx = activeRadix(x);
 		if (rx == 0) rx = 'H';
-		for (int x = a; x < end;) {
-			if (!all && x != a && anyBrk(x)) break;
+		while (x < end) {
+			if (!all && x > a && anyBrk(x)) break;
 			b = getBrk(x);
 			s = getStyle(x);
 			r = getRadix(x);
