@@ -4,4 +4,4 @@
 
 ![DZ Example](dz.png)
 
-[See Help file](dz/docs/dzhelp.html)
+[See Help file](http://sebhc.durgadas.com/dazzlestar/dzhelp.html)
