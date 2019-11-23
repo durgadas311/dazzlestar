@@ -48,6 +48,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	Font font;
 	JTextField dest;
 	JLabel stat;
+	JPanel src_pan;
+	JTextField src_pat;
 	JPanel err_pan;
 	JEditorPane err_txt;
 	JLabel err_lbl;
@@ -65,6 +67,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int cend = -1;
 	int dwin = -1;
 	int dend = -1;
+	// current search
+	int cur_adr;
+	int cur_beg;
+	byte[] cur_val;
+	String cur_str;
 
 	FontMetrics _fm;
 	int _fa;
@@ -249,6 +256,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
+
+		src_pan = new JPanel();
+		src_pan.setLayout(new BoxLayout(src_pan, BoxLayout.Y_AXIS));
+		src_pat = new JTextField();
+		src_pat.setPreferredSize(new Dimension(100, 20));
+		src_pat.setEditable(true);
+		src_pan.add(src_pat);
 
 		err_pan = new JPanel();
 		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
@@ -1330,6 +1344,32 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		stat.setText(statBase + " PRN saved");
 	}
 
+	// Search for byte pattern.
+	private int search(int start, int stop, byte[] val, boolean wrap) {
+		int a = start;
+		int e = stop;
+		if (e < 0) e = start;
+		if (a + val.length >= end) {
+			if (!wrap) return -1;
+			a = base;
+		}
+		while (true) {
+			int x = 0;
+			for (; x < val.length && (val[x] & 0xff) == read(a + x); ++x);
+			if (x == val.length) {
+				return a;
+			}
+			++a;
+			if (a >= end) {
+				if (!wrap) break;
+				a = base;
+			}
+			if (a == e) break;
+		}
+		// not found
+		return -1;
+	}
+
 	private void menuAction(JMenuItem m) {
 		int key = m.getMnemonic();
 		if (key == KeyEvent.VK_Q) {
@@ -1574,6 +1614,52 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void doSearch() {
+		src_pat.setText("");
+		int res = JOptionPane.showConfirmDialog(frame, src_pan,
+					"Search Byte(s)",
+					JOptionPane.OK_CANCEL_OPTION);
+		if (res != JOptionPane.OK_OPTION) {
+			return;
+		}
+		if (src_pat.getText().length() == 0) {
+			return;
+		}
+		String[] ss = src_pat.getText().split("\\s");
+		byte[] src = new byte[ss.length];
+		try {
+			for (int x = 0; x < ss.length; ++x) {
+				src[x] = (byte)(int)Integer.valueOf(ss[x], 16);
+			}
+		} catch (Exception ee) {
+			PopupFactory.warning(frame, "Search",
+				ee.getMessage());
+			return;
+		}
+		cur_val = src;
+		cur_str = src_pat.getText();
+		cur_adr = base;	// or cursor, or ...
+		cur_beg = cur_adr;
+		doSearchNext();
+	}
+
+	private void doSearchNext() {
+		if (cur_val == null) {
+			PopupFactory.warning(frame, "Search",
+				"No previous search");
+			return;
+		}
+		int a = search(cur_adr, cur_beg, cur_val, true);
+		if (a < 0) {
+			PopupFactory.inform(frame, "Search",
+				"Not Found: " + cur_str);
+			cur_adr = cur_beg;
+			return;
+		}
+		cur_adr = a + 1;
+		goAdr(a);
+	}
+
 	public void keyPressed(KeyEvent e) {
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
@@ -1602,6 +1688,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		} else if (k == KeyEvent.VK_END) {
 			int c = oneBack(cend);
 			setCursor(c);
+		} else if (k == KeyEvent.VK_F1) {
+			doSearch();
+		} else if (k == KeyEvent.VK_F2) {
+			doSearchNext();
 		}
 	}
 	public void keyReleased(KeyEvent e) {}
