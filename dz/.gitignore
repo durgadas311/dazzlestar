@@ -1,2 +1,4 @@
 *.class
 *.jar
+Manifest.txt
+docs/About.html

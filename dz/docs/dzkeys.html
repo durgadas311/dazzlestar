@@ -1,0 +1,95 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar Keyboard Commands</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar Keyboard Commands</H2>
+
+<P>Navigation is provided through modern keyboard commands:
+
+<DL>
+<DT>Home</DT>
+<DD>Jump to the first line in window.</DD>
+<DT>End</DT>
+<DD>Jump to the last line in window.</DD>
+<DT>Shift+Home</DT>
+<DD>Jump to the first "window" in the program.</DD>
+<DT>Shift+End</DT>
+<DD>Jump to the last "window" in the program.</DD>
+<DT>Page Up</DT>
+<DD>Move one screen-full up (back) in the program.</DD>
+<DT>Page Down</DT>
+<DD>Move one screen-full down (forward) in the program.</DD>
+<DT>(Up Arrow)</DT>
+<DD>Move one screen-line up (back) in the program.</DD>
+<DT>(Down Arrow)</DT>
+<DD>Move one screen-line down (forward) in the program.</DD>
+<DT>(Left Arrow)</DT>
+<DD>Move one byte up (back) in the program.
+Note that this can
+(temporarely) throw-off the code display, as indicated by a darker cursor.</DD>
+<DT>(Down Arrow)</DT>
+<DD>Move one byte down (forward) in the program.
+Note that this can
+(temporarely) throw-off the code display, as indicated by a darker cursor.</DD>
+</DL>
+
+<P>The following disassembly keyboard commands are recognized:
+
+<DL>
+<DT>A</DT>
+<DD>goto an Address. This activated the "A(ddr):" text box
+below the menu bar, which can only be deactivated by pressing ENTER.
+Type the 4-digit hex address desired, or leave empty to cancel.</DD>
+<DT>F</DT>
+<DD>Follow the address in the current instruction or DW (if a label).</DD>
+<DT>I</DT>
+<DD>Set an Instruction break. (default)</DD>
+<DT>B</DT>
+<DD>Set a DB break. Length of each DB is 16 bytes maximum,
+or until the next break change.</DD>
+<DT>C</DT>
+<DD>Set a DB character break. Same as 'B'.</DD>
+<DT>L</DT>
+<DD>Set a DW label (address) break.</DD>
+<DT>T</DT>
+<DD>Set a DB/DW table, char and label (address) break.</DD>
+<DT>Q</DT>
+<DD>Set a DW/DW table, word and label (address) break.</DD>
+<DT>S</DT>
+<DD>Set a DS field, until the next break change.</DD>
+<DT>W</DT>
+<DD>Set a DW (word) numeric break.</DD>
+<DT>X</DT>
+<DD>Set a DW numeric break, big-endian.</DD>
+<DT>R</DT>
+<DD>Set a DW relative address break.</DD>
+<DT>$</DT>
+<DD>Set a DB '$'-terminated string break.
+Long lines are currently not split.</DD>
+<DT>0</DT>
+<DD>Set a DB 0-terminated string break.
+Long lines are currently not split.</DD>
+<DT>7</DT>
+<DD>Set a DB 7th-bit-terminated string break.
+Long lines are currently not split.</DD>
+<DT>M</DT>
+<DD>Set DB style to "Messages", i.e. character strings when possible.
+(default)
+</DD>
+<DT>N</DT>
+<DD>Set DB style to "Numbers".
+</DD>
+<DT>H</DT>
+<DD>Set radix for numbers to Hex. (default)
+</DD>
+<DT>D</DT>
+<DD>Set radix for numbers to Decimal.
+</DD>
+<DT>D</DT>
+<DD>Set radix for (byte) numbers to Binary.
+</DD>
+</DL>
+
+</BODY>
+</HTML>

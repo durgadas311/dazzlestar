@@ -1,0 +1,60 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar Menus</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar Menus</H2>
+
+<P>Basic operational functions are supplied in the menus.
+Certain menu items are disabled or altered based on context.
+For example, you can't "Close" a disassembly if none is open.
+
+<DL>
+<DT>File->New</DT>
+<DD>Open a dialog to load a new COM file for disassembly.
+This will discard any currently disassembly.
+</DD>
+<DT>File->Close</DT>
+<DD>This will discard any currently disassembly, effectively "closing" it.
+</DD>
+<DT>File->Generate ASM</DT>
+<DD>Generates an ASM file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Generate PRN</DT>
+<DD>Generates a PRN (listing) file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Save DZ</DT>
+<DD>Generates a DZ file for the current disassembly.
+file is generated in the same folder as the COM file.
+</DD>
+<DT>File->Load DZ</DT>
+<DD>Open a dialog to loads a DZ file for the current disassembly.
+This replaces any existing breaks or symbols, effectively discarding those.
+This does not affect the folder used to generate output files.
+</DD>
+<DT>File->Quit</DT>
+<DD>Discards any current disassembly and exits the program.
+</DD>
+
+<DT>Disas->Rebuild Symtab</DT>
+<DD>Discards any current symbols and rescans code according to
+current breaks, building a new symbol table.
+</DD>
+<DT>Disas->Use {MAC80|Zilog}</DT>
+<DD>Change mnemonics used for disassembly of code.
+Menu reflects the opposite of the current mnemonics, i.e.
+what the mnemonics will be changed to.
+</DD>
+
+<DT>Help->About</DT>
+<DD>Display basic information and credits
+<DT>Help->Show Help</DT>
+<DD>Display this help document.
+</DD>
+
+</DL>
+
+</BODY>
+</HTML>

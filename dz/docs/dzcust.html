@@ -1,0 +1,52 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar Configuration</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar Configuration</H2>
+
+<P>The configuration of the disassembler is driven by the configuration
+file, which  is searched in the following way:
+<OL>
+<LI>The current directory is searched for "dzrc"
+<LI>The path "~/.dzrc" is used (user's home directory)
+</OL>
+This file is plain text and consists
+of lines in the format "property = value". Long values may be extended to
+subsequent lines by using the back-slash to cause the subsequent line
+to be attached to the value.
+
+<P>The following properties control the basic functioning of the virtual
+computer:
+
+<DL>
+<DT>code_win</DT>
+<DD>The number of lines to display in the "Code Window" (disassemble code).
+Default is 24.
+</DD>
+
+<DT>dump_win</DT>
+<DD>The number of lines to display in the "Dump Window" (hex dump).
+Default is 6.
+</DD>
+
+<DT>cursor_color</DT>
+<DD>This selects the color to use for the "cursor" highlights in
+the Code and Dump windows. Pick a color that works well with black text.
+Default is yellow.
+</DD>
+
+<DT>font_name</DT>
+<DD>This specifies the style or exact name for the font to use
+in the Code and Dump windows. This font should be monospaced.
+Default is "Monospaced".
+</DD>
+
+<DT>font_size</DT>
+<DD>Define the font size to use. May be specified independently of
+font_name. Default is 10.0.
+</DD>
+</DL>
+
+</BODY>
+</HTML>

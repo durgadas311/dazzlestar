@@ -169,6 +169,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// done with Disas menu
 		// Help is always last... far right.
 		mu = new JMenu("Help");
+		mi = new JMenuItem("About", KeyEvent.VK_T);
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = new JMenuItem("Show Help", KeyEvent.VK_H);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -1398,6 +1401,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			base = end = 0;
 			// TODO: discard obj[], brk[], len[] ?
 			// TODO: symtab.clear()?
+			return;
+		}
+		if (key == KeyEvent.VK_T) {
+			java.net.URL url = this.getClass().getResource("docs/About.html");
+			try {
+				JEditorPane about = new JEditorPane(url);
+				about.setEditable(false);
+				Dimension dim = new Dimension(350, 250);
+				about.setPreferredSize(dim);
+				JOptionPane.showMessageDialog(frame, about,
+					"About: DazzleStar TNG",
+					JOptionPane.PLAIN_MESSAGE);
+			} catch (Exception ee) { }
 			return;
 		}
 		if (key == KeyEvent.VK_H) {
