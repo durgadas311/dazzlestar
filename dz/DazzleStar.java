@@ -562,6 +562,32 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cend = e;
 	}
 
+	private void shiftUp() {
+		int c = oneBack(cwin);
+		if (c == cwin) { // no change
+			return;
+		}
+		setCodeWin(c);
+		c = oneBack(cursor);
+		if (c < dwin) {
+			setDumpWin(c & ~0x0f);
+		}
+		setCursor(c);
+	}
+
+	private void shiftDown() {
+		if (cend >= end) { // no change
+			return;
+		}
+		int c = cwin + getLen(cwin);
+		setCodeWin(c);
+		c = cursor + cur_len;
+		if (c + getLen(c) > dend) {
+			setDumpWin(dend - 16);
+		}
+		setCursor(c);
+	}
+
 	private void scrollUp() {
 		setCodeWin(cwin + getLen(cwin));
 	}
@@ -572,7 +598,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (c >= cend) {
 			scrollUp();
 		}
-		if (c >= dend) {
+		if (c + getLen(c) > dend) {
 			setDumpWin(dend - 16);
 		}
 		setCursor(c);
@@ -584,8 +610,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			setCodeWin(c);
 		}
 		if (c < dwin) {
-			// TODO: adjust for long "instructions"...
-			setDumpWin(dwin - 16);
+			setDumpWin(c & ~0x0f);
 		}
 		setCursor(c);
 	}
@@ -1467,6 +1492,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		goAdr(a);
 	}
 
+	private void keyAlted(int k) {
+		if (k == KeyEvent.VK_HOME) {
+			goAdr(cursor);
+		}
+	}
+
 	private void keyShifted(int k) {
 		if (k == KeyEvent.VK_HOME) {
 			goAdr(base);
@@ -1478,6 +1509,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				--x;
 			}
 			goAdr(c);
+		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
+			shiftDown();
+		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
+			shiftUp();
 		}
 	}
 
@@ -1530,6 +1565,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if ((m & InputEvent.SHIFT_MASK) != 0) {
 			keyShifted(k);
+		} else if ((m & InputEvent.ALT_MASK) != 0) {
+			keyAlted(k);
 		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
 			lineDown();
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
