@@ -13,25 +13,9 @@ import java.awt.datatransfer.StringSelection;
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
-	// Possible scheme to compress breaks, styles, radix.
-	// All must be non-zero, independent by break, style, radix.
-	static final byte BK_0 = 0x01;
-	static final byte BK_7 = 0x02;
-	static final byte BK_dol = 0x03; // '$' terminated string
-	static final byte BK_B = 0x04;
-	static final byte BK_I = 0x05;
-	static final byte BK_L = 0x06;
-	static final byte BK_W = 0x07;
-	static final byte BK_X = 0x08;
-	static final byte BK_R = 0x09;
-	static final byte BK_C = 0x0a;
-	//
-	static final byte BK_M = 0x10; // messages style
-	static final byte BK_N = 0x20; // numeric style
-	//
-	static final byte BK_2 = (byte)0x40; // binary
-	static final byte BK_D = (byte)0x80; // decimal
-	static final byte BK_H = (byte)0xc0; // hex
+	static final String allBreaks = "BILWXRC07$TQS";
+	static final String allStyles = "MN";
+	static final String allRadix = "HD2";
 
 	static DazzleStar _us;
 	File comFile;
@@ -394,6 +378,28 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		sty[a - base] = (byte)b;
 	}
 
+	// Return -1 for invalid, 0 for "none", or break
+	private int validBrk(int c) {
+		if (c == ' ') return 0;
+		//if (c == 'U') return 0; // TODO: what is 'U'???
+		if (allBreaks.indexOf(c) >= 0) return c;
+		return -1;
+	}
+
+	// Return -1 for invalid, 0 for "none", or style
+	private int validStyle(int c) {
+		if (c == ' ') return 0;
+		if (allStyles.indexOf(c) >= 0) return c;
+		return -1;
+	}
+
+	// Return -1 for invalid, 0 for "none", or radix
+	private int validRadix(int c) {
+		if (c == ' ') return 0;
+		if (allRadix.indexOf(c) >= 0) return c;
+		return -1;
+	}
+
 	// returns last break seen
 	private void setLen(int a, int n) {
 		putLen(a++, n--);
@@ -682,6 +688,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		symtab.clear();
 	}
 
+	// TODO: when to auto-create symbols?
 	private void symLine(int a, int n, int bk) {
 		Z80Dissed d;
 		int z;
@@ -770,6 +777,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return s;
 	}
 
+	// TODO: when to auto-create symbols?
 	private String disMulti(Z80Dissed d, String sep) {
 		if (d.addr < 0) {
 			if (d.fmt == null) {
@@ -1045,24 +1053,27 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int bk = 0;
 		int st = 0;
 		int rx = 0;
+		// TODO: decide whether to strip duplicates...
 		for (int a = first; a < last; ++a) {
 			String l = lookup(a);
 			if (l != null) {
+				// TODO: support non-auto names:
+				// ps.format("L%04x %s\n", a, l);
 				ps.format("%s\n", l);
 			}
 			String s = "";
 			int b = getBrk(a);
-			if (b != 0 && b != bk) {
+			if (b != 0) { // skip dups: && b != bk) {
 				s += (char)b;
 				bk = b;
 			} else s += " ";
 			b = getStyle(a);
-			if (b != 0 && b != st) {
+			if (b != 0) { // skip dups: && b != st) {
 				s += (char)b;
 				st = b;
 			} else s += " ";
 			b = getRadix(a);
-			if (b != 0 && b != rx) {
+			if (b != 0) { // skip dups: && b != rx) {
 				s += (char)b;
 				rx = b;
 			} else s += " ";
@@ -1075,6 +1086,52 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		stat.setText(statBase + " Saved");
 	}
 
+	private boolean processDZ(int c, String s) {
+		int a;
+		int bk = 0;
+		int st = 0;
+		int rx = 0;
+		String[] ss;
+		if (c == '-') {	// standard break: -AAAA,BSR
+			ss = s.split(",");
+			if (ss.length != 2) return false;
+			try {
+				a = Integer.valueOf(ss[0], 16);
+			} catch (Exception ee) {
+				return false; // provide ee.getString()?
+			}
+			// TODO: validate each char...
+			if (ss[1].length() > 0) {
+				bk = validBrk(ss[1].charAt(0));
+			}
+			if (ss[1].length() > 1) {
+				st = validStyle(ss[1].charAt(1));
+			}
+			if (ss[1].length() > 2) {
+				rx = validRadix(ss[1].charAt(2));
+			}
+			if (bk < 0 || st < 0 || rx < 0) {
+				return false;
+			}
+			if (bk != 0) putBrk(a, bk);
+			if (st != 0) putStyle(a, st);
+			if (rx != 0) putRadix(a, rx);
+		} else if (Character.isLetter(c)) { // symbol: XAAAA[ name]
+			ss = s.split(" ");
+			try {
+				a = Integer.valueOf(ss[0], 16);
+			} catch (Exception ee) {
+				return false; // provide ee.getString()?
+			}
+			if (ss.length > 1) {
+				putsym(a, ss[1]);
+			} else {
+				putsym(a, (char)c + ss[0]);
+			}
+		}
+		return true;
+	}
+
 	private void loadDZ(File dz) throws Exception {
 		BufferedReader lin = new BufferedReader(new FileReader(dz));
 		String s;
@@ -1084,30 +1141,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		Arrays.fill(brk, (byte)0);
 		Arrays.fill(len, (byte)0);
 		clearSymtab();
+		int c;
 		int e = 0;
 		int l = 0;
 		String es = "";
 		while ((s = lin.readLine()) != null) {
 			++l;
-			if (s.matches("-[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F],.*")) {
-				a = Integer.valueOf(s.substring(1,5), 16);
-				if (s.length() > 6) {
-					bk = s.charAt(6);
-					if (bk != ' ') putBrk(a, bk);
-				}
-				if (s.length() > 7) {
-					bk = s.charAt(7);
-					if (bk != ' ') putStyle(a, bk);
-				}
-				if (s.length() > 8) {
-					bk = s.charAt(8);
-					if (bk != ' ') putRadix(a, bk);
-				}
-			} else if (s.matches("[G-Z][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")) {
-				a = Integer.valueOf(s.substring(1), 16);
-				putsym(a, s);
-			} else {
-				es += String.format("%d: Unrecognized DZ line \"%s\"\n", l, s);
+			if (s.length() == 0) continue;
+			c = s.charAt(0);
+			if (c == 0x1a) break;	// CP/M EOF (Ctrl-Z)
+			if (!processDZ(c, s.substring(1))) {
+				es += String.format("%d: Unrecognized DZ line \"%s\"\n",
+									l, s);
 				++e;
 			}
 		}
@@ -1359,45 +1404,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private boolean doBrkKey(int k) {
-		int bk = 0;
-		int st = 0;
-		int rx = 0;
-		switch (k) {
-		case 'B':
-		case 'C':
-		case 'I':
-		case 'L':
-		case 'W':
-		case 'T':
-		case 'Q':
-		case 'S':
-		case 'X':
-		case 'R':
-		case '0':
-		case '$':
-		case '7':
-			bk = k;
-			break;
-		case 'M':
-		case 'N':
-			st = k;
-			break;
-		case 'H':
-		case 'D':
-		case '2':
-			rx = k;
-			break;
-		case ' ':
+		if (k == ' ') {
 			putBrk(cursor, 0);
 			putStyle(cursor, 0);
 			putRadix(cursor, 0);
-			break;
-		default:
+		} else if (validBrk(k) > 0) {
+			putBrk(cursor, k);
+		} else if (validStyle(k) > 0) {
+			putStyle(cursor, k);
+		} else if (validRadix(k) > 0) {
+			putRadix(cursor, k);
+		} else {
 			return false;
 		}
-		if (bk != 0) putBrk(cursor, bk);
-		if (st != 0) putStyle(cursor, st);
-		if (rx != 0) putRadix(cursor, rx);
 		resetBreaks(cursor, false);
 		cur_len = getLen(cursor);
 		setCodeWin(cwin);
