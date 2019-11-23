@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Stack;
 import java.util.Vector;
 import java.awt.datatransfer.StringSelection;
 
@@ -30,6 +31,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	byte[] sty;	// styles
 	byte[] len;	// length of "instructions" (lines)
 	Map<Integer,String> symtab;
+	Stack<Integer> prevs;
 	Z80Disassembler dis;
 	Font font2;
 	JMenuItem mi_ld;
@@ -120,6 +122,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			dis = new Z80DisassemblerMAC80(this);
 		}
 		symtab = new HashMap<Integer,String>();
+		prevs = new Stack<Integer>();
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
@@ -1474,6 +1477,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return true;
 	}
 
+	private void pushPrev(int adr) {
+		// TODO: configure stack size limit
+		prevs.push(adr);
+		if (prevs.size() > 100) {
+			prevs.setSize(100);
+		}
+	}
+
 	private void follow() {
 		int a = -1;
 		int bk = activeBreak(cursor);
@@ -1489,6 +1500,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			a &= 0xffff;
 		}
 		if (a < base || a >= end) return;
+		pushPrev(cursor);
 		goAdr(a);
 	}
 
@@ -1531,6 +1543,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			} catch (Exception ee) {}
 			dest.setText("");
 			if (a < base || a >= end) return;
+			pushPrev(cursor);
 			goAdr(a);
 		}
 	}
@@ -1549,6 +1562,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			dest.requestFocus();
 		} else if (c == 'F') {
 			follow();
+		} else if (c == 'V') {
+			if (!prevs.empty()) {
+				int a = prevs.pop();
+				goAdr(a);
+			}
 		} else if (doBrkKey(c)) {
 			return;
 		} else {
