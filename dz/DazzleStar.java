@@ -795,7 +795,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int e;
 		while (n > 0) {
 			c = read(a);
-			if (bit7 && n == 1) {
+			boolean last = (bit7 && n == 1 && (c & 0x80) != 0);
+			if (last) {
 				e = (c & 0x7f);
 			} else {
 				e = c;
@@ -805,6 +806,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				if (s.length() > 0) s += ',';
 				s += fmtNum(c, rdx);
 			} else {
+				if (last && q) {
+					s += '\'';
+					q = false;
+				}
 				if (!q) {
 					if (s.length() > 0) s += ',';
 					s += '\'';
@@ -812,7 +817,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 				s += (char)e;
 				if (e == '\'') s += (char)e;
-				if (bit7 && n == 1 && (c & 0x80) != 0) {
+				if (last) {
 					s += "'+80h";
 					q = false;
 				}
