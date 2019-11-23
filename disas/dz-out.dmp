@@ -1,3 +1,9 @@
+  Values (in hex) to search for? 45 4e 47
+     Options? (Global/Instr/No-verify/Back/Start)
+
+
+
+
 00000: c3 49 4d 00 00 00 00 86 11 01 23 43 4f 50 59 52  .IM.......#COPYR
 00010: 49 47 48 54 20 28 43 29 20 31 39 38 36 20 4a 4f  IGHT (C) 1986 JO
 00020: 48 4e 20 57 41 53 48 49 4e 47 54 4f 4e 20 00 00  HN WASHINGTON ..

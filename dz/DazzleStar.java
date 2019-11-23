@@ -381,7 +381,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	// Return -1 for invalid, 0 for "none", or break
 	private int validBrk(int c) {
 		if (c == ' ') return 0;
-		//if (c == 'U') return 0; // TODO: what is 'U'???
 		if (allBreaks.indexOf(c) >= 0) return c;
 		return -1;
 	}
@@ -484,6 +483,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				break;
 			case 'B':
 			case 'C':
+			case 'U':
 				n = 1;
 				while (n < 16 && x + n < end && !anyBrk(x + n)) ++n;
 				break;
@@ -869,6 +869,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			d.fmt = Integer.toString(n);
 			break;
 		case 'B':
+		case 'C':
+		case 'U':
 			d.op = "db";
 			if (st == 'M') { // "messages"... strings
 				d.fmt = asmString(a, n, bk, rx);
@@ -881,7 +883,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				d.fmt = s;
 			}
 			break;
-		case 'C':
 		case '0': // assert read(a + n - 1) == 0
 		case '$': // assert read(a + n - 1) == '$'
 		case '7': // assert read(a + n - 1) & 0x80 == 0x80
@@ -1102,7 +1103,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			// TODO: validate each char...
 			if (ss[1].length() > 0) {
-				bk = validBrk(ss[1].charAt(0));
+				// Special case, from orig "SA" command,
+				// 'U' = Unknown break from analyzer.
+				bk = ss[1].charAt(0);
+				if (bk != 'U') {
+					bk = validBrk(bk);
+				}
 			}
 			if (ss[1].length() > 1) {
 				st = validStyle(ss[1].charAt(1));
