@@ -23,11 +23,12 @@ Analyzer.jar: all
 	jar -cmf Manifest.txt Analyzer.jar Analyzer.class \
 		Memory.class Z80*.class
 
-ship: jar # src
+ship: # jar src
 	rsync -Wuv $(JARS) README \
 		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
 	rsync -Wuv docs/*.html \
 		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
+	rsync -Wuv DazzleStar.jar ../jar
 
 docs/About.html: __FRC__
 	sed -e 's/\$$(date)/$(shell date)/' docs/About.html.in >$@
