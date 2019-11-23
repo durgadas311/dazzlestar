@@ -26,6 +26,8 @@ Analyzer.jar: all
 ship: jar # src
 	rsync -Wuv $(JARS) README \
 		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
+	rsync -Wuv docs/*.html \
+		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
 
 docs/About.html: __FRC__
 	sed -e 's/\$$(date)/$(shell date)/' docs/About.html.in >$@
