@@ -1,8 +1,10 @@
 JAVAS = $(wildcard *.java)
 CLASSES = $(subst .java,.class,$(JAVAS))
 SOURCE = dz.tgz
-JARS = DazzleStar.jar Analyzer.jar
+JARS = DazzleStar.jar
 SHIPS = $(SOURCE) $(JARS)
+DEST = durgadas.com:/http/durgadas.com/sebhc/dazzlestar
+# DEST=/var/www/html/sebhc/mms89/dazzlestar
 
 all: $(CLASSES)
 
@@ -24,11 +26,9 @@ Analyzer.jar: all
 		Memory.class Z80*.class
 
 ship: # jar src
-	rsync -Wuv $(JARS) README \
-		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
-	rsync -Wuv docs/*.html \
-		durgadas.com:/http/durgadas.com/sebhc/dazzlestar
 	rsync -Wuv DazzleStar.jar ../jar
+	rsync -Wuv ../jar/*.jar README $(DEST)
+	rsync -Wuv docs/dz*.html $(DEST)
 
 docs/About.html: __FRC__
 	sed -e 's/\$$(date)/$(shell date)/' docs/About.html.in >$@

@@ -1,0 +1,48 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar Workflow</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar Workflow</H2>
+
+<H3>Starting from scratch</H3>
+
+<P>The general workflow when starting a new disassembly is:
+
+<OL>
+<LI><B>File->New</B> and select COM file. There is not normally a DZ file to accompany it.
+<LI>Identify/register functions that use inline parameters (parameters follow the
+CALL instruction). Use <B>File->Load Hints</B> to add these to the session. See TBD.
+<LI>Set location to entry point (normally 0100H) and select <B>Disas->Scan from here</B>.
+<LI>Use <B>F3</B> to locate each orphaned section of code, decide if it is code or data,
+and (if code) run <B>Disas->Scan from here</B>. If not code, data breaks may be set.
+<LI>Each scan may introduce new orphaned sections, so repeat until no more exist.
+<LI>Use <B>F4</B> to locate unknown sections and determine use. Run scan or set data
+breaks as appropriate.
+</OL>
+
+<P>Note that hints are only used during scanning, where they result in
+insertion of breaks in instruction streams. Hints should be loaded
+before any scanning is done (or else scanning should be reset and started over.
+
+<H3>Saving disassembly</H3>
+
+<P>Use <B>File->Save DZ</B> to record current progress of disassembly.
+Note the scan results are lost when you exit DazzleStar, or if you start
+a new project. Hints should have manually created and should be available
+next time. Note that hints affect both scanning and final disassembly
+(ASM or PRN output), and so should always be loaded (if present).
+
+<H3>Resuming prior disassembly</H3>
+
+<P>To resume a prior disassembly session:
+
+<OL>
+<LI><B>File->New</B> and select COM file. This should also load the prior DZ file.
+<LI><B>File->Load Hints</B> and select hint file.
+<LI>If more scanning is required, start with the scan steps.
+<LI>Continue locating un-identified sections and identify them.
+</OL>
+
+</BODY>
+</HTML>
