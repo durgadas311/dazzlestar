@@ -50,6 +50,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JLabel stat;
 	JPanel src_pan;
 	JTextField src_pat;
+	JRadioButton src_hex;
+	JRadioButton src_txt;
+	JRadioButton src_beg;
+	JRadioButton src_cur;
+	JCheckBox src_wrp;
 	JPanel err_pan;
 	JEditorPane err_txt;
 	JLabel err_lbl;
@@ -72,6 +77,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int cur_beg;
 	byte[] cur_val;
 	String cur_str;
+	boolean cur_wrp;
 
 	FontMetrics _fm;
 	int _fa;
@@ -263,6 +269,38 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		src_pat.setPreferredSize(new Dimension(100, 20));
 		src_pat.setEditable(true);
 		src_pan.add(src_pat);
+		src_txt = new JRadioButton("Text");
+		src_hex = new JRadioButton("Hex");
+		ButtonGroup bg = new ButtonGroup();
+		bg.add(src_hex);
+		bg.add(src_txt);
+		pan = new JPanel();
+		pan.setLayout(new BoxLayout(pan, BoxLayout.X_AXIS));
+		pan.add(src_hex);
+		pan.add(src_txt);
+		src_pan.add(pan);
+		src_beg = new JRadioButton("Beginning");
+		src_cur = new JRadioButton("Current");
+		bg = new ButtonGroup();
+		bg.add(src_beg);
+		bg.add(src_cur);
+		pan = new JPanel();
+		pan.setLayout(new BoxLayout(pan, BoxLayout.X_AXIS));
+		pan.add(new JLabel("From:"));
+		pan.add(src_beg);
+		pan.add(src_cur);
+		src_pan.add(pan);
+		src_wrp = new JCheckBox("Wrap");
+		pan = new JPanel();
+		pan.setLayout(new BoxLayout(pan, BoxLayout.X_AXIS));
+		pan.add(new JLabel("At end:"));
+		pan.add(src_wrp);
+		src_pan.add(pan);
+		// TODO: make these persistent or not?
+		src_pat.setText("");
+		src_hex.setSelected(true);
+		src_beg.setSelected(true);
+		src_wrp.setSelected(false);
 
 		err_pan = new JPanel();
 		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
@@ -1620,7 +1658,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void doSearch() {
-		src_pat.setText("");
+		// TODO: make these persistent or not?
+		//src_pat.setText("");
+		//src_hex.setSelected(true);
+		//src_beg.setSelected(true);
+		//src_wrp.setSelected(false);
 		int res = JOptionPane.showConfirmDialog(frame, src_pan,
 					"Search Byte(s)",
 					JOptionPane.OK_CANCEL_OPTION);
@@ -1630,31 +1672,40 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (src_pat.getText().length() == 0) {
 			return;
 		}
-		String[] ss = src_pat.getText().split("\\s");
-		byte[] src = new byte[ss.length];
-		try {
-			for (int x = 0; x < ss.length; ++x) {
-				src[x] = (byte)(int)Integer.valueOf(ss[x], 16);
-			}
-		} catch (Exception ee) {
-			PopupFactory.warning(frame, "Search",
-				ee.getMessage());
-			return;
-		}
-		cur_val = src;
 		cur_str = src_pat.getText();
-		cur_adr = base;	// or cursor, or ...
+		if (src_hex.isSelected()) {
+			String[] ss = cur_str.split("\\s");
+			byte[] src = new byte[ss.length];
+			try {
+				for (int x = 0; x < ss.length; ++x) {
+					src[x] = (byte)(int)Integer.valueOf(ss[x], 16);
+				}
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Search",
+					ee.getMessage());
+				return;
+			}
+			cur_val = src;
+		} else { // src_txt.isSelected()
+			cur_val = cur_str.getBytes();
+		}
+		if (src_beg.isSelected()) {
+			cur_adr = base;
+		} else {
+			cur_adr = cursor; // TODO: +1?
+		}
 		cur_beg = cur_adr;
+		cur_wrp = src_wrp.isSelected();
 		doSearchNext();
 	}
 
 	private void doSearchNext() {
-		if (cur_val == null) {
+		if (cur_str == null) {
 			PopupFactory.warning(frame, "Search",
 				"No previous search");
 			return;
 		}
-		int a = search(cur_adr, cur_beg, cur_val, true);
+		int a = search(cur_adr, cur_beg, cur_val, cur_wrp);
 		if (a < 0) {
 			PopupFactory.inform(frame, "Search",
 				"Not Found: " + cur_str);
