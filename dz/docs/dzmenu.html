@@ -34,10 +34,22 @@ file is generated in the same folder as the COM file.
 This replaces any existing breaks or symbols, effectively discarding those.
 This does not affect the folder used to generate output files.
 </DD>
+<DT>File->Load Hints</DT>
+<DD>Load code-scanner hints.
+See <A HREF="dzhints.html">Hint Syntax</A>.
+</DD>
 <DT>File->Quit</DT>
 <DD>Discards any current disassembly and exits the program.
 </DD>
 
+<DT>Disas->Scan from here</DT>
+<DD>(Re)Start auto-code scan from current location.</DD>
+<DT>Disas->Scan Hints</DT>
+<DD>Code scan all entry points from hints.
+Only enabled if some exist.</DD>
+<DT>Disas->Reset scan</DT>
+<DD>Clear all code scan progress markers.
+Used to start over fresh.</DD>
 <DT>Disas->Rebuild Symtab</DT>
 <DD>Discards any current symbols and rescans code according to
 current breaks, building a new symbol table.

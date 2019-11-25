@@ -12,18 +12,32 @@
 <OL>
 <LI><B>File->New</B> and select COM file. There is not normally a DZ file to accompany it.
 <LI>Identify/register functions that use inline parameters (parameters follow the
-CALL instruction). Use <B>File->Load Hints</B> to add these to the session. See TBD.
+CALL instruction). Use <B>File->Load Hints</B> to add these to the session.
+See <A HREF="dzhints.html">Hint Syntax</A>.
 <LI>Set location to entry point (normally 0100H) and select <B>Disas->Scan from here</B>.
 <LI>Use <B>F3</B> to locate each orphaned section of code, decide if it is code or data,
 and (if code) run <B>Disas->Scan from here</B>. If not code, data breaks may be set.
 <LI>Each scan may introduce new orphaned sections, so repeat until no more exist.
 <LI>Use <B>F4</B> to locate unknown sections and determine use. Run scan or set data
 breaks as appropriate.
+<LI>Prior to generating ASM/PRN (at least) it is a good idea
+to regenerate the symbol table (<B>Disas->Rebuild Symtab</B>).
+This ensures that data which was
+formerly (incorrectly) interpretted as code will not pollute the symbol table.
+<LI>Save the breaks/symbols (DZ file).
+<LI>Generate ASN and/or PRN files.
+<LI>Continue editing the ASM file to clean it up and prepare it
+for assembly.
 </OL>
 
 <P>Note that hints are only used during scanning, where they result in
 insertion of breaks in instruction streams. Hints should be loaded
-before any scanning is done (or else scanning should be reset and started over.
+before any scanning is done (or else scanning should be reset and started over).
+
+<P>Also, it is not the intent of DazzleStar TNG produce an ASM file that
+will compile successfully and generate the original code. The final, manual, steps
+of disassembly are done outside of DazzleStar. This includes adding commands
+and making sensible names for labels (or changing to constants).
 
 <H3>Saving disassembly</H3>
 

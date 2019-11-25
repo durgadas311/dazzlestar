@@ -1,0 +1,55 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar Hint Syntax</TITLE>
+</HEAD>
+<BODY>
+<H2>DazzleStar Hint Syntax</H2>
+
+<P>Hints are a new extension to the DazzleStar "breaks" file,
+to allow giving hints for the code scanner.
+
+<DL>
+<DT>+AAAA</DT>
+<DD>Add "AAAA" (code address) to the list of auxiliary (hidden)
+entry points or functions. These are only scanned when the
+menu item <B>Disas->Scan Hints</B> is selected.
+</DD>
+<DT>*AAAA,X</DT>
+<DD>All calls to the function (at address) "AAAA" have inline parameters
+as described by "X". Inline paramaters directly follow the call instruction
+but must be interpreted as data, not instructions.
+These are only used during code scanning to insert breaks around the parameters.
+The following are valid forms for "X":
+<DL>
+<DT><I>number</I></DT>
+<DD>A 'B' break of <I>number</I> bytes in length.</DD>
+<DT><I>-number</I></DT>
+<DD>A 'B' break of either <I>number</I> or <I>number</I>+1 bytes in length.
+First byte bit 7 is "0" if an additional byte is present.
+This option exists to aid in disassembly of DZ.COM and is probably not
+a general programming style.
+<DT>Z</DT>
+<DD>Parameter is a NUL-terminated string ('0' break).</DD>
+<DT>$</DT>
+<DD>Parameter is a '$'-terminated string ('$' break).</DD>
+<DT>B</DT>
+<DD>Parameter is a bit7-terminated string
+(bit 7 is "1" on last byte of string) ('7' break).</DD>
+<DT>L</DT>
+<DD>Parameter is a single 'L' break (label).</DD>
+<DT>N</DT>
+<DD>First byte is the length (plus one) ('B' break).</DD>
+</DD>
+</DL>
+
+</DL>
+
+<P>These hints are only used by the code scanner.
+They enable the <B>Disas->Scan Hints</B> menu item,
+and result in insertion of breaks when a matching instruction is scanned.
+
+<P>Note that hints are not case-sensitive. All addresses (e.g. "AAAA")
+are hexadecimal.
+
+</BODY>
+</HTML>

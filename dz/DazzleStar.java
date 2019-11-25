@@ -12,9 +12,11 @@ import java.util.Stack;
 import java.util.Vector;
 import java.awt.datatransfer.StringSelection;
 
-// TODO: cur_len is not getting update after analyze()...
-// TODO: do not pop-up results for "Scan from here", use status field...
-// TODO: make "Scan from here" a function key?
+// TODO:
+//	* cur_len is not getting update after analyze()...
+//	* cend not properly (re)computed sometimes.
+//	* do not pop-up results for "Scan from here", use status field...
+//	* make "Scan from here" a function key?
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
@@ -27,8 +29,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	String baseName;
 	String basePath;
 	String dzExt;
+	String hintExt;
 	String asmExt;
 	String prnExt;
+	boolean uppercase;
 	byte[] obj;
 	byte[] brk;	// breaks
 	byte[] rdx;	// radix
@@ -47,6 +51,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JMenuItem mi_asm;
 	JMenuItem mi_prn;
 	JMenuItem mi_cls;
+	JMenuItem mi_sch;
 	JMenuItem mi_sym;
 	JMenuItem mi_dis;
 	GenericHelp help;
@@ -188,10 +193,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mb.add(mu);
 		// done with File menu
 		mu = new JMenu("Disas");
-		mi = mi_sym = new JMenuItem("Scan from here", KeyEvent.VK_Z);
+		mi = new JMenuItem("Scan from here", KeyEvent.VK_Z);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_sym = new JMenuItem("Reset scan", KeyEvent.VK_R);
+		mi = mi_sch = new JMenuItem("Scan Hints", KeyEvent.VK_Y);
+		mi.addActionListener(this);
+		mi_sch.setEnabled(false);
+		mu.add(mi);
+		mi = new JMenuItem("Reset scan", KeyEvent.VK_R);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_G);
@@ -384,6 +393,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		stat.setText(statBase);
 		base = 0x0100;
 		end = base + obj.length;
+		prevs.clear();
+		calls.clear();
+		codes.clear();
+		mi_sch.setEnabled(false);
 		symtab.clear();
 		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
@@ -391,23 +404,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (baseName.matches(".*\\.COM")) {
 			basePath = basePath.substring(0, basePath.length() - 4);
 			baseName = baseName.substring(0, baseName.length() - 4);
-			dzExt = ".DZ";
-			asmExt = ".ASM";
-			prnExt = ".PRN";
+			uppercase = true;
 		} else {
 			if (baseName.matches(".*\\.com")) {
 				basePath = basePath.substring(0, basePath.length() - 4);
 				baseName = baseName.substring(0, baseName.length() - 4);
 			}
-			dzExt = ".dz";
-			asmExt = ".asm";
-			prnExt = ".prn";
+			uppercase = false;
 		}
-		// TODO: ignore case, only remove tail.
+		setExts();
 		File dz = new File(basePath + dzExt);
 		if (dz.exists()) {
 			loadDZ(dz);	// resets statBase...
 		}
+		// TODO: auto-load hints?
 		jobActive(true);
 		setCodeWin(base);
 		setDumpWin(base);
@@ -928,6 +938,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 					bb = (n & 0xff);
 					// TODO: common code...
 					switch (bb) {
+					case 'L':
+						n = 2;
+						break;
 					case '0':
 						n = lenTo(addr, 0, false); // n >= 1
 						break;
@@ -986,6 +999,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			z = read(a) | (read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
+			mksym(z);
+			break;
+		case 'T':
+			// assert: n == 3
+			z = read(a + 1) | (read(a + 2) << 8);
+			mksym(z);
+			break;
+		case 'Q':
+			// assert: n == 4
+			z = read(a + 2) | (read(a + 3) << 8);
 			mksym(z);
 			break;
 		}
@@ -1451,17 +1474,18 @@ if (orphaned(a)) t += '!'; else t += ' ';
 					b = '7' | 0x0100; // (non-zero hi byte)
 				} else if (ss[1].equals("$")) {
 					b = '$' | 0x0100; // (non-zero hi byte)
+				} else if (ss[1].equalsIgnoreCase("l")) {
+					b = 'L' | 0x0100; // (non-zero hi byte)
 				} else {
 					return false;
 				}
 			} else {
 				b = 1;
 			}
-			calls.put(a, b);
+			calls.put(a, b); // duplicates overwritten
 		} else if (c == '+') {
 			if (ss.length != 1) return false;
-			// TODO: how/when to process this
-			codes.add(a);
+			codes.add(a); // TODO: reject duplicates
 		} else {
 			return false;
 		}
@@ -1509,6 +1533,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		stat.setText(statBase);
 	}
 
+	// TODO: cummulative? or start from scratch?
 	private void loadHints(File in) throws Exception {
 		BufferedReader lin = new BufferedReader(new FileReader(in));
 		String s;
@@ -1543,6 +1568,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		// TODO: preserve current location?
 		setCursor(base);
 		// TODO: indicate hints loaded...
+		if (codes.size() > 0) {
+			mi_sch.setEnabled(true);
+		}
 	}
 
 	// TODO: address range?
@@ -1559,13 +1587,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			n = getLen(a);
 			if (n == 0) n = 1;
 			symLine(a, n, bk);
-			++a;	// already got this break, if any
-			--n;	//
-			while (n > 0) {
-				b = getBrk(a++);
-				if (b != 0) bk = b;
-				--n;
-			}
+			b = lastBrk(a, n);
+			if (b != 0) bk = b;
+			a += n;
 		}
 	}
 
@@ -1693,6 +1717,24 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		return -1;
 	}
 
+	private void setExts() {
+		dzExt = ".dz";
+		hintExt = ".dzh";
+		if (dis instanceof Z80DisassemblerMAC80) {
+			asmExt = ".asm";
+			prnExt = ".prn";
+		} else {
+			asmExt = ".z80";
+			prnExt = ".lst";
+		}
+		if (uppercase) {
+			dzExt = dzExt.toUpperCase();
+			hintExt = hintExt.toUpperCase();
+			asmExt = asmExt.toUpperCase();
+			prnExt = prnExt.toUpperCase();
+		}
+	}
+
 	private void menuAction(JMenuItem m) {
 		int key = m.getMnemonic();
 		if (key == KeyEvent.VK_Q) {
@@ -1776,6 +1818,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			doAnalyze();
 			return;
 		}
+		if (key == KeyEvent.VK_Y) {
+			doAnaHints();
+			return;
+		}
 		if (key == KeyEvent.VK_R) {
 			// In somecases, this warrants a repaint...
 			fresh();
@@ -1789,6 +1835,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				dis = new Z80DisassemblerMAC80(this);
 			}
 			disHint();
+			setExts();
 			code.repaint();
 			return;
 		}
@@ -1852,6 +1899,25 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				String.format("%d New Orphans Found", orphans));
 		} else {
 			PopupFactory.inform(frame, "Scan",
+				String.format("No New Orphans Found", orphans));
+		}
+		// We have no idea how far-reaching this was...
+		// probably need to rebuild all breaks...???
+		resetBreaks(base, true);
+		code.repaint();
+	}
+
+	private void doAnaHints() {
+		// TODO: more stats?
+		orphans = 0;
+		for (int pc : codes) {
+			analyze(pc);
+		}
+		if (orphans > 0) {
+			PopupFactory.inform(frame, "Scan Hints",
+				String.format("%d New Orphans Found", orphans));
+		} else {
+			PopupFactory.inform(frame, "Scan Hints",
 				String.format("No New Orphans Found", orphans));
 		}
 		// We have no idea how far-reaching this was...
