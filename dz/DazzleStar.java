@@ -40,6 +40,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	byte[] vst;	// visits and orphans
 	byte[] len;	// length of "instructions" (lines)
 	Map<Integer,String> symtab;
+	Map<Integer,String> cmnts;
 	Stack<Integer> prevs;
 	Map<Integer,Integer> calls;	// registered inline-param functs
 	Vector<Integer> codes;	// pre-register code sections/entries
@@ -68,6 +69,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JRadioButton src_beg;
 	JRadioButton src_cur;
 	JCheckBox src_wrp;
+	JPanel cmt_pan;
+	JTextField cmt_txt;
 	JPanel err_pan;
 	JEditorPane err_txt;
 	JLabel err_lbl;
@@ -154,6 +157,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			dis = new Z80DisassemblerMAC80(this);
 		}
 		symtab = new HashMap<Integer,String>();
+		cmnts = new HashMap<Integer,String>();
 		calls = new HashMap<Integer,Integer>();
 		codes = new Vector<Integer>();
 		prevs = new Stack<Integer>();
@@ -336,6 +340,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		src_beg.setSelected(true);
 		src_wrp.setSelected(false);
 
+		cmt_pan = new JPanel();
+		cmt_pan.setLayout(new BoxLayout(cmt_pan, BoxLayout.Y_AXIS));
+		cmt_txt = new JTextField();
+		cmt_txt.setPreferredSize(new Dimension(300, 20));
+		cmt_txt.setEditable(true);
+		cmt_pan.add(new JLabel(" "));
+		cmt_pan.add(cmt_txt);
+
 		err_pan = new JPanel();
 		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
 		// TODO: need better handling, don't require focus in err_txt/pan.
@@ -403,6 +415,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		codes.clear();
 		mi_sch.setEnabled(false);
 		symtab.clear();
+		cmnts.clear();
 		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
 		baseName = com.getName();
@@ -1317,6 +1330,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				t += "        ";
 			}
 			t += disLine(a, n, bk, st, rx);
+			if (cmnts.containsKey(a)) {
+				t += " ;";
+				t += cmnts.get(a);
+			}
 			g2d.drawString(t, x, y);
 			y += _fh;
 			b = lastBrk(a, n);
@@ -1405,6 +1422,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (!s.equals("   ")) {
 				ps.format("-%04x,%s\n", a, s);
 			}
+			// for now, only minor comments...
+			if (cmnts.containsKey(a)) {
+				ps.format("/%04x %s\n", a, cmnts.get(a));
+			}
 		}
 		ps.close();
 		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
@@ -1446,6 +1467,15 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (bk != 0) putBrk(a, bk);
 			if (st != 0) putStyle(a, st);
 			if (rx != 0) putRadix(a, rx);
+		} else if (c == '/') {	// minor comment /AAAA s...
+			ss = s.split(" ", 2);
+			if (ss.length != 2) return false;
+			try {
+				a = Integer.valueOf(ss[0], 16);
+			} catch (Exception ee) {
+				return false; // provide ee.getString()?
+			}
+			cmnts.put(a, ss[1]);
 		} else if (Character.isLetter(c)) { // symbol: XAAAA[ name]
 			ss = s.split(" ");
 			try {
@@ -1637,9 +1667,17 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (n == 0) n = 1;
 			ps.format("\t");
 			ps.format(disLineTab(a, n, bk, st, rx));
-			// TODO: optional: (also, more tabs as needed)
-			if (bk == 'I') {
-				// already indented by 8... so use 24 not 32...
+			if (cmnts.containsKey(a)) {
+				// already indented 8... so use 24 not 32...
+				while (dislen < 24) {
+					ps.format("\t");
+					dislen = (dislen & ~7) + 8;
+				}
+				ps.format(";");
+				ps.format(cmnts.get(a));
+			} else if (bk == 'I') {
+				// TODO: optional? all breaks?
+				// already indented 8... so use 24 not 32...
 				while (dislen < 24) {
 					ps.format("\t");
 					dislen = (dislen & ~7) + 8;
@@ -1708,6 +1746,11 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			}
 			// TODO: need label...
 			ps.format(disLine(a, n, bk, st, rx));
+			// TODO: alignment...
+			if (cmnts.containsKey(a)) {
+				ps.format(" ;");
+				ps.format(cmnts.get(a));
+			}
 			ps.format("\n");
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
@@ -2066,6 +2109,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			dest.requestFocus();
 		} else if (c == 'F') {
 			follow();
+		} else if (c == '/') {
+			doComment();
 		} else if (c == 'V') {
 			if (!prevs.empty()) {
 				int a = prevs.pop();
@@ -2076,6 +2121,27 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		} else {
 			// more keys
 		}
+	}
+
+	private void doComment() {
+		if (cmnts.containsKey(cursor)) {
+			cmt_txt.setText(cmnts.get(cursor));
+		} else {
+			cmt_txt.setText("");
+		}
+		int res = JOptionPane.showConfirmDialog(frame, cmt_pan,
+					"Comment",
+					JOptionPane.OK_CANCEL_OPTION);
+		if (res != JOptionPane.OK_OPTION) {
+			return;
+		}
+		if (cmt_txt.getText().length() == 0) {
+			cmnts.remove(cursor);
+			code.repaint();
+			return;
+		}
+		cmnts.put(cursor, cmt_txt.getText());
+		code.repaint();
 	}
 
 	private void doSearch() {
