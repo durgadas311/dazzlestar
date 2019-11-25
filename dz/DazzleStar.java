@@ -103,6 +103,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	Properties props = new Properties();
 	Vector<Z80Dissed> zdv = new Vector<Z80Dissed>();
+	int dislen;
 
 	public static void main(String[] args) {
 		_us = new DazzleStar(args);
@@ -129,6 +130,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			cfg.close();
 		} catch(Exception ee) {
 			rc = null;
+		}
+		String s = props.getProperty("disas");
+		if (s != null && s.equalsIgnoreCase("ZILOG")) {
+			dis = new Z80DisassemblerZilog(this);
 		}
 		File fi = null;
 		for (int x = 0; x < args.length; ++x) {
@@ -234,7 +239,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		String fn = "Monospaced";
 		clines = 24;
 		dlines = 6;
-		String s = props.getProperty("code_win");
+		s = props.getProperty("code_win");
 		if (s != null) {
 			clines = Integer.valueOf(s);
 		}
@@ -1084,20 +1089,31 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	// TODO: when to auto-create symbols?
 	private String disMulti(Z80Dissed d, String sep) {
 		String l;
+		int seplen = 8;
+		if (sep != null && !sep.equals("\t")) {
+			seplen = d.op.length() + sep.length();
+		}
 		if (d.addr < 0) {
 			if (d.fmt == null) {
+				dislen = d.op.length();
 				return d.op;
 			} else if (sep == null) {
-				return String.format("%-8s%s", d.op, d.fmt);
+				l = String.format("%-8s%s", d.op, d.fmt);
+				dislen = l.length();
+				return l;
 			} else {
+				dislen = seplen + d.fmt.length();
 				return d.op + sep + d.fmt;
 			}
 		} else if (sep == null) {
-			return String.format("%-8s%s", d.op,
+			l = String.format("%-8s%s", d.op,
 				String.format(d.fmt, getsym(d.addr)));
+			dislen = l.length();
+			return l;
 		} else {
-			return d.op + sep +
-				String.format(d.fmt, getsym(d.addr));
+			l = String.format(d.fmt, getsym(d.addr));
+			dislen = seplen + l.length();
+			return d.op + sep + l;
 		}
 	}
 
@@ -1239,6 +1255,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				if (x++ > 0) s += " ! ";
 				s += disMulti(d, " ");
 			}
+			dislen = s.length();
 			return s;
 		} else {
 			return disMulti(zdv.get(0), "\t");
@@ -1621,12 +1638,25 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			ps.format("\t");
 			ps.format(disLineTab(a, n, bk, st, rx));
 			// TODO: optional: (also, more tabs as needed)
-			ps.format("\t;; %04x:", a);
-			for (z = 0; z < 4; ++z) {
-				if (z < n) {
-					ps.format(" %02x", read(a + z));
-				} else {
-					ps.format("   ");
+			if (bk == 'I') {
+				// already indented by 8... so use 24 not 32...
+				while (dislen < 24) {
+					ps.format("\t");
+					dislen = (dislen & ~7) + 8;
+				}
+				ps.format(";; %04x:", a);
+				for (z = 0; z < 4; ++z) {
+					if (z < n) {
+						ps.format(" %02x", read(a + z));
+					} else {
+						ps.format("   ");
+					}
+				}
+				ps.format(" ");
+				for (z = 0; z < n && z < 4; ++z) {
+					b = read(a + z);
+					if (b < ' ' || b > '~') b = '.';
+					ps.format("%c", b);
 				}
 			}
 			ps.format("\n");
