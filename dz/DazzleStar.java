@@ -495,6 +495,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return ((vst[a - base] & 2) != 0);
 	}
 
+	private boolean constant(int a) {
+		return ((vst[a - base] & 4) != 0);
+	}
+
+	private void toggleConst(int a) {
+		vst[a - base] ^= 4;
+	}
+
+	private void setConst(int a) {
+		vst[a - base] |= 4;
+	}
+
+	private void resConst(int a) {
+		vst[a - base] &= ~4;
+	}
+
 	private void visit(int a) {
 		vst[a - base] |= 1;
 	}
@@ -509,6 +525,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void fresh() {
+		// TODO: don't lose constants?
 		Arrays.fill(vst, (byte)0);
 	}
 
@@ -917,11 +934,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				bk = 'I';
 				putBrk(addr, bk);	// adopt()s also
 			}
+			boolean k = constant(addr);
 			addr += d.len;
 			if (d.addr < 0) {
 				continue;
 			}
-			mksym(d.addr);
+			if (!k) mksym(d.addr);
 			if (d.type == Z80Dissed.LXI || d.type == Z80Dissed.LDI) {
 				// can't make any assumptions
 				continue;
@@ -1003,7 +1021,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		case 'I':
 			// assert: n == dis.intrLen()
 			d = dis.disas(a);
-			if (d.addr >= 0) {
+			if (d.addr >= 0 && !constant(a)) {
 				mksym(d.addr);
 			}
 			break;
@@ -1052,7 +1070,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (e < ' ' || e > '~') {
 			return fmtNum(e, rdx);
 		} else {
-			return String.format("'%c'", (char)e);
+			if (e == '\'') return "''''";
+			else return String.format("'%c'", (char)e);
 		}
 	}
 
@@ -1100,7 +1119,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	// TODO: when to auto-create symbols?
-	private String disMulti(Z80Dissed d, String sep) {
+	private String disMulti(int a, Z80Dissed d, String sep) {
 		String l;
 		int seplen = 8;
 		if (sep != null && !sep.equals("\t")) {
@@ -1118,15 +1137,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				dislen = seplen + d.fmt.length();
 				return d.op + sep + d.fmt;
 			}
-		} else if (sep == null) {
-			l = String.format("%-8s%s", d.op,
-				String.format(d.fmt, getsym(d.addr)));
-			dislen = l.length();
-			return l;
 		} else {
-			l = String.format(d.fmt, getsym(d.addr));
-			dislen = seplen + l.length();
-			return d.op + sep + l;
+			if (constant(a)) {
+				// TODO: honor radix?
+				l = String.format(d.fmt,
+					String.format("0%04xh", d.addr));
+			} else {
+				l = String.format(d.fmt, getsym(d.addr));
+			}
+			if (sep == null) {
+				l = String.format("%-8s%s", d.op, l);
+				dislen = l.length();
+				return l;
+			} else {
+				dislen = seplen + l.length();
+				return d.op + sep + l;
+			}
 		}
 	}
 
@@ -1244,11 +1270,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			int x = 0;
 			for (Z80Dissed d : zdv) {
 				if (x++ > 0) s += " ! ";
-				s += disMulti(d, " ");
+				s += disMulti(a, d, " ");
 			}
 			return s;
 		} else {
-			return disMulti(zdv.get(0), null);
+			return disMulti(a, zdv.get(0), null);
 		}
 	}
 
@@ -1265,12 +1291,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			int x = 0;
 			for (Z80Dissed d : zdv) {
 				if (x++ > 0) s += " ! ";
-				s += disMulti(d, " ");
+				s += disMulti(a, d, " ");
 			}
 			dislen = s.length();
 			return s;
 		} else {
-			return disMulti(zdv.get(0), "\t");
+			return disMulti(a, zdv.get(0), "\t");
 		}
 	}
 
@@ -1425,6 +1451,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (cmnts.containsKey(a)) {
 				ps.format("/%04x %s\n", a, cmnts.get(a));
 			}
+			if (constant(a)) {
+				ps.format("%%%04x\n", a);
+			}
 		}
 		ps.close();
 		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
@@ -1445,6 +1474,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
+			// TODO: error, or ignored?
+			if (a < base || a >= end) return false;
 			// TODO: validate each char...
 			if (ss[1].length() > 0) {
 				// Special case, from orig "SA" command,
@@ -1475,6 +1506,15 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				return false; // provide ee.getString()?
 			}
 			cmnts.put(a, ss[1]);
+		} else if (c == '%') {	// LXI constant operand
+			try {
+				a = Integer.valueOf(s, 16);
+			} catch (Exception ee) {
+				return false; // provide ee.getString()?
+			}
+			// TODO: error, or ignored?
+			if (a < base || a >= end) return false;
+			setConst(a);
 		} else if (Character.isLetter(c)) { // symbol: XAAAA[ name]
 			ss = s.split(" ");
 			try {
@@ -1548,6 +1588,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		Arrays.fill(rdx, (byte)0);
 		Arrays.fill(sty, (byte)0);
 		Arrays.fill(len, (byte)0);
+		Arrays.fill(vst, (byte)0); // yes? or else
+		// OR: for (int x = 0; x < vst.length; ++x) resConst(x);
 		clearSymtab();
 		int c;
 		int e = 0;
@@ -1637,6 +1679,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (b != 0) bk = b;
 			a += n;
 		}
+		code.repaint();
 	}
 
 	private void generateASM(File asm, int first, int last) throws Exception {
@@ -1661,24 +1704,24 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (r != 0) rx = r;
 			l = lookup(a);
 			if (l != null) ps.format("%s:", l);
-			//	if (l.length() > 7) ps.format("\n");
+			//	if (l.length() > 7) ps.print("\n");
 			n = getLen(a);
 			if (n == 0) n = 1;
-			ps.format("\t");
-			ps.format(disLineTab(a, n, bk, st, rx));
+			ps.print("\t");
+			ps.print(disLineTab(a, n, bk, st, rx));
 			if (cmnts.containsKey(a)) {
 				// already indented 8... so use 24 not 32...
 				while (dislen < 24) {
-					ps.format("\t");
+					ps.print("\t");
 					dislen = (dislen & ~7) + 8;
 				}
-				ps.format(";");
-				ps.format(cmnts.get(a));
+				ps.print(";");
+				ps.print(cmnts.get(a));
 			} else if (bk == 'I') {
 				// TODO: optional? all breaks?
 				// already indented 8... so use 24 not 32...
 				while (dislen < 24) {
-					ps.format("\t");
+					ps.print("\t");
 					dislen = (dislen & ~7) + 8;
 				}
 				ps.format(";; %04x:", a);
@@ -1686,17 +1729,17 @@ if (orphaned(a)) t += '!'; else t += ' ';
 					if (z < n) {
 						ps.format(" %02x", read(a + z));
 					} else {
-						ps.format("   ");
+						ps.print("   ");
 					}
 				}
-				ps.format(" ");
+				ps.print(" ");
 				for (z = 0; z < n && z < 4; ++z) {
 					b = read(a + z);
 					if (b < ' ' || b > '~') b = '.';
 					ps.format("%c", b);
 				}
 			}
-			ps.format("\n");
+			ps.print("\n");
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
 			r = lastRadix(a, n);
@@ -1735,22 +1778,22 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				if (z < n) {
 					ps.format("%02x", read(a + z));
 				} else {
-					ps.format("  ");
+					ps.print("  ");
 				}
 			}
 			if (z < n) {
-				ps.format("+ ");
+				ps.print("+ ");
 			} else {
-				ps.format("  ");
+				ps.print("  ");
 			}
 			// TODO: need label...
-			ps.format(disLine(a, n, bk, st, rx));
+			ps.print(disLine(a, n, bk, st, rx));
 			// TODO: alignment...
 			if (cmnts.containsKey(a)) {
-				ps.format(" ;");
-				ps.format(cmnts.get(a));
+				ps.print(" ;");
+				ps.print(cmnts.get(a));
 			}
-			ps.format("\n");
+			ps.print("\n");
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
 			r = lastRadix(a, n);
@@ -2114,6 +2157,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			follow();
 		} else if (c == '/') {
 			doComment();
+		} else if (c == 'K') {
+			doConstant();
 		} else if (c == 'V') {
 			if (!prevs.empty()) {
 				int a = prevs.pop();
@@ -2124,6 +2169,19 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		} else {
 			// more keys
 		}
+	}
+
+	private void doConstant() {
+		int bk = activeBreak(cursor);
+		if (bk != 0 && bk != 'I') return;
+		Z80Dissed d = dis.disas(cursor);
+		if (d.type != Z80Dissed.LXI) return;
+		// assert: d.addr >= 0
+		toggleConst(cursor);
+		if (!constant(cursor)) {
+			mksym(d.addr);
+		}
+		code.repaint();
 	}
 
 	private void doComment() {
