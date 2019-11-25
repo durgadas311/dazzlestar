@@ -25,8 +25,10 @@ Analyzer.jar: all
 	jar -cmf Manifest.txt Analyzer.jar Analyzer.class \
 		Memory.class Z80*.class
 
-ship: # jar src
+release: # jar src
 	rsync -Wuv DazzleStar.jar ../jar
+
+ship: release # jar src
 	rsync -Wuv ../jar/*.jar README $(DEST)
 	rsync -Wuv docs/dz*.html $(DEST)
 

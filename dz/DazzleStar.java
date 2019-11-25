@@ -1168,7 +1168,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			d.type = Z80Dissed.JMP; // good enough?
 			break;
 		case 'T':
-//System.err.format("T: bk='%c' st='%c' rx='%c'\n", bk, st, rx);
 			// assert: n == 3
 			y = read(a);
 			z = read(a + 1) | (read(a + 2) << 8);
@@ -2045,6 +2044,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			a = read(cursor) | (read(cursor + 1) << 8);
 			a += cursor;
 			a &= 0xffff;
+		} else if (bk == 'T') {
+			a = read(cursor + 1) | (read(cursor + 2) << 8);
+		} else if (bk == 'Q') {
+			a = read(cursor + 2) | (read(cursor + 3) << 8);
 		}
 		if (a < base || a >= end) return;
 		pushPrev(cursor);
