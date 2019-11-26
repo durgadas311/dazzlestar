@@ -1686,6 +1686,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		// TODO: resetBreaks(base, true); ?
 		PrintStream ps = new PrintStream(asm);
 		String l;
+		Z80Dissed d;
 		int b, s, r;
 		int z;
 		int n;
@@ -1740,6 +1741,13 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				}
 			}
 			ps.print("\n");
+			if (bk == 'I') {
+				d = zdv.get(0);
+				if (d.type == Z80Dissed.JMP ||
+						d.type == Z80Dissed.RET) {
+					ps.print("\n");
+				}
+			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
 			r = lastRadix(a, n);
@@ -1755,6 +1763,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 	private void generatePRN(File prn, int first, int last) throws Exception {
 		// TODO: resetBreaks(base, true); ?
 		PrintStream ps = new PrintStream(prn);
+		String l;
+		Z80Dissed d;
 		int b, s, r;
 		int z;
 		int n;
@@ -1786,14 +1796,28 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			} else {
 				ps.print("  ");
 			}
-			// TODO: need label...
-			ps.print(disLine(a, n, bk, st, rx));
-			// TODO: alignment...
+			l = lookup(a);
+			if (l != null) ps.format("%s:", l);
+			//	if (l.length() > 7) ps.print("\n");
+			ps.print("\t");
+			ps.print(disLineTab(a, n, bk, st, rx));
 			if (cmnts.containsKey(a)) {
-				ps.print(" ;");
+				// already indented 8... so use 24 not 32...
+				while (dislen < 24) {
+					ps.print("\t");
+					dislen = (dislen & ~7) + 8;
+				}
+				ps.print(";");
 				ps.print(cmnts.get(a));
 			}
 			ps.print("\n");
+			if (bk == 'I') {
+				d = zdv.get(0);
+				if (d.type == Z80Dissed.JMP ||
+						d.type == Z80Dissed.RET) {
+					ps.print("\n");
+				}
+			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
 			r = lastRadix(a, n);
