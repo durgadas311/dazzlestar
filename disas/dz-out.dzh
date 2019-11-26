@@ -1,0 +1,22 @@
+# obscured by PCHL
++4d4f
+# RST 3 code
++8c87
+# RST 3, 1 inline parm
+*0018,1
+# RST 4 code
++8ca6
+# RST 4, 1 or 2 inline parms
+*0020,-1
+# subroutine with 2 inline parms
+*8d27,2
+*8d71,L
+# *921e,# maybe terminal - data may follow call
+*8c26,1
+*8c3a,1
+# variable length inline, first byte is len
+*75c9,n
+# correct?
+*7397,1
+*75be,1
+*7546,1
