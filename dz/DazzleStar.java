@@ -529,6 +529,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		Arrays.fill(vst, (byte)0);
 	}
 
+	private boolean terminal(int a) {
+		return ((vst[a - base] & 8) != 0);
+	}
+
+	private void setTerm(int a) {
+		vst[a - base] |= 8;
+	}
+
+	private void resTerm(int a) {
+		vst[a - base] &= ~8;
+	}
+
 	private int nextOrphan(int a) {
 		while (++a < end) {
 			if (orphaned(a)) {
@@ -648,6 +660,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	// Setup/rescan breaks and lengths...
 	// stop at next break unless 'all'.
 	private void resetBreaks(int a, boolean all) {
+		Z80Dissed d;
 		int n;
 		int b, s, r;
 		int x = a;
@@ -666,9 +679,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			if (b != 0) bk = b;
 			if (s != 0) st = s;
 			if (r != 0) rx = r;
+			resTerm(x);	// try and keep things clean(er)
 			switch (bk) {
 			case 'I':
-				n = dis.disas(x).len;
+				d = dis.disas(x);
+				n = d.len;
+				if (d.type == Z80Dissed.JMP ||
+						d.type == Z80Dissed.RET) {
+					setTerm(x);
+				}
 				break;
 			case 'B':
 			case 'C':
@@ -708,8 +727,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				n = 1;
 				break;
 			}
-			// honor any breaks we skipped over...
 			setLen(x, n);
+			// honor any breaks we skipped over...
 			b = lastBrk(x, n);
 			s = lastStyle(x, n);
 			r = lastRadix(x, n);
@@ -741,6 +760,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void setCodeWin(int a) {
 		int e = a;
 		for (int x = 0; e < end && x < clines; ++x) {
+			if (terminal(e)) ++x;
 			e += getLen(e);
 		}
 		cwin = a;
@@ -781,7 +801,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int c = cursor + cur_len;
 		if (c >= end) return;
 		if (c >= cend) {
-			scrollUp();
+			scrollUp(); // changes 'cend'
+			if (c >= cend) {
+				scrollUp();
+			}
 		}
 		if (c + getLen(c) > dend) {
 			setDumpWin(dend - 16);
@@ -814,7 +837,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void pageDown() {
 		int c = oneBack(cend);
-		if (c == cursor) return;
 		setCodeWin(c);
 		if (c < dwin) {
 			setDumpWin(c & ~0x0f);
@@ -929,12 +951,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			visit(addr);
 			Z80Dissed d = dis.disas(addr);
-			putLen(addr, d.len);
+			setLen(addr, d.len);
 			if (bk != 'I') {
 				bk = 'I';
 				putBrk(addr, bk);	// adopt()s also
 			}
 			boolean k = constant(addr);
+			if (d.type == Z80Dissed.JMP ||
+					d.type == Z80Dissed.RET) {
+				setTerm(addr);
+			} else {
+				resTerm(addr);
+			}
 			addr += d.len;
 			if (d.addr < 0) {
 				continue;
@@ -1000,10 +1028,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				// handle long strings...
 				int m = n;
 				while (m > 16) {
-					putLen(addr, 16);
+					setLen(addr, 16);
 					m -= 16;
 				}
-				putLen(addr, m);
+				setLen(addr, m);
 				addr += n;
 				putBrk(addr, 'I');
 			}
@@ -1361,6 +1389,11 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			}
 			g2d.drawString(t, x, y);
 			y += _fh;
+			if (terminal(a)) {
+				// doesn't matter if off-screen?
+				y += _fh;
+				++l;
+			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
 			r = lastRadix(a, n);
@@ -1741,12 +1774,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				}
 			}
 			ps.print("\n");
-			if (bk == 'I') {
-				d = zdv.get(0);
-				if (d.type == Z80Dissed.JMP ||
-						d.type == Z80Dissed.RET) {
-					ps.print("\n");
-				}
+			if (terminal(a)) {
+				ps.print("\n");
 			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
@@ -1811,12 +1840,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				ps.print(cmnts.get(a));
 			}
 			ps.print("\n");
-			if (bk == 'I') {
-				d = zdv.get(0);
-				if (d.type == Z80Dissed.JMP ||
-						d.type == Z80Dissed.RET) {
-					ps.print("\n");
-				}
+			if (terminal(a)) {
+				ps.print("\n");
 			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
