@@ -724,12 +724,12 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				break;
 			case 0x23:       /* INC IX */
 				instr.op = "inc";
-				instr.op = String.format("i%c", regIXY);
+				instr.fmt = String.format("i%c", regIXY);
 				--lastLen;
 				break;
 			case 0x24:       /* INC IXh */
 				instr.op = "inc";
-				instr.op = String.format("i%ch", regIXY);
+				instr.fmt = String.format("i%ch", regIXY);
 				--lastLen;
 				break;
 			case 0x25:       /* DEC IXh */

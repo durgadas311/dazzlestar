@@ -924,14 +924,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return l;
 	}
 
-	private String mksym(int a) {
+	private void mksym(int a) {
 		String l = lookup(a);
 		if (l != null) {
-			return l;
+			return;
 		}
+		// TODO: what is the upper limit?
+		if (a < base || a > 0xc000) return;
 		l = String.format("L%04x", a);
 		putsym(a, l);
-		return l;
 	}
 
 	private void clearSymtab() {
@@ -1095,7 +1096,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	// TODO: make this usable from asmString()...
 	private String asmChar(int e, int rdx) {
-		if (e < ' ' || e > '~') {
+		if (e < ' ' || e > '~' || e == '!') {
 			return fmtNum(e, rdx);
 		} else {
 			if (e == '\'') return "''''";
@@ -1118,7 +1119,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			} else {
 				e = c;
 			}
-			if (e < ' ' || e > '~') {
+			if (e < ' ' || e > '~' || e == '!') {
 				if (q) { s += '\''; q = false; }
 				if (s.length() > 0) s += ',';
 				s += fmtNum(c, rdx);
@@ -1729,6 +1730,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		if (st == 0) st = 'M';
 		int rx = activeRadix(first);
 		if (rx == 0) rx = 'H';
+		// TODO: ps.print("\tmaclib\tz80\n");
+		ps.format("\torg\t0%04xh\n", base);
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			s = getStyle(a);
@@ -1769,13 +1772,19 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				ps.print(" ");
 				for (z = 0; z < n && z < 4; ++z) {
 					b = read(a + z);
-					if (b < ' ' || b > '~') b = '.';
+					if (b < ' ' || b > '~' || b == '!') b = '.';
 					ps.format("%c", b);
 				}
 			}
 			ps.print("\n");
 			if (terminal(a)) {
 				ps.print("\n");
+			}
+			for (z = 1; z < n; ++z) {
+				l = lookup(a + z);
+				if (l != null) {
+					ps.format("%s\tequ\t$-%d\n", l, n - z);
+				}
 			}
 			b = lastBrk(a, n);
 			s = lastStyle(a, n);
@@ -1785,6 +1794,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (r != 0) rx = r;
 			a += n;
 		}
+		ps.print("\tend\n");
 		ps.close();
 		stat.setText(statBase + " ASM saved");
 	}
