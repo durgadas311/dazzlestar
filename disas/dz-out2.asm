@@ -1735,7 +1735,11 @@ L10d3:	call	L8d27		;; 10d3: cd 27 8d    .'.
 	db	4
 L10e7:	ldx	a,-123		;; 10e7: dd 7e 85    .~.
 	ora	a		;; 10ea: b7          .
+ if userst
+	jrz	L1158		;; 10eb: 28 6b       (k
+ else
 	jz	L1158		;; 10eb: 28 6b       (k
+ endif
 	rst3			;; 10ed: df          .
 	db	84h
 	inx	h		;; 10ef: 23          #
@@ -1813,7 +1817,11 @@ L114c:	rst3			;; 114c: df          .
 	db	80h
 	rst3			;; 1154: df          .
 	db	4
+ if userst
+	jr	L10e7		;; 1156: 18 8f       ..
+ else
 	jmp	L10e7		;; 1156: 18 8f       ..
+ endif
 
 L1158:	ldx	a,-122		;; 1158: dd 7e 86    .~.
 	jmp	L8d56		;; 115b: c3 56 8d    .V.
@@ -2015,7 +2023,11 @@ L1270:	call	L8c26		;; 1270: cd 26 8c    .&.
 	pop	psw		;; 1291: f1          .
 	ana	b		;; 1292: a0          .
 	rar			;; 1293: 1f          .
+ if userst
+	jrnc	L1312		;; 1294: 30 7c       0|
+ else
 	jnc	L1312		;; 1294: 30 7c       0|
+ endif
 	lxi	h,0ff86h	;; 1296: 21 86 ff    ...
 	rst2			;; 1299: d7          .
 	push	h		;; 129a: e5          .
@@ -4905,7 +4917,11 @@ L2962:	call	L0977		;; 2962: cd 77 09    .w.
 L2965:	ldx	a,-122		;; 2965: dd 7e 86    .~.
 	xri	001h		;; 2968: ee 01       ..
 	rar			;; 296a: 1f          .
+ if userst
+	jrnc	L29dc		;; 296b: 30 6f       0o
+ else
 	jnc	L29dc		;; 296b: 30 6f       0o
+ endif
 	lhld	L1d43		;; 296d: 2a 43 1d    *C.
 	rst3			;; 2970: df          .
 	db	4
@@ -6763,7 +6779,11 @@ L3840:	rst3			;; 3840: df          .
 L385a:	call	L0c91		;; 385a: cd 91 0c    ...
 	lda	L1c5a		;; 385d: 3a 5a 1c    :Z.
 	rar			;; 3860: 1f          .
+ if userst
+	jrnc	L38d6		;; 3861: 30 73       0s
+ else
 	jnc	L38d6		;; 3861: 30 73       0s
+ endif
 	rst3			;; 3863: df          .
 	db	90h
 	push	h		;; 3865: e5          .
@@ -11593,7 +11613,12 @@ L5fd0:	rst3			;; 5fd0: df          .
 	db	8ah
 	rst3			;; 5fd2: df          .
 	db	8
-L5fd4:	jmp	L5f66		;; 5fd4: 18 90       ..
+L5fd4:
+ if userst
+	jr	L5f66		;; 5fd4: 18 90       ..
+ else
+	jmp	L5f66		;; 5fd4: 18 90       ..
+ endif
 
 L5fd6:	rst3			;; 5fd6: df          .
 	db	8ch
@@ -11889,7 +11914,11 @@ L61a4:	call	L8d27		;; 61a4: cd 27 8d    .'.
 	lhld	L1a28		;; 61bd: 2a 28 1a    *(.
 	ora	a		;; 61c0: b7          .
 	dsbc	b		;; 61c1: ed 42       .B
+ if userst
+	jrc	L623c		;; 61c3: 38 77       8w
+ else
 	jc	L623c		;; 61c3: 38 77       8w
+ endif
 	lhld	L1a2a		;; 61c5: 2a 2a 1a    **.
 	rst4			;; 61c8: e7          .
 	db	87h
@@ -12524,7 +12553,11 @@ L6635:	lxi	b,00006h	;; 6635: 01 06 00    ...
 	call	L5e1e		;; 6645: cd 1e 5e    ..^
 	ldx	a,-118		;; 6648: dd 7e 8a    .~.
 	ora	a		;; 664b: b7          .
+ if userst
+	jrnz	L66bb		;; 664c: 20 6d        m
+ else
 	jnz	L66bb		;; 664c: 20 6d        m
+ endif
 	rst3			;; 664e: df          .
 	db	94h
 	rst3			;; 6650: df          .
@@ -12751,7 +12784,11 @@ L67d5:	lhld	L02f3		;; 67d5: 2a f3 02    *..
 	call	L7bb7		;; 67d9: cd b7 7b    ..{
 	rar			;; 67dc: 1f          .
 	jrnc	L67e1		;; 67dd: 30 02       0.
+ if userst
+	jr	L6857		;; 67df: 18 76       .v
+ else
 	jmp	L6857		;; 67df: 18 76       .v
+ endif
 
 L67e1:	call	L763d		;; 67e1: cd 3d 76    .=v
 	lhld	L02f3		;; 67e4: 2a f3 02    *..
