@@ -2,6 +2,7 @@
 userst	equ	0
 
 	maclib	z80
+esc	equ	27
 
  if userst
 
@@ -41,14 +42,14 @@ L0100:	jmp	L4d49		;program entry
 
 L0103:	db	0,0
 L0105:	db	0,0,86h,11h,1
-L010a:	db	'#COPYRIGHT (C) 1'
-	db	'986 JOHN WASHING'
-	db	'TON ',0,0,0,0,0,0,0,0,0,0,0,0
-	db	0,0,0,0,0,0,0,0,1ah
-L0143:	db	8,'Kaypro 4',0,'ler AD'
-	db	'M seriesy?& Trou'
-	db	't CP/M 2.2 F800',0
-	db	0,0,0,0,0,0,0,0,0
+L010a:	db	35,'COPYRIGHT (C) 1986 JOHN WASHINGTON ',0
+	db	0,0,0,0,0,0,0,0,0,0,0
+	db	0,0,0,0,0,0,0,0
+	db	1ah
+L0143:	db	7,'H19/H89',0
+	rept	017ch-$
+	db	0
+	endm
 L017c:	db	0ffh
 L017d:	db	'P'
 L017e:	db	11h
@@ -87,22 +88,33 @@ L01b1:	db	'DZENGMNU.OVR',0,0
 L01bf:	db	0ch,'DZENGHLP.OVR',0,0
 L01ce:	db	0ch,'DZENGMSG.OVR',0,0
 L01dd:	db	0e8h,3
-L01df:	db	18h,'P'
+L01df:	db	24,80	; terminal rows, cols
+; term init
 L01e1:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+; term exit
 L01f1:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-L0201:	db	2,1bh,'=',0,0,0,0,0,0,0,0,0,0,0,0,0
+; cursor addr pre seq
+L0201:	db	2,esc,'Y',0,0,0,0,0,0,0,0,0,0,0,0,0
+; cursor addr sep seq
 L0211:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+; cursor addr end seq
 L0221:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-L0231:	db	0
-L0232:	db	' '
-L0233:	db	' '
-L0234:	db	0
-L0235:	db	1,18h,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-	db	2,1bh,'R',0,0,0,0,0,0,0,0,0,0,0,0,0
-	db	2,1bh,'E',0,0,0,0,0,0,0,0,0,0,0,0,0
-	db	1,1ah,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-L0275:	db	3,1bh,'B0',0,0,0,0,0,0,0,0,0,0,0,0
-L0285:	db	3,1bh,'C0',0,0,0,0,0,0,0,0,0,0,0,0
+L0231:	db	0	; 0=row first curs addr
+L0232:	db	' '	; cursor addr row off
+L0233:	db	' '	; cursor addr col off
+L0234:	db	0	; 0=binary curs addr
+; erase to EOL seq
+L0235:	db	2,esc,'K',0,0,0,0,0,0,0,0,0,0,0,0,0
+; delete line seq
+	db	2,esc,'M',0,0,0,0,0,0,0,0,0,0,0,0,0
+; insert line seq
+	db	2,esc,'L',0,0,0,0,0,0,0,0,0,0,0,0,0
+; clear screen seq
+	db	2,esc,'E',0,0,0,0,0,0,0,0,0,0,0,0,0
+; rev video seq
+L0275:	db	2,esc,'p',0,0,0,0,0,0,0,0,0,0,0,0,0
+; norm video seq
+L0285:	db	2,esc,'q',0,0,0,0,0,0,0,0,0,0,0,0,0
 L0295:	db	8
 L0296:	db	0
 L0297:	db	0
