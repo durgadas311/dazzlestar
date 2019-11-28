@@ -52,8 +52,7 @@ L01ce:	db	0ch,'DZENGMSG.OVR',0,0
 L01dd:	db	0e8h,3
 L01df:	db	18h,'P'
 L01e1:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-L01f1:	db	0,0,0,0,0,0,0,0,0,0,0,0,0
-L01fe:	db	0,0,0
+L01f1:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 L0201:	db	2,1bh,'=',0,0,0,0,0,0,0,0,0,0,0,0,0
 L0211:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 L0221:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -65,8 +64,7 @@ L0235:	db	1,18h,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	2,1bh,'R',0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	2,1bh,'E',0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	1,1ah,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-L0275:	db	3,1bh,'B0',0,0,0
-L027c:	db	0,0,0,0,0,0,0,0,0
+L0275:	db	3,1bh,'B0',0,0,0,0,0,0,0,0,0,0,0,0
 L0285:	db	3,1bh,'C0',0,0,0,0,0,0,0,0,0,0,0,0
 L0295:	db	8
 L0296:	db	0
@@ -163,7 +161,7 @@ L041f:	lda	L02ac		;; 041f: 3a ac 02    :..
 	call	L72e8		;; 0429: cd e8 72    ..r
 	jr	L0438		;; 042c: 18 0a       ..
 
-L042e:	mvi	a,00ch		;; 042e: 3e 0c       >.
+L042e:	mvi	a,00ch		;BIOS conout
 	push	psw		;; 0430: f5          .
 	ldx	a,-125		;; 0431: dd 7e 83    .~.
 	push	psw		;; 0434: f5          .
@@ -223,7 +221,7 @@ L0496:	call	L8d27		;; 0496: cd 27 8d    .'.
 	lda	L02b1		;; 049f: 3a b1 02    :..
 	rar			;; 04a2: 1f          .
 	jrnc	L04c8		;; 04a3: 30 23       0#
-	mvi	a,006h		;; 04a5: 3e 06       >.
+	mvi	a,006h		;BIOS const
 	push	psw		;; 04a7: f5          .
 	mvi	a,000h		;; 04a8: 3e 00       >.
 	push	psw		;; 04aa: f5          .
@@ -231,7 +229,7 @@ L0496:	call	L8d27		;; 0496: cd 27 8d    .'.
 	stx	a,-126		;; 04ae: dd 77 82    .w.
 	ora	a		;; 04b1: b7          .
 	jrz	L04c8		;; 04b2: 28 14       (.
-	mvi	a,009h		;; 04b4: 3e 09       >.
+	mvi	a,009h		;BIOS conin
 	push	psw		;; 04b6: f5          .
 	mvi	a,000h		;; 04b7: 3e 00       >.
 	push	psw		;; 04b9: f5          .
@@ -339,7 +337,6 @@ L0587:	lxi	h,L0285		;; 0587: 21 85 02    ...
 	push	h		;; 058a: e5          .
 	call	L5b56		;; 058b: cd 56 5b    .V[
 L058e:	ldx	a,-125		;; 058e: dd 7e 83    .~.
-L058f	equ	$-2
 	sta	L03f9		;; 0591: 32 f9 03    2..
 	jmp	L8d56		;; 0594: c3 56 8d    .V.
 
@@ -649,7 +646,7 @@ L07ee:	rst	3		;; 07ee: df          .
 	mov	a,l		;; 07fb: 7d          }
 	push	psw		;; 07fc: f5          .
 	call	L0597		;; 07fd: cd 97 05    ...
-L0800:	jmp	L8d56		;; 0800: c3 56 8d    .V.
+	jmp	L8d56		;; 0800: c3 56 8d    .V.
 
 L0803:	call	L8d27		;; 0803: cd 27 8d    .'.
 	db	0feh,'@'
@@ -2400,9 +2397,7 @@ L1561:	lxi	b,02e01h	;; 1561: 01 01 2e    ...
 	lxi	h,L1050		;; 1574: 21 50 10    .P.
 	call	L75ea		;; 1577: cd ea 75    ..u
 	call	L1581		;; 157a: cd 81 15    ...
-	mvi	l,043h		;; 157d: 2e 43       .C
-	mov	c,a		;; 157f: 4f          O
-	mov	c,l		;; 1580: 4d          M
+	db	'.COM'
 L1581:	call	L75e5		;; 1581: cd e5 75    ..u
 	db	4
 	call	L8b20		;; 1585: cd 20 8b    . .
@@ -2481,11 +2476,11 @@ L1606:	lhld	L109d		;; 1606: 2a 9d 10    *..
 	lhld	L10c0		;; 1626: 2a c0 10    *..
 	dcx	h		;; 1629: 2b          +
 	shld	L10c0		;; 162a: 22 c0 10    "..
-	lxi	b,L01fe		;; 162d: 01 fe 01    ...
+	lxi	b,001feh	;; 162d: 01 fe 01    ...
 	ora	a		;; 1630: b7          .
 	dsbc	b		;; 1631: ed 42       .B
 	jrc	L163b		;; 1633: 38 06       8.
-	lxi	h,L01fe		;; 1635: 21 fe 01    ...
+	lxi	h,001feh	;; 1635: 21 fe 01    ...
 	shld	L10c0		;; 1638: 22 c0 10    "..
 L163b:	lhld	L10c0		;; 163b: 2a c0 10    *..
 	push	h		;; 163e: e5          .
@@ -2496,7 +2491,7 @@ L163b:	lhld	L10c0		;; 163b: 2a c0 10    *..
 	mov	l,c		;; 1649: 69          i
 	rst	3		;; 164a: df          .
 	db	3
-	lxi	b,L0100		;; 164c: 01 00 01    ...
+	lxi	b,00100h	;; 164c: 01 00 01    ...
 	rst	3		;; 164f: df          .
 	db	83h
 	dad	b		;; 1651: 09          .
@@ -2543,8 +2538,7 @@ L1698:	call	L8d27		;; 1698: cd 27 8d    .'.
 	lxi	h,L0f9e		;; 169d: 21 9e 0f    ...
 	mvi	m,044h		;; 16a0: 36 44       6D
 	call	L16a8		;; 16a2: cd a8 16    ...
-	mvi	l,044h		;; 16a5: 2e 44       .D
-	mov	e,d		;; 16a7: 5a          Z
+	db	'.DZ'
 L16a8:	call	L75e5		;; 16a8: cd e5 75    ..u
 	db	3
 	lxi	h,L1098		;; 16ac: 21 98 10    ...
@@ -2554,7 +2548,7 @@ L16a8:	call	L75e5		;; 16a8: cd e5 75    ..u
 	mvi	m,001h		;; 16b7: 36 01       6.
 	jmp	L8d56		;; 16b9: c3 56 8d    .V.
 
-L16bc:	nop			;; 16bc: 00          .
+L16bc:	db	0
 L16bd:	call	L8d27		;; 16bd: cd 27 8d    .'.
 	db	0fbh,0fh
 	jr	L16c4		;; 16c2: 18 00       ..
@@ -2570,10 +2564,7 @@ L16c4:	mvi	a,011h		;; 16c4: 3e 11       >.
 	db	87h
 	push	h		;; 16d7: e5          .
 	call	L16df		;; 16d8: cd df 16    ...
-	mov	b,b		;; 16db: 40          @
-	mov	b,b		;; 16dc: 40          @
-	mov	b,b		;; 16dd: 40          @
-	mov	b,b		;; 16de: 40          @
+	db	'@@@@'
 L16df:	call	L75e5		;; 16df: cd e5 75    ..u
 	db	4
 	call	L8b95		;; 16e3: cd 95 8b    ...
@@ -3604,7 +3595,7 @@ L200d:	call	L0496		;; 200d: cd 96 04    ...
 	db	83h
 	mov	a,h		;; 201e: 7c          |
 	ora	l		;; 201f: b5          .
-L2020:	ora	b		;; 2020: b0          .
+	ora	b		;; 2020: b0          .
 	ora	c		;; 2021: b1          .
 	jrnz	L200d		;; 2022: 20 e9        .
 	jmp	L8d56		;; 2024: c3 56 8d    .V.
@@ -4324,9 +4315,7 @@ L258c:	call	L8d27		;; 258c: cd 27 8d    .'.
 	push	psw		;; 2593: f5          .
 	call	L0d9b		;; 2594: cd 9b 0d    ...
 	call	L259d		;; 2597: cd 9d 25    ..%
-	mov	b,l		;; 259a: 45          E
-	mov	d,c		;; 259b: 51          Q
-	mov	d,l		;; 259c: 55          U
+	db	'EQU'
 L259d:	call	L75e5		;; 259d: cd e5 75    ..u
 	db	3
 	mvi	a,037h		;; 25a1: 3e 37       >7
@@ -4341,8 +4330,7 @@ L25b2:	call	L8d27		;; 25b2: cd 27 8d    .'.
 	db	0,6
 	call	L258c		;; 25b7: cd 8c 25    ..%
 	call	L25bf		;; 25ba: cd bf 25    ..%
-	inr	h		;; 25bd: 24          $
-	dcr	l		;; 25be: 2d          -
+	db	'$-'
 L25bf:	call	L75e5		;; 25bf: cd e5 75    ..u
 	db	2
 	mvi	a,037h		;; 25c3: 3e 37       >7
@@ -4682,8 +4670,7 @@ L2815:	lda	L1d48		;; 2815: 3a 48 1d    :H.
 	push	psw		;; 281d: f5          .
 	call	L0d9b		;; 281e: cd 9b 0d    ...
 	call	L2827		;; 2821: cd 27 28    .'(
-	dcx	sp		;; 2824: 3b          ;
-	jrnz	L284f		;; 2825: 20 28        (
+	db	'; ('
 L2827:	call	L75e5		;; 2827: cd e5 75    ..u
 	db	3
 	mvi	a,037h		;; 282b: 3e 37       >7
@@ -4701,7 +4688,7 @@ L2843:	call	L67a6		;; 2843: cd a6 67    ..g
 	jmp	L2965		;; 2849: c3 65 29    .e)
 
 L284c:	ldx	a,-122		;; 284c: dd 7e 86    .~.
-L284f:	rar			;; 284f: 1f          .
+	rar			;; 284f: 1f          .
 	jnc	L2962		;; 2850: d2 62 29    .b)
 	rst	3		;; 2853: df          .
 	db	8ch
@@ -5721,7 +5708,7 @@ L2fe4:	call	L050f		;; 2fe4: cd 0f 05    ...
 	mvi	a,07fh		;; 2fff: 3e 7f       >.
 	push	psw		;; 3001: f5          .
 	call	L72f2		;; 3002: cd f2 72    ..r
-L3005:	addx	-116		;; 3005: dd 86 8c    ...
+	addx	-116		;; 3005: dd 86 8c    ...
 	push	psw		;; 3008: f5          .
 	call	L0597		;; 3009: cd 97 05    ...
 L300c:	ldx	l,-121		;; 300c: dd 6e 87    .n.
@@ -7553,7 +7540,7 @@ L3ef1:	call	L0799		;; 3ef1: cd 99 07    ...
 L3efb:	ldx	a,-121		;; 3efb: dd 7e 87    .~.
 	ora	a		;; 3efe: b7          .
 	jrnz	L3f0d		;; 3eff: 20 0c        .
-L3f01:	mvi	a,027h		;; 3f01: 3e 27       >'
+	mvi	a,027h		;; 3f01: 3e 27       >'
 	push	psw		;; 3f03: f5          .
 	call	L0597		;; 3f04: cd 97 05    ...
 	mvix	001h,-125	;; 3f07: dd 36 83 01 .6..
@@ -9916,7 +9903,7 @@ L515f:	call	L763d		;; 515f: cd 3d 76    .=v
 
 L51a1:	ldx	a,-27		;; 51a1: dd 7e e5    .~.
 	stx	a,-125		;; 51a4: dd 77 83    .w.
-	lxi	b,L3f01		;; 51a7: 01 01 3f    ..?
+	lxi	b,03f01h	;; 51a7: 01 01 3f    ..?
 	push	b		;; 51aa: c5          .
 	lxi	h,L01b0		;; 51ab: 21 b0 01    ...
 	call	L75ea		;; 51ae: cd ea 75    ..u
@@ -9948,9 +9935,7 @@ L51da:	stx	a,-30		;; 51da: dd 77 e2    .w.
 	mvix	000h,-33	;; 51ea: dd 36 df 00 .6..
 	mvix	001h,-31	;; 51ee: dd 36 e1 01 .6..
 	call	L51f8		;; 51f2: cd f8 51    ..Q
-	mov	c,a		;; 51f5: 4f          O
-	mov	b,m		;; 51f6: 46          F
-	mov	b,m		;; 51f7: 46          F
+	db	'OFF'
 L51f8:	call	L75e5		;; 51f8: cd e5 75    ..u
 	db	3
 	lxi	h,0ffdah	;; 51fc: 21 da ff    ...
@@ -10711,7 +10696,7 @@ L5961:	ldx	a,-95		;; 5961: dd 7e a1    .~.
 	mvi	a,02dh		;; 599a: 3e 2d       >-
 	push	psw		;; 599c: f5          .
 	call	L0597		;; 599d: cd 97 05    ...
-	lxi	b,L0100		;; 59a0: 01 00 01    ...
+	lxi	b,00100h	;; 59a0: 01 00 01    ...
 	lxi	h,00000h	;; 59a3: 21 00 00    ...
 	push	h		;; 59a6: e5          .
 	push	b		;; 59a7: c5          .
@@ -10793,7 +10778,7 @@ L5a35:	ldx	a,-126		;; 5a35: dd 7e 82    .~.
 	ldx	a,-95		;; 5a3b: dd 7e a1    .~.
 	cpi	054h		;; 5a3e: fe 54       .T
 	jrnz	L5a70		;; 5a40: 20 2e        .
-	lxi	b,L0100		;; 5a42: 01 00 01    ...
+	lxi	b,00100h	;; 5a42: 01 00 01    ...
 	rst	3		;; 5a45: df          .
 	db	0a2h
 	ora	a		;; 5a47: b7          .
@@ -11201,7 +11186,7 @@ L5d50:	ldx	a,+9		;; 5d50: dd 7e 09    .~.
 	call	L7450		;; 5d7e: cd 50 74    .Pt
 	call	L8c0e		;; 5d81: cd 0e 8c    ...
 	push	psw		;; 5d84: f5          .
-	lxi	b,L0100		;; 5d85: 01 00 01    ...
+	lxi	b,00100h	;; 5d85: 01 00 01    ...
 	ldx	l,+10		;; 5d88: dd 6e 0a    .n.
 	ldx	h,+11		;; 5d8b: dd 66 0b    .f.
 	ora	a		;; 5d8e: b7          .
@@ -11745,8 +11730,7 @@ L60eb:	rst	3		;; 60eb: df          .
 L60f2:	call	L8d27		;; 60f2: cd 27 8d    .'.
 	db	0f7h,'#'
 	call	L60fc		;; 60f7: cd fc 60    ..`
-	cmc			;; 60fa: 3f          ?
-	cmc			;; 60fb: 3f          ?
+	db	'??'
 L60fc:	call	L75e5		;; 60fc: cd e5 75    ..u
 	db	2
 	lxi	h,L1c10		;; 6100: 21 10 1c    ...
@@ -12800,9 +12784,7 @@ L685e:	call	L8d27		;; 685e: cd 27 8d    .'.
 	cpi	047h		;; 6875: fe 47       .G
 	jrnz	L688d		;; 6877: 20 14        .
 	call	L6880		;; 6879: cd 80 68    ..h
-	mvi	l,042h		;; 687c: 2e 42       .B
-	mov	d,d		;; 687e: 52          R
-	mov	c,e		;; 687f: 4b          K
+	db	'.BRK'
 L6880:	call	L75e5		;; 6880: cd e5 75    ..u
 	db	4
 	lxi	h,0ff88h	;; 6884: 21 88 ff    ...
@@ -13184,9 +13166,7 @@ L6b78:	call	L8d27		;; 6b78: cd 27 8d    .'.
 	lxi	h,L1074		;; 6bba: 21 74 10    .t.
 	call	L75ea		;; 6bbd: cd ea 75    ..u
 	call	L6bc7		;; 6bc0: cd c7 6b    ..k
-	mvi	l,024h		;; 6bc3: 2e 24       .$
-	inr	h		;; 6bc5: 24          $
-	inr	h		;; 6bc6: 24          $
+	db	'.$$$'
 L6bc7:	call	L75e5		;; 6bc7: cd e5 75    ..u
 	db	4
 	call	L8b20		;; 6bcb: cd 20 8b    . .
@@ -13239,7 +13219,7 @@ L6c1a:	lxi	h,0ff84h	;; 6c1a: 21 84 ff    ...
 	ora	l		;; 6c2d: b5          .
 	call	L8c0e		;; 6c2e: cd 0e 8c    ...
 	push	psw		;; 6c31: f5          .
-	lxi	b,L0100		;; 6c32: 01 00 01    ...
+	lxi	b,00100h	;; 6c32: 01 00 01    ...
 	rst	3		;; 6c35: df          .
 	db	82h
 	ora	a		;; 6c37: b7          .
@@ -13545,7 +13525,7 @@ L6ea0:	mvi	a,061h		;; 6ea0: 3e 61       >a
 	call	L0597		;; 6ea3: cd 97 05    ...
 	jr	L6eba		;; 6ea6: 18 12       ..
 
-L6ea8:	lxi	b,L3005		;; 6ea8: 01 05 30    ..0
+L6ea8:	lxi	b,03005h	;; 6ea8: 01 05 30    ..0
 	call	L8d90		;; 6eab: cd 90 8d    ...
 	dw	L6e9e
 	dw	L6e8e
@@ -13620,7 +13600,7 @@ L6f3c:	lxi	h,L6e04		;; 6f3c: 21 04 6e    ..n
 	db	10h
 	call	L75c9		;; 6f43: cd c9 75    ..u
 	db	10h,0,0,0,0,0,0,0,0,0,0,0,0,0
-	lxi	b,L027c		;; 6f54: 01 7c 02    .|.
+	lxi	b,0027ch	;; 6f54: 01 7c 02    .|.
 	call	L74e3		;; 6f57: cd e3 74    ..t
 	lxi	b,00001h	;; 6f5a: 01 01 00    ...
 	push	b		;; 6f5d: c5          .
@@ -13722,7 +13702,7 @@ L7004:	lhld	L6df0		;; 7004: 2a f0 6d    *.m
 	db	87h
 	push	h		;; 7026: e5          .
 	push	b		;; 7027: c5          .
-	lxi	b,L0100		;; 7028: 01 00 01    ...
+	lxi	b,00100h	;; 7028: 01 00 01    ...
 	lxi	h,00000h	;; 702b: 21 00 00    ...
 	call	L87f6		;; 702e: cd f6 87    ...
 	mov	h,b		;; 7031: 60          `
@@ -14055,7 +14035,7 @@ L72ca:	lhld	L6e02		;; 72ca: 2a 02 6e    *.n
 	jnz	L718d		;; 72cf: c2 8d 71    ..q
 	jmp	L8d56		;; 72d2: c3 56 8d    .V.
 
-L72d5:	pop	h		;; 72d5: e1          .
+L72d5:	pop	h		;call BIOS
 	pop	psw		;; 72d6: f1          .
 	mov	c,a		;; 72d7: 4f          O
 	pop	psw		;; 72d8: f1          .
@@ -15119,7 +15099,7 @@ L798e:	mvi	a,001h		;; 798e: 3e 01       >.
 L7990:	lhld	L91bd		;; 7990: 2a bd 91    *..
 	pchl			;; 7993: e9          .
 
-L7994:	nop			;; 7994: 00          .
+L7994:	db	0
 L7995:	pop	h		;; 7995: e1          .
 	shld	L91bd		;; 7996: 22 bd 91    "..
 	mvi	a,002h		;; 7999: 3e 02       >.
@@ -16010,7 +15990,7 @@ L80f1:	lxi	h,L8051		;; 80f1: 21 51 80    .Q.
 L80ff:	mvi	a,04eh		;; 80ff: 3e 4e       >N
 	mvi	c,005h		;; 8101: 0e 05       ..
 	call	L921e		;; 8103: cd 1e 92    ...
-L8106:	nop			;; 8106: 00          .
+L8106:	db	0
 L8107:	call	L81bd		;; 8107: cd bd 81    ...
 	lxi	h,L813c		;; 810a: 21 3c 81    .<.
 	lxi	b,0000ch	;; 810d: 01 0c 00    ...
@@ -16431,15 +16411,7 @@ L8482:	cmp	m		;; 8482: be          .
 	jrnz	L8482		;; 8486: 20 fa        .
 	ret			;; 8488: c9          .
 
-L8489:	mov	c,m		;; 8489: 4e          N
-	mov	l,a		;; 848a: 6f          o
-	mov	m,h		;; 848b: 74          t
-	jrnz	L84f4		;; 848c: 20 66        f
-	mov	l,a		;; 848e: 6f          o
-	mov	m,l		;; 848f: 75          u
-	mov	l,m		;; 8490: 6e          n
-	mov	h,h		;; 8491: 64          d
-	lda	L2020		;; 8492: 3a 20 20    :  
+L8489:	db	'Not found:  '
 L8495:	pop	h		;; 8495: e1          .
 	popiy			;; 8496: fd e1       ..
 	pop	b		;; 8498: c1          .
@@ -16498,7 +16470,7 @@ L84e4:	cpi	05bh		;; 84e4: fe 5b       .[
 	inx	h		;; 84ed: 23          #
 	djnz	L84bc		;; 84ee: 10 cc       ..
 	bity	6,+0		;; 84f0: fd cb 00 76 ...v
-L84f4:	jrnz	L8540		;; 84f4: 20 4a        J
+	jrnz	L8540		;; 84f4: 20 4a        J
 	ldy	a,+9		;; 84f6: fd 7e 09    .~.
 	cpi	020h		;; 84f9: fe 20       . 
 	jrz	L8540		;; 84fb: 28 43       (C
@@ -16983,7 +16955,7 @@ L87c6:	lxi	h,00000h	;; 87c6: 21 00 00    ...
 	ora	a		;; 87cc: b7          .
 	jrnz	L87d3		;; 87cd: 20 04        .
 	mov	a,c		;; 87cf: 79          y
-	lxi	b,L0800		;; 87d0: 01 00 08    ...
+	lxi	b,00800h	;; 87d0: 01 00 08    ...
 L87d3:	slar	c		;; 87d3: cb 21       ..
 	ralr	a		;; 87d5: cb 17       ..
 	ralr	l		;; 87d7: cb 15       ..
@@ -18225,7 +18197,7 @@ L8e6e:	db	0,0
 L8e70:	db	0,0
 L8e72:	db	0,0
 L8e74:	db	0
-L8e75:	db	'C',93h
+L8e75:	dw	L9343
 L8e77:	db	1
 L8e78:	lspd	00006h		;; 8e78: ed 7b 06 00 .{..
 	mvi	b,006h		;; 8e7c: 06 06       ..
@@ -18334,7 +18306,7 @@ L8f4c:	pop	h		;; 8f4c: e1          .
 	push	b		;; 8f4d: c5          .
 	push	h		;; 8f4e: e5          .
 	push	h		;; 8f4f: e5          .
-L8f50:	push	h		;; 8f50: e5          .
+	push	h		;; 8f50: e5          .
 	lxi	b,00048h	;; 8f51: 01 48 00    .H.
 	push	b		;; 8f54: c5          .
 	call	L9013		;; 8f55: cd 13 90    ...
@@ -18388,11 +18360,10 @@ L8fb2:	pushiy			;; 8fb2: fd e5       ..
 	mvi	a,001h		;; 8fb5: 3e 01       >.
 	ret			;; 8fb7: c9          .
 
-L8fb8:	rnz			;; 8fb8: c0          .
-	adc	a		;; 8fb9: 8f          .
-	cm	L058f		;; 8fba: fc 8f 05    ...
-	sub	b		;; 8fbd: 90          .
-	djnz	L8f50		;; 8fbe: 10 90       ..
+L8fb8:	dw	L8fc0
+	dw	L8ffc
+	dw	L9005
+	dw	L9010
 L8fc0:	lxi	h,L8e13		;; 8fc0: 21 13 8e    ...
 	mov	a,m		;; 8fc3: 7e          ~
 	ora	a		;; 8fc4: b7          .
@@ -18431,16 +18402,15 @@ L8ffc:	ldx	e,+23		;; 8ffc: dd 5e 17    .^.
 	call	L91c3		;; 9001: cd c3 91    ...
 	ret			;; 9004: c9          .
 
-	bitx	2,+5		;; 9005: dd cb 05 56 ...V
+L9005:	bitx	2,+5		;; 9005: dd cb 05 56 ...V
 	rz			;; 9009: c8          .
 	lxi	h,L8e13		;; 900a: 21 13 8e    ...
 	mvi	m,000h		;; 900d: 36 00       6.
 	ret			;; 900f: c9          .
 
-	ret			;; 9010: c9          .
+L9010:	ret			;; 9010: c9          .
 
-L9011:	nop			;; 9011: 00          .
-	nop			;; 9012: 00          .
+L9011:	dw	0
 L9013:	pop	h		;; 9013: e1          .
 	jr	L901a		;; 9014: 18 04       ..
 
@@ -18499,7 +18469,7 @@ L9056:	pop	h		;; 9056: e1          .
 	mov	a,c		;; 9068: 79          y
 	ani	0c0h		;; 9069: e6 c0       ..
 	jrnz	L9070		;; 906b: 20 03        .
-	lxi	b,L0100		;; 906d: 01 00 01    ...
+	lxi	b,00100h	;; 906d: 01 00 01    ...
 L9070:	lhld	L91b7		;; 9070: 2a b7 91    *..
 	push	h		;; 9073: e5          .
 	push	b		;; 9074: c5          .
@@ -18750,7 +18720,7 @@ L91cf:	lhld	L91b7		;; 91cf: 2a b7 91    *..
 	dad	b		;; 91d2: 09          .
 	jrc	L91e9		;; 91d3: 38 14       8.
 	shld	L91b7		;; 91d5: 22 b7 91    "..
-	lxi	b,L0100		;; 91d8: 01 00 01    ...
+	lxi	b,00100h	;; 91d8: 01 00 01    ...
 	dad	b		;; 91db: 09          .
 	jrc	L91e9		;; 91dc: 38 0b       8.
 	mov	a,h		;; 91de: 7c          |
@@ -18929,7 +18899,7 @@ L9331:	mov	a,h		;; 9331: 7c          |
 	ldx	h,+3		;; 933e: dd 66 03    .f.
 	jr	L9331		;; 9341: 18 ee       ..
 
-	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+L9343:	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

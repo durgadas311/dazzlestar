@@ -7,6 +7,20 @@
 ;	...
 ;	* G0
 ;	A> SAVE xx DZyy.COM
+;
+; Or, SID (easier):
+;	A>sid dz-out2.com
+;	CP/M 3 SID - Version 3.0
+;	NEXT MSZE  PC  END
+;	9A80 9A80 0100 E1FF
+;	#rdzterm.hex
+;	NEXT MSZE  PC  END
+;	0300 9A80 0100 E1FF
+;	#wdz-out2x.com,0100,9a80
+;	0135h record(s) written.
+;	#g0
+;	A>
+; Be certain to use MSZE value in W command.
 
 esc	equ	27
 
@@ -14,7 +28,7 @@ esc	equ	27
 	ds	64
 	db	0,0,1ah
 ;
-	db	5,'xterm',0	; length, term name, NUL terminator
+	db	7,'H19/H89',0	; length, term name, NUL terminator
 	rept	017ch-$	;  55-chars max for terminal name (+len,NUL)
 	db	0
 	endm
@@ -44,51 +58,51 @@ esc	equ	27
 	; terminal definition start?
 	db	24	; rows (lines)
 	db	80	; columns
-	db	13,esc,'[1;1H',esc,'[1;24r',0,0		; init seq
-	db	13,esc,'[r',esc,'[1;1H',esc,'[2J',0,0	; exit seq
-	db	2,esc,'[',0,0,0,0,0,0,0,0,0,0,0,0,0	; curs pre
-	db	1,';',0,0,0,0,0,0,0,0,0,0,0,0,0,0	; curs sep
-	db	1,'H',0,0,0,0,0,0,0,0,0,0,0,0,0,0	; curs end
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0		; init seq
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0		; exit seq
+	db	2,esc,'Y',0,0,0,0,0,0,0,0,0,0,0,0,0	; curs pre
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0		; curs sep
+	db	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0		; curs end
 	db	0	; 0=row-first, 1=col-first
-	db	1	; row offset
-	db	1	; col offset
-	db	2	; r/c type, 0=binary, 2=ascii 2-dig, 3=ascii 3-dig
+	db	' '	; row offset
+	db	' '	; col offset
+	db	0	; r/c type, 0=binary, 2=ascii 2-dig, 3=ascii 3-dig
 
-	db	3,esc,'[K',0,0,0,0,0,0,0,0,0,0,0,0	; erase to EOL
-	db	3,esc,'[M',0,0,0,0,0,0,0,0,0,0,0,0	; delete line
-	db	3,esc,'[L',0,0,0,0,0,0,0,0,0,0,0,0	; insert line
-	db	4,esc,'[2J',0,0,0,0,0,0,0,0,0,0,0	; clear screen
-	db	4,esc,'[7m',0,0,0,0,0,0,0,0,0,0,0	; rev video
-	db	4,esc,'[0m',0,0,0,0,0,0,0,0,0,0,0	; norm video
+	db	2,esc,'K',0,0,0,0,0,0,0,0,0,0,0,0,0	; erase to EOL
+	db	2,esc,'M',0,0,0,0,0,0,0,0,0,0,0,0,0	; delete line
+	db	2,esc,'L',0,0,0,0,0,0,0,0,0,0,0,0,0	; insert line
+	db	2,esc,'E',0,0,0,0,0,0,0,0,0,0,0,0,0	; clear screen
+	db	2,esc,'p',0,0,0,0,0,0,0,0,0,0,0,0,0	; rev video
+	db	2,esc,'q',0,0,0,0,0,0,0,0,0,0,0,0,0	; norm video
 
-	db	08,01,00,00,00,00,00,00,00
+	db	08,00,00,00,00,00,00,00
 
-	; patch area?
+	; hooks to customize functions
+	nop
 	ret
 	nop
-	nop
 
+	nop
 	ret
 	nop
-	nop
 
+	nop
 	ret
 	nop
-	nop
 
+	nop
 	ret
 	nop
-	nop
 
+	nop
 	ret
 	nop
-	nop
 
+	nop	; BIOS conout hook
 	ret
 	nop
-	nop
 
-	db	0
+	db	0,0
 	db	1	; keyboard scanning (1=on)
 	db	00,00,00,00,00,00,00,00,00,00,00,00,00,00
 	db	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
