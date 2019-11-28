@@ -5,14 +5,17 @@ userst	equ	0
 
  if userst
 
+rst2v	equ	0010h	; in case not "RST 2"
 rst2	macro
 	rst	2
 	endm
 
+rst3v	equ	0018h	; in case not "RST 3"
 rst3	macro
 	rst	3
 	endm
 
+rst4v	equ	0020h	; in case not "RST 4"
 rst4	macro
 	rst	4
 	endm
@@ -17894,18 +17897,18 @@ L8c3c:	pop	d		;; 8c3c: d1          .
 
  if userst
 L8c5b:	lhld	L8c82		;; 8c5b: 2a 82 8c    *..
-	shld	00010h		;; 8c5e: 22 10 00    "..
+	shld	rst2v		;; 8c5e: 22 10 00    "..
 	lhld	L8c82+2		;; 8c61: 2a 84 8c    *..
-	shld	00012h		;; 8c64: 22 12 00    "..
+	shld	rst2v+2		;; 8c64: 22 12 00    "..
 	lhld	L8c82+4		;; 8c67: 2a 86 8c    *..
-	shld	00014h		;; 8c6a: 22 14 00    "..
+	shld	rst2v+4		;; 8c6a: 22 14 00    "..
 	mvi	a,0c3h		;; 8c6d: 3e c3       >.
-	sta	00018h		;; 8c6f: 32 18 00    2..
-	sta	00020h		;; 8c72: 32 20 00    2 .
+	sta	rst3v		;; 8c6f: 32 18 00    2..
+	sta	rst4v		;; 8c72: 32 20 00    2 .
 	lxi	h,L8c87		;; 8c75: 21 87 8c    ...
-	shld	00019h		;; 8c78: 22 19 00    "..
+	shld	rst3v+1		;; 8c78: 22 19 00    "..
 	lxi	h,L8ca6		;; 8c7b: 21 a6 8c    ...
-	shld	00021h		;; 8c7e: 22 21 00    "..
+	shld	rst4v+1		;; 8c7e: 22 21 00    "..
 	ret			;; 8c81: c9          .
  endif
 
