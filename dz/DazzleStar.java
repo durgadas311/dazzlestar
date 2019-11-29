@@ -865,8 +865,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void goAdr(int a) {
 		int c = a;
 		while (a > base && getLen(a) == 0) --a;
-		setCodeWin(a);
-		setDumpWin(a & ~0x0f);
+		if (a >= cwin && a < cend) {
+			// TODO: any action?
+		} else {
+			setCodeWin(a);
+		}
+		if (a >= dwin && a < dend) {
+			// TODO: any action?
+		} else {
+			setDumpWin(cwin & ~0x0f);
+		}
 		setCursor(c);
 	}
 
@@ -2104,6 +2112,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 	private void buttonAction(JButton b) {
 	}
 
+	// TODO: use some modifier for single/double byte B-I?
 	private boolean doBrkKey(int k) {
 		if (k == ' ') {
 			putBrk(cursor, 0);
