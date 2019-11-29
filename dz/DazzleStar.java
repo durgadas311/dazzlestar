@@ -1703,6 +1703,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		int n;
 		clearSymtab();	// optional?
 		int bk = activeBreak(first);
+		if (bk == 0) bk = 'I';
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			if (b != 0) bk = b;
