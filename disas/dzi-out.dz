@@ -1,4 +1,3 @@
-L0100
 -0100,I  
 L0103
 -0103,B  
@@ -100,13 +99,6 @@ L02f0
 L02f1
 L02f3
 L02fa
-L03e8
-L05f5
-L0800
-L0c00
-L0d01
-L0ef3
-L0f01
 L10fa
 L10fb
 L10fc
@@ -175,6 +167,10 @@ L1610
 L162e
 -1631,B  
 -1633,I  
+-1634,B  
+-1635,I  
+-163b,B  
+-163c,I  
 L1646
 -1649,B  
 -164b,I  
@@ -209,17 +205,21 @@ L1754
 L1759
 -1759,I  
 L1782
-L178e
 L1797
 -17a3,B  
-L17ab
 -17ac,I  
+-17af,B  
+-17b0,I  
 -17bf,B  
 -17c9,I  
+-17cc,B  
 L17cd
+-17cd,I  
 -17d8,B  
 -17d9,I  
 L17fa
+-180e,B  
+-180f,I  
 L182a
 L1830
 L1841
@@ -230,7 +230,7 @@ L185b
 -185b,I  
 -185e,B  
 -185f,I  
--1877,B  
+-1875,B  
 L187f
 -187f,I  
 -1882,B  
@@ -241,7 +241,6 @@ L18a1
 -18a1,I  
 -18a4,B  
 -18a5,I  
-L18bb
 -18bd,B  
 L18bf
 -18bf,I  
@@ -251,7 +250,7 @@ L18cc
 L18e5
 -18e8,B  
 -18ea,I  
--192e,B  
+-192c,B  
 L1931
 -1931,I  
 -1934,B  
@@ -268,7 +267,6 @@ L197c
 -197c,I  
 -197f,B  
 -1980,I  
-L198f
 -19c4,B  
 L19c7
 -19c7,I  
@@ -442,6 +440,7 @@ L204f
 -2053,I  
 L2060
 L2062
+%2062
 -2068,L  
 L206e
 -206e,I  
@@ -460,6 +459,8 @@ L20c0
 L210b
 -210e,B  
 -2110,I  
+-2111,B  
+-2112,I  
 L2126
 L2142
 L2153
@@ -478,6 +479,7 @@ L220e
 -220f,B  
 -2210,I  
 L2225
+L2228
 -222b,B  
 L222d
 -222d,I  
@@ -487,16 +489,34 @@ L2248
 L224b
 -224e,B  
 -2250,I  
+-2254,B  
+-2255,I  
+%225b
+-2260,B  
+-2261,I  
 L2280
 L22ac
+-22ad,B  
+-22ae,I  
 L22ca
 L22cd
 -22d0,B  
 -22d2,I  
+-22d6,B  
+-22d7,I  
 L22f1
 L2317
 L2326
-L2352
+-232a,B  
+-232b,I  
+-2336,B  
+-2337,I  
+%233d
+-2351,B  
+-2352,I  
+%2358
+-2362,B  
+-2363,I  
 L2366
 L236f
 L2372
@@ -504,12 +524,15 @@ L2372
 -2377,I  
 -237a,B  
 -2380,I  
+-2383,B  
+-2384,I  
 L239d
 L23a1
 -23a8,B  
-L23a9
 -23b1,I  
 L23da
+-23df,B  
+-23e0,I  
 -23ed,B  
 L23ef
 -23ef,I  
@@ -522,6 +545,7 @@ L2410
 -2414,I  
 L2423
 L2429
+L242f
 -2432,B  
 -2434,I  
 -2437,B  
@@ -669,7 +693,6 @@ L2706
 -2706,I  
 -2709,B  
 -270a,I  
-L2710
 -2718,B  
 L271f
 -271f,I  
@@ -685,7 +708,6 @@ L274c
 -274c,I  
 -274f,B  
 -2750,I  
-L2757
 -275e,B  
 L2761
 -2761,I  
@@ -694,13 +716,21 @@ L2761
 L2773
 -2776,B  
 -2778,I  
+-2779,B  
+-277a,I  
 -277f,B  
 -2785,I  
+-2788,B  
+-2789,I  
 L278c
 -2793,B  
 -279c,I  
-L27ae
-L27b0
+-27aa,B  
+-27ab,I  
+-27b1,B  
+-27b2,I  
+-27b4,B  
+-27b5,I  
 L27cb
 L27cd
 L27d0
@@ -708,10 +738,13 @@ L27d0
 -27d5,I  
 -27d8,B  
 -27de,I  
+-27e1,B  
+-27e2,I  
+-27e9,B  
 L27ea
+-27ea,I  
 -27f1,B  
 -27fa,I  
-L2807
 -280f,B  
 -2819,I  
 -2824,B  
@@ -722,26 +755,47 @@ L2832
 L2841
 -2855,B  
 -285f,I  
-L286f
 L2879
+-287a,B  
+-287b,I  
+-2888,B  
+-2889,I  
+-288f,B  
 L2890
+-2890,I  
 L2893
 -2896,B  
 -289d,I  
+-28a0,B  
+-28a1,I  
+-28a5,B  
+-28a6,I  
+-28a7,B  
+-28a8,I  
 L28ab
 -28ae,B  
 -28b0,I  
+-28b4,B  
+-28b5,I  
+%28b5
 -28c0,B  
-L28c6
 L28cc
 -28cc,I  
 -28cf,B  
 -28d0,I  
+-28dc,B  
 L28dd
+-28dd,I  
 L28e6
 -28e9,B  
 -28eb,I  
+-28f1,B  
+-28f2,I  
 L28fe
+-2929,B  
+-292a,I  
+-2931,B  
+-2932,I  
 L293f
 L2a1f
 -2a22,B  
@@ -753,6 +807,8 @@ L2a42
 -2a46,I  
 L2a4f
 L2a5d
+-2a5e,B  
+-2a5f,I  
 -2a7a,B  
 L2a7c
 -2a7c,I  
@@ -763,7 +819,11 @@ L2a9c
 -2a9c,I  
 -2a9f,B  
 -2aa0,I  
+-2aaa,B  
+-2aab,I  
 L2ab8
+-2ac0,B  
+-2ac1,I  
 -2adc,B  
 L2ae8
 -2ae8,I  
@@ -773,6 +833,8 @@ L2b0a
 L2b0d
 -2b10,B  
 -2b12,I  
+-2b19,B  
+-2b1a,I  
 L2b2f
 -2b3e,B  
 L2b43
@@ -784,18 +846,40 @@ L2b5c
 -2b5c,I  
 -2b5f,B  
 -2b60,I  
+-2b72,B  
+-2b73,I  
+-2b91,B  
+-2b92,I  
 -2bb0,B  
 L2bb6
 -2bb6,I  
 -2bb9,B  
 -2bba,I  
+-2bcc,B  
+-2bcd,I  
 L2bea
 L2bf4
 L2bf7
 -2bfa,B  
 -2bfc,I  
+-2bfd,B  
+-2bfe,I  
+-2c0f,B  
+-2c10,I  
+-2c1b,B  
+-2c1c,I  
+-2c2d,B  
+-2c2e,I  
+-2c3a,B  
+-2c3b,I  
+-2c4c,B  
+-2c4d,I  
 L2c5d
 L2c6c
+-2c74,B  
+-2c75,I  
+-2c86,B  
+-2c87,I  
 L2ca0
 L2caa
 L2cb4
@@ -827,6 +911,10 @@ L2da5
 L2daf
 L2dd1
 L2dd4
+-2ddc,B  
+-2ddd,I  
+-2dee,B  
+-2def,I  
 L2e09
 L2e0d
 L2e0f
@@ -843,14 +931,31 @@ L2ea8
 -2eab,B  
 -2eac,I  
 L2eb9
+-2ec3,B  
+-2ec4,I  
+-2ece,B  
+-2ecf,I  
+-2ed3,B  
+-2ed4,I  
+-2ede,B  
+-2edf,I  
 -2eee,B  
 -2efb,I  
+-2f0e,B  
+-2f0f,I  
+-2f5e,B  
+-2f5f,I  
+-2f68,B  
+-2f69,I  
 L2f75
 L2f8b
+-2f97,B  
+-2f98,I  
 L2fa6
 L2fa9
+-2fac,W  
+-2fb0,I  
 L2fb9
-L2fcd
 -300f,B  
 L301b
 -301b,I  
@@ -866,6 +971,8 @@ L307f
 -307f,I  
 -3082,B  
 -3083,I  
+-3098,B  
+-3099,I  
 L309c
 L30ae
 -30be,B  
@@ -876,6 +983,10 @@ L3111
 -3114,B  
 -3115,I  
 L3136
+-3150,B  
+-3151,I  
+-3154,B  
+-3155,I  
 L317e
 -319f,B  
 L31ac
@@ -883,8 +994,12 @@ L31ac
 -31af,B  
 -31b0,I  
 L31cd
+-31eb,B  
+-31ec,I  
 L3211
 L322c
+-3233,B  
+-3234,I  
 -3251,B  
 L3262
 -3262,I  
@@ -909,6 +1024,8 @@ L332b
 L332e
 L3341
 L335e
+-33a0,B  
+-33a1,I  
 -33be,B  
 L33c7
 -33c7,I  
@@ -954,10 +1071,14 @@ L3572
 -3572,I  
 -3575,B  
 -3576,I  
+-3580,B  
+-3581,I  
 L3594
 L35a9
 L35b8
 L35ba
+-35c2,B  
+-35c3,I  
 L35da
 -35dd,B  
 L35fe
@@ -966,6 +1087,8 @@ L35fe
 -3602,I  
 L360d
 L3613
+-3614,B  
+-3615,I  
 L3624
 L3627
 -362a,B  
@@ -1069,7 +1192,6 @@ L3b69
 -3b83,B  
 L3b99
 -3b99,I  
-L3b9a
 -3b9c,B  
 -3b9d,I  
 -3bc0,B  
@@ -1226,16 +1348,10 @@ L40e5
 L40f2
 L40f5
 -40f8,B  
-L4102
-L4103
-L4104
 L4106
 -4106,I  
 -4109,B  
 -410a,I  
-L410c
-L410d
-L410e
 -411c,B  
 L412d
 -412d,I  
@@ -1247,6 +1363,7 @@ L415c
 -415c,I  
 -415f,B  
 -4160,I  
+%4173
 L417f
 -4182,B  
 L41a2
@@ -1272,8 +1389,8 @@ L422d
 -4230,B  
 -4231,I  
 L423f
-L4240
 L4241
+%4241
 -4247,L  
 L4261
 -4261,I  
@@ -1313,7 +1430,6 @@ L43f9
 -43f9,I  
 -43fc,B  
 -43fd,I  
-L4401
 -4412,B  
 L4429
 -4429,I  
@@ -1513,12 +1629,17 @@ L4a50
 L4a62
 L4a67
 L4a69
+%4a69
 -4a6f,L  
 L4a8d
 -4a8d,I  
 L4aa9
 -4aac,B  
 -4aae,I  
+-4aaf,B  
+-4ab0,I  
+-4ab5,B  
+-4ab6,I  
 L4ab9
 L4abc
 -4abf,B  
@@ -1551,7 +1672,9 @@ L4b9b
 L4bc2
 L4bf3
 L4c00
+%4c30
 L4c67
+%4c6e
 L4c74
 -4c87,B  
 L4c92
@@ -1626,6 +1749,10 @@ L4ed7
 -4ed7,I  
 -4eda,B  
 -4edb,I  
+-4ee5,B  
+-4ee6,I  
+-4eed,B  
+-4eee,I  
 L4f01
 -4f04,B  
 -4f06,I  
@@ -1738,6 +1865,7 @@ L53b7
 -53b7,I  
 -53ba,B  
 -53bb,I  
+%53d3
 L53eb
 -5402,B  
 L5418
@@ -1926,6 +2054,7 @@ L5a2b
 L5a3a
 L5a49
 L5a4b
+%5a4b
 -5a51,L  
 L5a6d
 -5a6d,I  
@@ -2193,6 +2322,7 @@ L6367
 -636b,I  
 L6375
 L6377
+%6377
 -637d,L  
 L6385
 -6385,I  
@@ -2270,6 +2400,7 @@ L6622
 L6627
 L662c
 L662e
+%662e
 -6634,L  
 L663e
 -663e,I  
@@ -2431,12 +2562,14 @@ L6b2d
 -6b31,I  
 L6b3b
 L6b3d
+%6b3d
 -6b43,L  
 L6b4d
 -6b4d,I  
 L6b69
 -6b6c,B  
 -6b6e,I  
+%6b79
 -6b8c,B  
 L6b94
 -6b94,I  
@@ -2462,6 +2595,10 @@ L6c64
 -6c64,I  
 -6c67,B  
 -6c68,I  
+%6c75
+%6ca1
+-6cb7,B  
+-6cb8,I  
 -6cd2,B  
 L6cde
 -6cde,I  
@@ -2507,15 +2644,11 @@ L6e3b
 -6e3e,B  
 -6e3f,I  
 L6e47
--6e66,B  
-L6e80
-L6e82
-L6e86
+-6e5e,B  
 L6e8b
 -6e8b,I  
 -6e8e,B  
 -6e8f,I  
-L6ea5
 L6ead
 -6eb3,B  
 L6ee4
@@ -2628,6 +2761,8 @@ L733c
 -733c,I  
 -733f,B  
 -7340,I  
+-7360,B  
+-7361,I  
 -737b,B  
 L7387
 -7387,I  
@@ -2638,6 +2773,7 @@ L73a3
 -73a3,I  
 -73a6,B  
 -73a7,I  
+%73d1
 L73de
 -73ea,B  
 L73f2
@@ -2695,6 +2831,7 @@ L760f
 L7611
 L762a
 L762c
+%762c
 -7632,L  
 L763a
 -763a,I  
@@ -2702,15 +2839,23 @@ L763a
 -7642,I  
 L764f
 L7656
+-765a,B  
+-765b,I  
 L766d
 -7670,B  
 -7672,I  
 L769f
+-76ac,B  
+-76ad,I  
 L76dd
 -76e9,B  
 -76eb,I  
+-76fe,B  
+-76ff,I  
 -771c,B  
 -771e,I  
+-7730,B  
+-7731,I  
 L774a
 -774d,B  
 -774f,I  
@@ -2723,6 +2868,8 @@ L7799
 L77a9
 L77ac
 L77f7
+-780a,B  
+-780b,I  
 L784e
 L7863
 L7892
@@ -2757,7 +2904,13 @@ L7997
 L79a9
 -79ac,B  
 -79ae,I  
+-79b2,B  
+-79b3,I  
+-79b9,B  
+-79ba,I  
 L79c5
+-79c6,B  
+-79c7,I  
 -79dd,B  
 -79df,I  
 L79ed
@@ -2769,6 +2922,8 @@ L7a26
 L7a38
 -7a3b,B  
 -7a3d,I  
+-7a3e,B  
+-7a3f,I  
 L7a52
 L7a5d
 L7a60
@@ -2792,7 +2947,8 @@ L7b9b
 L7bb2
 L7bd5
 L7bea
-L7bed
+-7c0d,B  
+-7c0e,I  
 L7c29
 L7c39
 L7c3c
@@ -2812,6 +2968,8 @@ L7cd7
 L7cef
 L7d61
 L7d80
+-7d96,B  
+-7d97,I  
 L7dc2
 L7dd7
 L7dde
@@ -2853,6 +3011,8 @@ L8025
 L8044
 L8069
 L8091
+-80a6,B  
+-80a7,I  
 L80c1
 L80cb
 -80df,B  
@@ -2862,6 +3022,8 @@ L80fc
 -8101,I  
 L8119
 L8123
+-812e,B  
+-812f,I  
 L8156
 -815c,B  
 L815e
@@ -2869,6 +3031,8 @@ L815e
 L8175
 -8178,B  
 -817a,I  
+-817b,B  
+-817c,I  
 L8180
 L818a
 L818f
@@ -2948,6 +3112,7 @@ L848f
 L84b9
 L84ba
 L84bf
+/84e4 delete file
 L84e9
 L84ec
 L84fc
@@ -2957,6 +3122,10 @@ L850d
 -850e,I  
 L8511
 L8513
+/852b search first file
+/853f get user number
+/854e open file
+/8559 close file
 L8561
 L8563
 L8567
@@ -2992,11 +3161,17 @@ L866b
 -866b,I  
 L867a
 L867b
+/867b conin
+/8685 quit on ctrl-c
+/868b echo LF if CR
 L8691
+/8691 direct con I/O - input/status
 L869c
-L86a0
+/869c aux input
 L86a5
+/86a5 aux output
 L86ac
+/86ac list output
 L86b1
 L86b5
 L86e3
@@ -3052,19 +3227,34 @@ L8935
 L894d
 L8956
 L8968
+/8972 compute file size
 L897e
+/8981 close file
 L8986
+/89a5 open file
+/89b4 seq read
 L89bc
+/89c3 open file
 L89c9
+/89db close file
+/89ee open file
 L89f4
+/89f4 setdma, call bdos(C,DE) x B times
+/8a05 iy=de=ix[+18,+19]
 L8a08
+/8a0a setdma
+/8a0f de=ix+36
+/8a14 caller's BDOS func
+/8a20 de+=128
 L8a2e
 L8a30
+/8a31 reset default dma
 L8a3b
 L8a65
 L8a6a
 L8a6d
 L8a88
+/8a9a make file
 L8aa3
 L8aa5
 L8abb
@@ -3087,6 +3277,8 @@ L8bd6
 L8bdd
 L8beb
 L8bfa
+/8bfe close file
+/8c0e delete file
 L8c15
 L8c22
 L8c2d
@@ -3128,12 +3320,16 @@ L8d8b
 L8da9
 L8dbf
 L8dc9
+/8dc9 set default dma
 L8dd2
 L8df6
 L8e00
 L8e1a
+/8e20 open file
 L8e31
+/8e31 delete file
 L8e36
+/8e38 make file
 L8e41
 L8e56
 L8e6e
@@ -3144,6 +3340,8 @@ L8e82
 L8e96
 L8eb6
 L8ec6
+/8ec9 close file
+/8edd delete file
 L8ee7
 L8efa
 L8f05
@@ -3155,36 +3353,44 @@ L8f46
 L8f5d
 L8f7d
 L8f84
+/8f84 seq read, ix[+20] times
 L8f88
+/8f88 seq write, ix[+20] times
 L8f8a
+/8f90 dma address
+/8f97 num iterations
 L8f9a
+/8f9f setdma
+/8fac do read/write
 L8fc1
 L8fd4
 L8fdb
+-8fdb,B  
 L8fea
+-8fea,I  
 L8ff9
+-8ff9,B  
 L900a
+-900a,I  
 L9011
+-9011,B  
 L901f
+-901f,I  
 L9024
 L9028
 L902f
+-902f,B  
 L9038
-L9048
+-9038,I  
 L9056
-L905b
-L9064
 L9066
-L906d
 L9079
 L907a
-L9082
 L9084
 L908b
 -908b,B  
 L9097
 -9097,I  
-L909b
 L90a4
 L90ac
 L90b7
@@ -3236,6 +3442,7 @@ L931d
 L9328
 L9331
 L9340
+%934a
 L934d
 L935c
 L935d
@@ -3320,9 +3527,16 @@ L9626
 L9630
 L9662
 L966c
-L9680
+%9670
+%967a
+%9681
+%968b
+%9695
+%969f
 L96ac
+%96ae
 L96b4
+%96b4
 L96d7
 L96dc
 L96ec
@@ -3356,12 +3570,16 @@ L9887
 L9888
 L988f
 L98af
+/98af RST setup
 L98d6
+/98d6 RST 2 code
 L98d8
 L98da
 L98db
+/98db RST 3 routine
 L98ef
 L98fa
+/98fa RST 4 routine
 L9909
 L991b
 L992a
@@ -3414,10 +3632,13 @@ L9ac8
 L9ac9
 -9ac9,L  
 L9acb
--9acb,I  
+-9acb,B  
 L9acc
+-9acc,I  
 L9ad2
+/9b2c get version
 L9b38
+/9b3b set dma to default
 L9b43
 L9b44
 -9b44,B  
@@ -3435,7 +3656,9 @@ L9c0c
 L9c14
 -9c14,I  
 L9c28
+/9c2b read line from con
 L9c50
+/9c50 conout(ix[+23])
 L9c59
 L9c64
 L9c65
@@ -3449,6 +3672,7 @@ L9c7f
 L9c83
 L9c91
 L9caa
+%9cc1
 L9cc4
 L9ce0
 L9d0d
@@ -3464,6 +3688,7 @@ L9d88
 L9d96
 L9da6
 L9dae
+%9dc6
 L9dd8
 L9dfc
 L9e0b
@@ -3475,9 +3700,12 @@ L9e13
 L9e15
 L9e17
 -9e17,I  
+/9e17 call BDOS
 L9e23
+%9e2c
 L9e3d
 L9e45
+/9e45 conout (E)
 L9e4f
 L9e56
 L9e61
@@ -3487,7 +3715,9 @@ L9e89
 L9e90
 L9eb6
 L9ed7
+/9ed7 print Y/N prompt
 L9edc
+/9edc conin
 L9efc
 L9f07
 L9f11
