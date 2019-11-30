@@ -63,7 +63,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	DZDumpPane dump;
 	Font font;
 	JTextField dest;
-	JLabel stat;
+	JLabel statCom;
+	JLabel statDZ;
+	JLabel statHint;
 	JPanel src_pan;
 	JTextField src_pat;
 	JRadioButton src_hex;
@@ -169,6 +171,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
 		frame.addKeyListener(this);
+		GridBagLayout gb = new GridBagLayout();
+		GridBagConstraints gc = new GridBagConstraints();
+		gc.fill = GridBagConstraints.NONE;
+		gc.gridx = 0;
+		gc.gridy = 0;
+		gc.weightx = 0;
+		gc.weighty = 0;
+		gc.gridwidth = 1;
+		gc.gridheight = 1;
+		gc.anchor = GridBagConstraints.WEST;
 		// This allows TAB to be sent
 		frame.setFocusTraversalKeysEnabled(false);
 		java.net.URL url = this.getClass().getResource("docs/dzhelp.html");
@@ -246,7 +258,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		jobActive(false);
 		// This is the main container of everything (exc. menus)
 		JPanel pan = new JPanel();
-		pan.setLayout(new BoxLayout(pan, BoxLayout.Y_AXIS));
+		pan.setLayout(gb);
+		JPanel pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
+		++gc.gridx;
+		++gc.gridy;
 
 		// TODO: get Properties...
 		hilite = Color.yellow;
@@ -284,30 +302,66 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dest.setEnabled(false);
 		dest.setFont(font2);
 		dest.addActionListener(this);
-		stat = new JLabel();
-		stat.setPreferredSize(new Dimension(400, 20));
-		stat.setFont(font2);
+		statCom = new JLabel("Work:");
+		//statCom.setPreferredSize(new Dimension(300, 20));
+		statCom.setFont(font2);
+		statDZ = new JLabel("DZ:");
+		//statDZ.setPreferredSize(new Dimension(300, 20));
+		statDZ.setFont(font2);
+		statHint = new JLabel("Hint:");
+		//statHint.setPreferredSize(new Dimension(300, 20));
+		statHint.setFont(font2);
+		gb.setConstraints(statCom, gc);
+		pan.add(statCom);
+		++gc.gridy;
+		gb.setConstraints(statDZ, gc);
+		pan.add(statDZ);
+		++gc.gridy;
+		gb.setConstraints(statHint, gc);
+		pan.add(statHint);
+		++gc.gridy;
+		pn = new JPanel();
 		JLabel lb = new JLabel("A(ddr):");
 		lb.setFont(font2);
-		JPanel pn = new JPanel();
 		pn.setLayout(new BoxLayout(pn, BoxLayout.X_AXIS));
 		pn.add(lb);
 		pn.add(dest);
-		pn.add(stat);
+		gb.setConstraints(pn, gc);
 		pan.add(pn);
+		++gc.gridy;
 
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
+		++gc.gridy;
 		code = new DZCodePane(this);
 		code.setFont(font);
 		setupFont();	// needs 'code' JPanel
 		code.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * clines + 2 * bd_width));
+		gb.setConstraints(code, gc);
+		pan.add(code);
+		++gc.gridy;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
+		++gc.gridy;
 		dump = new DZDumpPane(this);
 		dump.setFont(font);
 		dump.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * dlines + 2 * bd_width));
-		pan.add(code);
+		gb.setConstraints(dump, gc);
 		pan.add(dump);
+		++gc.gridy;
 		frame.add(pan);
+
+		++gc.gridx;
+		pn = new JPanel();
+		pn.setPreferredSize(new Dimension(5, 5));
+		gb.setConstraints(pn, gc);
+		pan.add(pn);
 		// done setup on frame...
 		frame.pack();
 		frame.setVisible(true);
@@ -427,7 +481,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		f.close();
 		comFile = com;
 		statBase = String.format("Work: %s", com.getName());
-		stat.setText(statBase);
+		statCom.setText(statBase);
 		base = 0x0100;
 		end = base + obj.length;
 		prevs.clear();
@@ -453,9 +507,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		setExts();
 		File dz = new File(basePath + dzExt);
 		if (dz.exists()) {
-			loadDZ(dz);	// resets statBase...
+			loadDZ(dz);
 		}
-		// TODO: auto-load hints?
+		dz = new File(basePath + hintExt);
+		if (dz.exists()) {
+			loadHints(dz);
+		}
 		jobActive(true);
 		setCodeWin(base);
 		setDumpWin(base);
@@ -1523,8 +1580,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			}
 		}
 		ps.close();
-		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
-		stat.setText(statBase + " Saved");
+		statDZ.setText("DZ: " + dz.getName() + " Saved");
 	}
 
 	private void generateHints(File dzh) throws Exception {
@@ -1562,7 +1618,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			ps.format("*%04x,%s\n", a, h);
 		}
 		ps.close();
-		// TODO: update status line?
+		statHint.setText("Hint: " + dzh.getName() + " Saved");
 	}
 
 	private boolean processDZ(int c, String s) {
@@ -1768,8 +1824,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		}
 		resetBreaks(base, true);
 		setCursor(base);
-		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
-		stat.setText(statBase);
+		statDZ.setText("DZ: " + dz.getName());
 	}
 
 	// TODO: cummulative? or start from scratch?
@@ -1806,7 +1861,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		resetBreaks(base, true);
 		// TODO: preserve current location?
 		setCursor(base);
-		// TODO: indicate hints loaded...
+		statHint.setText("Hint: " + in.getName());
 		if (codes.size() > 0) {
 			mi_sch.setEnabled(true);
 		}
@@ -1914,7 +1969,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		}
 		ps.print("\tend\n");
 		ps.close();
-		stat.setText(statBase + " ASM saved");
+		statCom.setText(statBase + " ASM Saved");
 	}
 
 	private void generatePRN(File prn, int first, int last) throws Exception {
@@ -1980,7 +2035,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			a += n;
 		}
 		ps.close();
-		stat.setText(statBase + " PRN saved");
+		statCom.setText(statBase + " PRN Saved");
 	}
 
 	// Search for byte pattern.
