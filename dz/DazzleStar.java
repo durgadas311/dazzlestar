@@ -52,6 +52,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JMenuItem mi_asm;
 	JMenuItem mi_prn;
 	JMenuItem mi_cls;
+	JMenuItem mi_hnt;
 	JMenuItem mi_sch;
 	JMenuItem mi_sym;
 	JMenuItem mi_dis;
@@ -71,6 +72,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JCheckBox src_wrp;
 	JPanel cmt_pan;
 	JTextField cmt_txt;
+	JPanel hnt_pan;
+	JTextField hnt_txt;
 	JPanel err_pan;
 	JEditorPane err_txt;
 	JLabel err_lbl;
@@ -212,6 +215,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi = new JMenuItem("Reset scan", KeyEvent.VK_R);
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = mi_hnt = new JMenuItem("Apply Hint", KeyEvent.VK_B);
+		mi.addActionListener(this);
+		mi_hnt.setEnabled(false);
+		mu.add(mi);
 		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_G);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -348,6 +355,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cmt_pan.add(new JLabel(" "));
 		cmt_pan.add(cmt_txt);
 
+		hnt_pan = new JPanel();
+		hnt_pan.setLayout(new BoxLayout(hnt_pan, BoxLayout.Y_AXIS));
+		hnt_txt = new JTextField();
+		hnt_txt.setPreferredSize(new Dimension(300, 20));
+		hnt_txt.setEditable(true);
+		hnt_pan.add(new JLabel(" "));
+		hnt_pan.add(hnt_txt);
+
 		err_pan = new JPanel();
 		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
 		// TODO: need better handling, don't require focus in err_txt/pan.
@@ -379,6 +394,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void jobActive(boolean act) {
 		mi_ld.setEnabled(act);
 		mi_hn.setEnabled(act);
+		mi_hnt.setEnabled(act);
 		mi_sav.setEnabled(act);
 		mi_asm.setEnabled(act);
 		mi_prn.setEnabled(act);
@@ -947,6 +963,47 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		symtab.clear();
 	}
 
+	private int callBreak(int addr, int n) {
+		int bb = 'B';
+		if (n > 0 && (n & ~0xff) != 0) {
+			bb = (n & 0xff);
+			// TODO: common code...
+			switch (bb) {
+			case 'L':
+				n = 2;
+				break;
+			case '0':
+				n = lenTo(addr, 0, false); // n >= 1
+				break;
+			case '$':
+				n = lenTo(addr, '$', false); // n >= 1
+				break;
+			case '7':
+				n = lenToBit7(addr, false); // n >= 1
+				break;
+			}
+		}
+		putBrk(addr, bb);
+		if (n == 0) {
+			n = read(addr) + 1;
+		} else if (n < 0) {
+			n = -n;
+			if ((read(addr) & 0x80) == 0) {
+				++n;
+			}
+		}
+		// handle long strings...
+		int m = n;
+		while (m > 16) {
+			setLen(addr, 16);
+			m -= 16;
+		}
+		setLen(addr, m);
+		addr += n;
+		putBrk(addr, 'I');
+		return n;
+	}
+
 	// TODO: detect bogus/nonsense instructions (derailings)
 	private void analyze(int addr) {
 		int bk;
@@ -1005,44 +1062,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			// user must have pre-registered calls with inline parameters...
 			if (d.type == Z80Dissed.CALL && calls.containsKey(d.addr)) {
 				// must be unconditional CALL if inline params...
-				int n = calls.get(d.addr);
-				int bb = 'B';
-				if (n > 0 && (n & ~0xff) != 0) {
-					bb = (n & 0xff);
-					// TODO: common code...
-					switch (bb) {
-					case 'L':
-						n = 2;
-						break;
-					case '0':
-						n = lenTo(addr, 0, false); // n >= 1
-						break;
-					case '$':
-						n = lenTo(addr, '$', false); // n >= 1
-						break;
-					case '7':
-						n = lenToBit7(addr, false); // n >= 1
-						break;
-					}
-				}
-				putBrk(addr, bb);
-				if (n == 0) {
-					n = read(addr) + 1;
-				} else if (n < 0) {
-					n = -n;
-					if ((read(addr) & 0x80) == 0) {
-						++n;
-					}
-				}
-				// handle long strings...
-				int m = n;
-				while (m > 16) {
-					setLen(addr, 16);
-					m -= 16;
-				}
-				setLen(addr, m);
+				int n = callBreak(addr, calls.get(d.addr));
 				addr += n;
-				putBrk(addr, 'I');
 			}
 			// Only CJMP, CALL left...
 			analyze(d.addr);
@@ -1575,7 +1596,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		return true;
 	}
 
-	private boolean processHint(int c, String s) {
+	// TODO: need better, extensible, way to pass codes,calls,...
+	private boolean processHint(int c, String s,
+				Vector<Integer> codes,
+				Map<Integer,Integer> calls) {
 		int a;
 		int b;
 		String[] ss = s.split(",");
@@ -1616,6 +1640,49 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			codes.add(a); // TODO: reject duplicates
 		} else {
 			return false;
+		}
+		return true;
+	}
+
+	private boolean applyHint(String s) {
+		// TODO: need better way to locate what was added...
+		Vector<Integer> codes = new Vector<Integer>();
+		Map<Integer,Integer> calls = new HashMap<Integer,Integer>();
+		int c = s.charAt(0);
+		if (!processHint(c, s.substring(1), codes, calls)) {
+			return false;
+		}
+		// Only one can be non-zero...
+		if (codes.size() > 0) {
+			this.codes.addAll(codes);
+			return true;
+		}
+		this.calls.putAll(calls);
+		int a = base;
+		int bk = getBrk(a);
+		if (bk == 0) bk = 'I';
+		int b;
+		int n;
+		Z80Dissed d;
+		while (a < end) {
+			b = getBrk(a);
+			if (b != 0) bk = b;
+			n = getLen(a);
+			if (n == 0) n = 1;
+			if (bk != 'I') {
+				b = lastBrk(a, n);
+				if (b != 0) bk = b;
+				a += n;
+				continue;
+			}
+			d = dis.disas(a);
+			// assert n == d.len
+			if (d.type == Z80Dissed.CALL && calls.containsKey(d.addr)) {
+				n += callBreak(a + n, calls.get(d.addr));
+			}
+			b = lastBrk(a, n);
+			if (b != 0) bk = b;
+			a += n;
 		}
 		return true;
 	}
@@ -1679,7 +1746,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			c = s.charAt(0);
 			if (c == 0x1a) break;	// CP/M EOF (Ctrl-Z)
 			if (c == '#') continue;
-			if (!processHint(c, s.substring(1))) {
+			if (!processHint(c, s.substring(1), codes, calls)) {
 				es += String.format("%d: Unrecognized Hint \"%s\"\n",
 									l, s);
 				++e;
@@ -2005,6 +2072,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			doAnaHints();
 			return;
 		}
+		if (key == KeyEvent.VK_B) {
+			doHint();
+			return;
+		}
 		if (key == KeyEvent.VK_R) {
 			// In somecases, this warrants a repaint...
 			fresh();
@@ -2250,6 +2321,25 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		if (!constant(cursor)) {
 			mksym(d.addr);
 		}
+		code.repaint();
+	}
+
+	private void doHint() {
+		hnt_txt.setText("");
+		int res = JOptionPane.showConfirmDialog(frame, hnt_pan,
+					"Apply Hint",
+					JOptionPane.OK_CANCEL_OPTION);
+		if (res != JOptionPane.OK_OPTION) {
+			return;
+		}
+		if (hnt_txt.getText().length() == 0) {
+			return;
+		}
+		if (!applyHint(hnt_txt.getText())) {
+			PopupFactory.inform(frame, "Apply Hint",
+				String.format("Hint failed \"%s\"", hnt_txt.getText()));
+		}
+		resetBreaks(base, true);
 		code.repaint();
 	}
 

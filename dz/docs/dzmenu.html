@@ -50,6 +50,16 @@ Only enabled if some exist.</DD>
 <DT>Disas->Reset scan</DT>
 <DD>Clear all code scan progress markers.
 Used to start over fresh.</DD>
+<DT>Disas->Apply Hint</DT>
+<DD> Enter and apply a single hint.
+Typically only useful for declaring inline function params.
+The single hint will be added to the hints table,
+and the current code will be scanned and calls to the
+function will have breaks added for the inline parameters.
+Note that calls which are hidden by previous mis-aligned breaks
+will not be fixed.
+See <A HREF="dzhints.html">Hint Syntax</A>.
+</DD>
 <DT>Disas->Rebuild Symtab</DT>
 <DD>Discards any current symbols and rescans code according to
 current breaks, building a new symbol table.
