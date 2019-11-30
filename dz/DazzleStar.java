@@ -47,6 +47,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	Z80Disassembler dis;
 	Font font2;
 	JMenuItem mi_ld;
+	JMenuItem mi_shn;
 	JMenuItem mi_hn;
 	JMenuItem mi_sav;
 	JMenuItem mi_asm;
@@ -194,6 +195,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_L);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_shn = new JMenuItem("Save Hints", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = mi_hn = new JMenuItem("Load Hints", KeyEvent.VK_I);
@@ -1493,17 +1497,17 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			}
 			String s = "";
 			int b = getBrk(a);
-			if (b != 0) { // skip dups: && b != bk) {
+			if (b != 0) { // skip dups: && b != bk)
 				s += (char)b;
 				bk = b;
 			} else s += " ";
 			b = getStyle(a);
-			if (b != 0) { // skip dups: && b != st) {
+			if (b != 0) { // skip dups: && b != st)
 				s += (char)b;
 				st = b;
 			} else s += " ";
 			b = getRadix(a);
-			if (b != 0) { // skip dups: && b != rx) {
+			if (b != 0) { // skip dups: && b != rx)
 				s += (char)b;
 				rx = b;
 			} else s += " ";
@@ -1521,6 +1525,44 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		ps.close();
 		statBase = String.format("Work: %s %s", comFile.getName(), dz.getName());
 		stat.setText(statBase + " Saved");
+	}
+
+	private void generateHints(File dzh) throws Exception {
+		PrintStream ps = new PrintStream(dzh);
+		String h;
+		for (int a : codes) {
+			ps.format("+%04x\n", a);
+		}
+		for (int a : calls.keySet()) {
+			int n = calls.get(a);
+			if (n > 0 && (n & ~0xff) != 0) {
+				switch (n & 0xff) {
+				case 'L':
+					h = "L";
+					break;
+				case '0':
+					h = "Z";
+					break;
+				case '$':
+					h = "$";
+					break;
+				case '7':
+					h = "B";
+					break;
+				default:
+					// not a viable situation...
+					h = String.format("?%04x", n);
+					break;
+				}
+			} else if (n == 0) {
+				h = "N";
+			} else {
+				h = String.format("%d", n);
+			}
+			ps.format("*%04x,%s\n", a, h);
+		}
+		ps.close();
+		// TODO: update status line?
 	}
 
 	private boolean processDZ(int c, String s) {
@@ -2019,6 +2061,24 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				generateDZ(dz, base, end);
 			} catch (Exception ee) {
 				PopupFactory.warning(frame, "Save DZ",
+					ee.getMessage());
+				//ee.printStackTrace();
+			}
+			return;
+		}
+		if (key == KeyEvent.VK_D) {
+			// Save Hints...
+			// TODO: pick file? backup existing?
+			if (calls.size() == 0 && codes.size() == 0) {
+				PopupFactory.warning(frame, "Save Hints",
+					"No Hints to save");
+				return;
+			}
+			File dz = new File(basePath + hintExt);
+			try {
+				generateHints(dz);
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Save Hints",
 					ee.getMessage());
 				//ee.printStackTrace();
 			}
