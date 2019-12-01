@@ -66,6 +66,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JLabel statCom;
 	JLabel statDZ;
 	JLabel statHint;
+
+	JPanel com_pan;
+	JTextField com_org;
 	JPanel src_pan;
 	JTextField src_pat;
 	JRadioButton src_hex;
@@ -392,6 +395,22 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		frame.pack();
 		frame.setVisible(true);
 
+		gb = new GridBagLayout();
+		com_pan = new JPanel();
+		com_pan.setLayout(gb);
+		gc.gridx = 0;
+		gc.gridy = 0;
+		com_org = new JTextField();
+		com_org.setPreferredSize(new Dimension(50, 20));
+		com_org.setEditable(true);
+		com_org.setFont(font2);
+		lb = new JLabel("Org:");
+		lb.setFont(font2);
+		gb.setConstraints(lb, gc);
+		com_pan.add(lb);
+		++gc.gridy;
+		gb.setConstraints(com_org, gc);
+		com_pan.add(com_org);
 		src_pan = new JPanel();
 		src_pan.setLayout(new BoxLayout(src_pan, BoxLayout.Y_AXIS));
 		src_pat = new JTextField();
@@ -464,8 +483,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 		if (fi != null) {
 			// Assume this means commandline... stdin/out/err...
+			// TODO: allow org to be specified
 			try {
-				newJob(fi);
+				newJob(fi, 0x0100);
 			} catch (Exception ee) {
 				ee.printStackTrace();
 				System.exit(1);
@@ -496,7 +516,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private void newJob(File com) throws Exception {
+	private void newJob(File com, int org) throws Exception {
 		jobActive(false);
 		InputStream f = new FileInputStream(com);
 		obj = new byte[f.available()];
@@ -510,7 +530,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		comFile = com;
 		statBase = String.format("Work: %s", com.getName());
 		statCom.setText(statBase);
-		base = 0x0100;
+		base = org;
 		end = base + obj.length;
 		prevs.clear();
 		calls.clear();
@@ -2242,16 +2262,21 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		}
 		if (key == KeyEvent.VK_N) {
 			// new job (disassembly)
+			com_org.setText("0100");
 			SuffFileChooser sfc = new SuffFileChooser("COM file",
 				new String[]{ "com" },
 				new String[]{ "COM file" },
-				comFile, null);
+				comFile, com_pan);
 			int rv = sfc.showOpenDialog(frame);
 			if (rv != JFileChooser.APPROVE_OPTION) {
 				return;
 			}
+			int org = 0x0100;
+			if (com_org.getText().length() > 0) {
+				org = Integer.valueOf(com_org.getText(), 16);
+			}
 			try {
-				newJob(sfc.getSelectedFile());
+				newJob(sfc.getSelectedFile(), org);
 			} catch (Exception ee) {
 				PopupFactory.warning(frame, "Load COM",
 					ee.getMessage());
