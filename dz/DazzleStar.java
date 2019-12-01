@@ -191,13 +191,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			help = new GenericHelp(frame.getTitle() + " Help", url);
 		}
 
+		JMenuItem mi;
 		JMenuBar mb = new JMenuBar();
 		// File menu...
 		JMenu mu = new JMenu("File");
 		mu.setMnemonic(KeyEvent.VK_F);
-		JMenuItem mi = new JMenuItem("New", KeyEvent.VK_N);
-		mi.addActionListener(this);
-		mu.add(mi);
+		mu.add(newSubMenu());
 		mi = mi_cls = new JMenuItem("Close", KeyEvent.VK_C);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -403,9 +402,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		com_org = new JTextField();
 		com_org.setPreferredSize(new Dimension(50, 20));
 		com_org.setEditable(true);
-		com_org.setFont(font2);
 		lb = new JLabel("Org:");
-		lb.setFont(font2);
 		gb.setConstraints(lb, gc);
 		com_pan.add(lb);
 		++gc.gridy;
@@ -493,6 +490,27 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		} else {
 			comFile = new File(System.getProperty("user.dir"));
 		}
+	}
+
+	private JMenuItem newSubMenu() {
+		JMenu mu = new JMenu("New");
+		mu.setMnemonic(KeyEvent.VK_N);
+		JMenuItem mi = new JMenuItem("Binary (.COM)", KeyEvent.VK_N);
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("SPR File (V)", KeyEvent.VK_V);
+		mi.addActionListener(this);
+		mi.setEnabled(false);	// TODO: implement and enable
+		mu.add(mi);
+		mi = new JMenuItem("PRL File (W)", KeyEvent.VK_W);
+		mi.addActionListener(this);
+		mi.setEnabled(false);	// TODO: implement and enable
+		mu.add(mi);
+		mi = new JMenuItem("REL File (X)", KeyEvent.VK_X);
+		mi.addActionListener(this);
+		mi.setEnabled(false);	// TODO: implement and enable
+		mu.add(mi);
+		return mu;
 	}
 
 	private void jobActive(boolean act) {
@@ -2259,9 +2277,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		if (key == KeyEvent.VK_N) {
 			// new job (disassembly)
 			com_org.setText("0100");
-			SuffFileChooser sfc = new SuffFileChooser("COM file",
-				new String[]{ "com" },
-				new String[]{ "COM file" },
+			SuffFileChooser sfc = new SuffFileChooser("Binary file",
+				new String[]{ "com", "bin", "rom" },
+				new String[]{ "COM file", "BIN file", "ROM file" },
 				comFile, com_pan);
 			int rv = sfc.showOpenDialog(frame);
 			if (rv != JFileChooser.APPROVE_OPTION) {
