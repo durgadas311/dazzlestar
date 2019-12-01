@@ -25,6 +25,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	static final String allRadix = "HD2";
 
 	static DazzleStar _us;
+	ProgramFile prog;
 	File comFile;
 	String baseName;
 	String basePath;
@@ -33,7 +34,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	String asmExt;
 	String prnExt;
 	boolean uppercase;
-	byte[] obj;
 	byte[] brk;	// breaks
 	byte[] rdx;	// radix
 	byte[] sty;	// styles
@@ -518,20 +518,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void newJob(File com, int org) throws Exception {
 		jobActive(false);
-		InputStream f = new FileInputStream(com);
-		obj = new byte[f.available()];
-		brk = new byte[f.available()];
-		rdx = new byte[f.available()];
-		sty = new byte[f.available()];
-		vst = new byte[f.available()];
-		len = new byte[f.available()];
-		f.read(obj);
-		f.close();
+		ProgramFile prg = new BinaryFile(com, org);
+		brk = new byte[prg.size()];
+		rdx = new byte[prg.size()];
+		sty = new byte[prg.size()];
+		vst = new byte[prg.size()];
+		len = new byte[prg.size()];
+		prog = prg;
 		comFile = com;
 		statBase = String.format("Work: %s", com.getName());
 		statCom.setText(statBase);
-		base = org;
-		end = base + obj.length;
+		base = prg.base();
+		end = prg.end();
 		prevs.clear();
 		calls.clear();
 		codes.clear();
@@ -541,16 +539,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
 		baseName = com.getName();
-		if (baseName.matches(".*\\.COM")) {
-			basePath = basePath.substring(0, basePath.length() - 4);
-			baseName = baseName.substring(0, baseName.length() - 4);
-			uppercase = true;
-		} else {
-			if (baseName.matches(".*\\.com")) {
-				basePath = basePath.substring(0, basePath.length() - 4);
-				baseName = baseName.substring(0, baseName.length() - 4);
-			}
-			uppercase = false;
+		uppercase = baseName.equals(baseName.toUpperCase());
+		int x = baseName.lastIndexOf('.');
+		if (x > 0) {
+			String sfx = baseName.substring(x);
+			// TODO: analyze suffix?
+			baseName = baseName.substring(0, x);
+			x = basePath.length() - sfx.length();
+			basePath = basePath.substring(0, x);
 		}
 		setExts();
 		File dz = new File(basePath + dzExt);
@@ -765,7 +761,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// Must never break on first char
 		int x = a;
 		while (x < end) {
-			if (read(x++) == c) break;
+			if (prog.read(x++) == c) break;
 			if (brk && (anyBrk(x) || symbol(x))) break;
 		}
 		return x - a;
@@ -776,7 +772,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// Must never break on first char
 		int x = a;
 		while (x < end) {
-			if ((read(x++) & 0x80) != 0) break;
+			if ((prog.read(x++) & 0x80) != 0) break;
 			if (brk && (anyBrk(x) || symbol(x))) break;
 		}
 		return x - a;
@@ -1098,10 +1094,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		putBrk(addr, bb);
 		if (n == 0) {
-			n = read(addr) + 1;
+			n = prog.read(addr) + 1;
 		} else if (n < 0) {
 			n = -n;
-			if ((read(addr) & 0x80) == 0) {
+			if ((prog.read(addr) & 0x80) == 0) {
 				++n;
 			}
 		}
@@ -1198,24 +1194,24 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			break;
 		case 'L':
 			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
+			z = prog.read(a) | (prog.read(a + 1) << 8);
 			mksym(z);
 			break;
 		case 'R':
 			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
+			z = prog.read(a) | (prog.read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
 			mksym(z);
 			break;
 		case 'T':
 			// assert: n == 3
-			z = read(a + 1) | (read(a + 2) << 8);
+			z = prog.read(a + 1) | (prog.read(a + 2) << 8);
 			mksym(z);
 			break;
 		case 'Q':
 			// assert: n == 4
-			z = read(a + 2) | (read(a + 3) << 8);
+			z = prog.read(a + 2) | (prog.read(a + 3) << 8);
 			mksym(z);
 			break;
 		}
@@ -1254,7 +1250,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int c;
 		int e;
 		while (n > 0) {
-			c = read(a);
+			c = prog.read(a);
 			boolean last = (bit7 && n == 1 && (c & 0x80) != 0);
 			if (last) {
 				e = (c & 0x7f);
@@ -1336,7 +1332,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		switch (bk) {
 		case 'L':
 			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
+			z = prog.read(a) | (prog.read(a + 1) << 8);
 			d.op = "dw";
 			d.fmt = "%s";
 			d.addr = z;
@@ -1344,19 +1340,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			break;
 		case 'W':
 			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
+			z = prog.read(a) | (prog.read(a + 1) << 8);
 			d.op = "dw";
 			d.fmt = fmtNum(z, rx);
 			break;
 		case 'X':
 			// assert: n == 2
-			z = read(a + 1) | (read(a) << 8);
+			z = prog.read(a + 1) | (prog.read(a) << 8);
 			d.op = "dw";
 			d.fmt = fmtNum(z, rx);
 			break;
 		case 'R':
 			// assert: n == 2
-			z = read(a) | (read(a + 1) << 8);
+			z = prog.read(a) | (prog.read(a + 1) << 8);
 			z += a;
 			z &= 0xffff;
 			d.op = "dw";
@@ -1366,8 +1362,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			break;
 		case 'T':
 			// assert: n == 3
-			y = read(a);
-			z = read(a + 1) | (read(a + 2) << 8);
+			y = prog.read(a);
+			z = prog.read(a + 1) | (prog.read(a + 2) << 8);
 			d.op = "db";
 			if (st == 'M') {
 				d.fmt = asmChar(y, rx);
@@ -1383,8 +1379,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			break;
 		case 'Q':
 			// assert: n == 4
-			y = read(a) | (read(a + 1) << 8);
-			z = read(a + 2) | (read(a + 3) << 8);
+			y = prog.read(a) | (prog.read(a + 1) << 8);
+			z = prog.read(a + 2) | (prog.read(a + 3) << 8);
 			d.op = "dw";
 			d.fmt = fmtNum(y, rx);
 			zd.add(d);
@@ -1408,14 +1404,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				s = "";
 				for (z = 0; z < n; ++z) {
 					if (z != 0) s += ',';
-					s += fmtNum(read(a++), rx);
+					s += fmtNum(prog.read(a++), rx);
 				}
 				d.fmt = s;
 			}
 			break;
-		case '0': // assert read(a + n - 1) == 0
-		case '$': // assert read(a + n - 1) == '$'
-		case '7': // assert read(a + n - 1) & 0x80 == 0x80
+		case '0': // assert prog.read(a + n - 1) == 0
+		case '$': // assert prog.read(a + n - 1) == '$'
+		case '7': // assert prog.read(a + n - 1) & 0x80 == 0x80
 			// TODO: '7' comment showing last char?
 			d.op = "db";
 			d.fmt = asmString(a, n, bk, rx);
@@ -1507,7 +1503,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 			for (z = 0; z < 5; ++z) {
 				if (z < n) {
-					t += String.format("%02x", read(a + z));
+					t += String.format("%02x", prog.read(a + z));
 				} else {
 					t += "  ";
 				}
@@ -1568,7 +1564,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			for (int z = 0; z < 16; ++z) {
 				paintHighlight(g2d, a + z, x + s.length() * _fw + _fw2, y - _fa, 3);
 				if (a + z < end) {
-					s += String.format(" %02x", read(a + z));
+					s += String.format(" %02x", prog.read(a + z));
 				} else {
 					s += " --";
 				}
@@ -1577,7 +1573,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			for (int z = 0; z < 16; ++z) {
 				paintHighlight(g2d, a + z, x + s.length() * _fw, y - _fa, 1);
 				if (a + z < end) {
-					c = read(a + z);
+					c = prog.read(a + z);
 					if (c < ' ' || c > '~') c = '.';
 					s += (char)c;
 				} else {
@@ -1989,14 +1985,14 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				ps.format(";; %04x:", a);
 				for (z = 0; z < 4; ++z) {
 					if (z < n) {
-						ps.format(" %02x", read(a + z));
+						ps.format(" %02x", prog.read(a + z));
 					} else {
 						ps.print("   ");
 					}
 				}
 				ps.print(" ");
 				for (z = 0; z < n && z < 4; ++z) {
-					b = read(a + z);
+					b = prog.read(a + z);
 					if (b < ' ' || b > '~' || b == '!') b = '.';
 					ps.format("%c", b);
 				}
@@ -2050,7 +2046,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (n == 0) n = 1;
 			for (z = 0; z < 5; ++z) {
 				if (z < n) {
-					ps.format("%02x", read(a + z));
+					ps.format("%02x", prog.read(a + z));
 				} else {
 					ps.print("  ");
 				}
@@ -2101,7 +2097,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		}
 		while (true) {
 			int x = 0;
-			for (; x < val.length && (val[x] & 0xff) == read(a + x); ++x);
+			for (; x < val.length && (val[x] & 0xff) == prog.read(a + x); ++x);
 			if (x == val.length) {
 				return a;
 			}
@@ -2290,8 +2286,23 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			cwin = -1;
 			dwin = -1;
 			base = end = 0;
-			// TODO: discard obj[], brk[], len[] ?
-			// TODO: symtab.clear()?
+			prog = null;
+			// don't null - remember last directory used
+			//comFile = null;
+			statCom.setText("Work:");
+			statDZ.setText("DZ:");
+			statHint.setText("Hint:");
+			jobActive(false);
+			brk = null;
+			rdx = null;
+			sty = null;
+			vst = null;
+			len = null;
+			symtab.clear();
+			calls.clear();
+			codes.clear();
+			code.repaint();
+			dump.repaint();
 			return;
 		}
 		if (key == KeyEvent.VK_T) {
@@ -2394,15 +2405,15 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			Z80Dissed d = dis.disas(cursor);
 			a = d.addr;
 		} else if (bk == 'L') {
-			a = read(cursor) | (read(cursor + 1) << 8);
+			a = prog.read(cursor) | (prog.read(cursor + 1) << 8);
 		} else if (bk == 'R') {
-			a = read(cursor) | (read(cursor + 1) << 8);
+			a = prog.read(cursor) | (prog.read(cursor + 1) << 8);
 			a += cursor;
 			a &= 0xffff;
 		} else if (bk == 'T') {
-			a = read(cursor + 1) | (read(cursor + 2) << 8);
+			a = prog.read(cursor + 1) | (prog.read(cursor + 2) << 8);
 		} else if (bk == 'Q') {
-			a = read(cursor + 2) | (read(cursor + 3) << 8);
+			a = prog.read(cursor + 2) | (prog.read(cursor + 3) << 8);
 		}
 		if (a < base || a >= end) return;
 		pushPrev(cursor);
@@ -2671,11 +2682,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		return read(adr);
 	}
 	public int read(int adr) {
-		adr -= base;
-		if (adr < 0 || adr >= obj.length) {
-			return 0;
-		}
-		return obj[adr] & 0xff;
+		// should never happen...
+		if (prog == null) return 0;
+		return prog.read(adr);
 	}
 	public void write(int address, int value) {}
 	public void reset() {}
