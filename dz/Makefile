@@ -32,8 +32,11 @@ ship: release # jar src
 	rsync -Wuv ../jar/*.jar README $(DEST)
 	rsync -Wuv docs/dz*.html $(DEST)
 	rsync -Wuv ../disas/dz-out.* ../disas/dz-out2.* \
+		../disas/dzi-out2.* \
 		../disas/dzxterm.asm ../disas/dzh19.asm \
 		$(DEST)/disas
+	rsync -Wuv ../disas/zout/dz-out2.cim $(DEST)/disas/dz2.com
+	rsync -Wuv ../disas/zout/dzi-out2.cim $(DEST)/disas/dzi2.com
 
 docs/About.html: __FRC__
 	sed -e 's/\$$(date)/$(shell date)/' docs/About.html.in >$@

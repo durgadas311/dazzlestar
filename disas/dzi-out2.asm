@@ -7787,9 +7787,10 @@ L6b3d:	lxi	b,04104h	;; 6b3d: 01 04 41    ..A
 	dw	L6b09
 	dw	L6b24
 	dw	L6b3b
+
 L6b4d:	lxi	h,L130f		;; 6b4d: 21 0f 13    ...
 	call	pshstr		;; 6b50: cd 2a 83    .*.
-	call	L8511		;; 6b53: cd 11 85    ...
+	call	fexist		;; 6b53: cd 11 85    ...
 	push	psw		;; 6b56: f5          .
 	ldx	a,-126		;; 6b57: dd 7e 82    .~.
 	cpi	058h		;; 6b5a: fe 58       .X
@@ -8358,7 +8359,7 @@ L7278:	mvi	b,009h		;; 7278: 06 09       ..
 	db 'X' ! dw L7268
 	dw	L7276
 L729a:	ldx	a,-126		;; 729a: dd 7e 82    .~.
-	cpi	058h		;; 729d: fe 58       .X
+	cpi	'X'		;; 729d: fe 58       .X
 	jnz	L6e47		;; 729f: c2 47 6e    .Gn
 	lda	L1320		;; 72a2: 3a 20 13    : .
 	rar			;; 72a5: 1f          .
@@ -10624,7 +10625,7 @@ L850d:	db	0
 	xra	a		;; 850e: af          .
 	jr	L8513		;; 850f: 18 02       ..
 
-L8511:	mvi	a,001h		;; 8511: 3e 01       >.
+fexist:	mvi	a,001h		;; 8511: 3e 01       >.
 L8513:	sta	L850d		;; 8513: 32 0d 85    2..
 	pop	h		;; 8516: e1          .
 	shld	tmpret		;; 8517: 22 11 9e    "..
