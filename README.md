@@ -5,3 +5,5 @@
 ![DZ Example](dz.png)
 
 [See Help file](http://sebhc.durgadas.com/dazzlestar/dzhelp.html)
+
+![DZ Example](dz2.png)
