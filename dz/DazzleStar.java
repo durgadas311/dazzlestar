@@ -2441,9 +2441,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 
 	private void doHint() {
 		hnt_txt.setText("");
-		int res = JOptionPane.showConfirmDialog(frame, hnt_pan,
+		int res = FocusOptionPane.focusConfirmDialog(frame, hnt_pan,
 					"Apply Hint",
-					JOptionPane.OK_CANCEL_OPTION);
+					JOptionPane.OK_CANCEL_OPTION, hnt_txt);
 		if (res != JOptionPane.OK_OPTION) {
 			return;
 		}
@@ -2464,9 +2464,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		} else {
 			cmt_txt.setText("");
 		}
-		int res = JOptionPane.showConfirmDialog(frame, cmt_pan,
+		int res = FocusOptionPane.focusConfirmDialog(frame, cmt_pan,
 					"Comment",
-					JOptionPane.OK_CANCEL_OPTION);
+					JOptionPane.OK_CANCEL_OPTION, cmt_txt);
 		if (res != JOptionPane.OK_OPTION) {
 			return;
 		}
@@ -2485,9 +2485,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		//src_hex.setSelected(true);
 		//src_beg.setSelected(true);
 		//src_wrp.setSelected(false);
-		int res = JOptionPane.showConfirmDialog(frame, src_pan,
+		int res = FocusOptionPane.focusConfirmDialog(frame, src_pan,
 					"Search Byte(s)",
-					JOptionPane.OK_CANCEL_OPTION);
+					JOptionPane.OK_CANCEL_OPTION, src_pat);
 		if (res != JOptionPane.OK_OPTION) {
 			return;
 		}
