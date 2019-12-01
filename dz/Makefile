@@ -30,7 +30,7 @@ release: # jar src
 
 ship: release # jar src
 	rsync -Wuv ../jar/*.jar README $(DEST)
-	rsync -Wuv docs/dz*.html $(DEST)
+	rsync -Wuv docs/dz*.html dzrc.example $(DEST)
 	rsync -Wuv ../disas/dz-out.* ../disas/dz-out2.* \
 		../disas/dzi-out2.* \
 		../disas/dzxterm.asm ../disas/dzh19.asm \

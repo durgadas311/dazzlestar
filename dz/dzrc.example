@@ -1,0 +1,23 @@
+# Example properties file for DazzleStar.jar
+# All are commented out. See documentation for
+# default values.
+
+# font size for status pane
+#status_font_size = 11
+# font size for code and dump panes
+#font_size = 12
+# font name for code and dump panes
+#font_name = Monospaced
+
+# Size of code and dump panes, in lines
+#code_win = 16
+#dump_win = 4
+
+# These show a "green CRT"-like appearance:
+
+# background color for code and dump panes
+#background = 202020
+# font color for code and dump panes
+#font_color = 00ff00
+# color for cursors in code and dump panes
+#cursor_color = 808080
