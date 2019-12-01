@@ -191,6 +191,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		JMenuBar mb = new JMenuBar();
 		// File menu...
 		JMenu mu = new JMenu("File");
+		mu.setMnemonic(KeyEvent.VK_F);
 		JMenuItem mi = new JMenuItem("New", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -199,6 +200,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mu.add(mi);
 		mi = mi_asm = new JMenuItem("Generate ASM", KeyEvent.VK_A);
 		mi.addActionListener(this);
+		mi.setDisplayedMnemonicIndex(9);
 		mu.add(mi);
 		mi = mi_prn = new JMenuItem("Generate PRN", KeyEvent.VK_P);
 		mi.addActionListener(this);
@@ -209,10 +211,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_L);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_shn = new JMenuItem("Save Hints", KeyEvent.VK_D);
+		mi = mi_shn = new JMenuItem("Save Hints (D)", KeyEvent.VK_D);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_hn = new JMenuItem("Load Hints", KeyEvent.VK_I);
+		mi = mi_hn = new JMenuItem("Load Hints (I)", KeyEvent.VK_I);
+		mi.setDisplayedMnemonicIndex(12);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Quit (no save)", KeyEvent.VK_Q);
@@ -221,31 +224,34 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mb.add(mu);
 		// done with File menu
 		mu = new JMenu("Disas");
-		mi = new JMenuItem("Scan from here", KeyEvent.VK_Z);
+		mu.setMnemonic(KeyEvent.VK_D);
+		mi = new JMenuItem("Scan from here (Z)", KeyEvent.VK_Z);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_sch = new JMenuItem("Scan Hints", KeyEvent.VK_Y);
+		mi = mi_sch = new JMenuItem("Scan Hints (Y)", KeyEvent.VK_Y);
 		mi.addActionListener(this);
 		mi_sch.setEnabled(false);
 		mu.add(mi);
 		mi = new JMenuItem("Reset scan", KeyEvent.VK_R);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_hnt = new JMenuItem("Apply Hint", KeyEvent.VK_B);
+		mi = mi_hnt = new JMenuItem("Apply Hint (B)", KeyEvent.VK_B);
 		mi.addActionListener(this);
 		mi_hnt.setEnabled(false);
 		mu.add(mi);
-		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_G);
+		mi = mi_sym = new JMenuItem("Rebuild Symtab (G)", KeyEvent.VK_G);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_dis = new JMenuItem("Use -----", KeyEvent.VK_M);
+		mi = mi_dis = new JMenuItem("Use ----- (M)", KeyEvent.VK_M);
 		mi.addActionListener(this);
+		mi.setDisplayedMnemonicIndex(11);
 		mu.add(mi);
 		mb.add(mu);
 		disHint();
 		// done with Disas menu
 		// Help is always last... far right.
 		mu = new JMenu("Help");
+		mu.setMnemonic(KeyEvent.VK_H);
 		mi = new JMenuItem("About", KeyEvent.VK_T);
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -482,9 +488,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void disHint() {
 		if (dis instanceof Z80DisassemblerMAC80) {
-			mi_dis.setText("Use Zilog");
+			mi_dis.setText("Use Zilog (M)");
+			mi_dis.setDisplayedMnemonicIndex(11);
 		} else {
-			mi_dis.setText("Use MAC80");
+			mi_dis.setText("Use MAC80 (M)");
+			mi_dis.setDisplayedMnemonicIndex(11);
 		}
 	}
 
@@ -960,9 +968,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void goAdr(int a) {
+		goAdr(a, false);
+	}
+
+	private void goAdr(int a, boolean jump) {
 		int c = a;
 		while (a > base && getLen(a) == 0) --a;
-		if (a >= cwin && a < cend) {
+		if (!jump && a >= cwin && a < cend) {
 			// TODO: any action?
 		} else {
 			setCodeWin(a);
@@ -2374,7 +2386,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 
 	private void keyAlted(int k) {
 		if (k == KeyEvent.VK_HOME) {
-			goAdr(cursor);
+			goAdr(cursor, true);
 		}
 	}
 
@@ -2425,6 +2437,11 @@ if (orphaned(a)) t += '!'; else t += ' ';
 
 	public void keyTyped(KeyEvent e) {
 		int c = Character.toUpperCase(e.getKeyChar());
+		int m = e.getModifiers();
+		if ((m & InputEvent.ALT_MASK) != 0) {
+			// don't respond to shortcut keys
+			return;
+		}
 		if (c == 'A') {
 			dest.setEnabled(true);
 			dest.requestFocus();
