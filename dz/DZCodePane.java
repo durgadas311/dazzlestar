@@ -9,7 +9,10 @@ public class DZCodePane extends JPanel {
 
 	public DZCodePane(DZCodePainter cp) {
 		super();
-		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+		Color c = getBackground();
+		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED,
+			c.brighter(), c.brighter(),
+			c.darker(), c.darker()));
 		p1 = cp;
 	}
 

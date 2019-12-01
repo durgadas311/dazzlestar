@@ -284,6 +284,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (s != null) {
 			hilite = new Color(Integer.valueOf(s, 16));
 		}
+		liter = hilite.darker();
 		s = props.getProperty("font_name");
 		if (s != null) {
 			fn = s;
@@ -293,9 +294,24 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			fz = Float.valueOf(s);
 		}
 		font = new Font(fn, Font.PLAIN, (int)fz);
-		liter = hilite.darker();
+		Color fc = Color.black;
+		s = props.getProperty("font_color");
+		if (s != null) {
+			fc = new Color(Integer.valueOf(s, 16));
+		}
+		Color bc = null; // default: don't set
+		s = props.getProperty("background");
+		if (s != null) {
+			bc = new Color(Integer.valueOf(s, 16));
+		}
 
-		font2 = new Font("Sans-serif", Font.PLAIN, 10);
+		fz = (float)10.0;
+		s = props.getProperty("status_font_size");
+		if (s != null) {
+			fz = Float.valueOf(s);
+		}
+		font2 = new Font("Sans-serif", Font.PLAIN, (int)fz);
+
 		dest = new JTextField();
 		dest.setPreferredSize(new Dimension(50, 20));
 		dest.setEditable(true);
@@ -337,6 +353,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		++gc.gridy;
 		code = new DZCodePane(this);
 		code.setFont(font);
+		code.setForeground(fc);
+		if (bc != null) code.setBackground(bc);
 		setupFont();	// needs 'code' JPanel
 		code.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * clines + 2 * bd_width));
@@ -350,6 +368,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		++gc.gridy;
 		dump = new DZDumpPane(this);
 		dump.setFont(font);
+		dump.setForeground(fc);
+		if (bc != null) dump.setBackground(bc);
 		dump.setPreferredSize(new Dimension(_fw * ln_width + 2 * bd_width,
 						_fh * dlines + 2 * bd_width));
 		gb.setConstraints(dump, gc);

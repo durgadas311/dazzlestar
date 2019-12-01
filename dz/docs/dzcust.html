@@ -32,7 +32,9 @@ Default is 6.
 
 <DT>cursor_color</DT>
 <DD>This selects the color to use for the "cursor" highlights in
-the Code and Dump windows. Pick a color that works well with black text.
+the Code and Dump windows.
+Note that this, background, and font_color need to be sufficiently contrasting.
+The value is a 6-digit hexadecimal number representing RGB.
 Default is yellow.
 </DD>
 
@@ -45,6 +47,27 @@ Default is "Monospaced".
 <DT>font_size</DT>
 <DD>Define the font size to use. May be specified independently of
 font_name. Default is 10.0.
+</DD>
+
+<DT>font_color</DT>
+<DD>Selects the color for the font (foreground color) in Code and Dump
+windows.
+Note that this, background, and cursor_color need to be sufficiently contrasting.
+The value is a 6-digit hexadecimal number representing RGB.
+Default is black.
+</DD>
+
+<DT>background</DT>
+<DD>Selects the color for the background in Code and Dump windows.
+Note that this, font_color, and cursor_color need to be sufficiently contrasting.
+The value is a 6-digit hexadecimal number representing RGB.
+Default is to leave un-set, effectively using the JRE default.
+</DD>
+
+<DT>status_font_size</DT>
+<DD>Define the font size to use for the status line/pane.
+A Plain, Sans-Serif font style is always used.
+Default is 10.0.
 </DD>
 
 <DT>disas</DT>

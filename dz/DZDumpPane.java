@@ -9,7 +9,10 @@ public class DZDumpPane extends JPanel {
 
 	public DZDumpPane(DZDumpPainter dp) {
 		super();
-		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+		Color c = getBackground();
+		setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED,
+			c.brighter(), c.brighter(),
+			c.darker(), c.darker()));
 		p1 = dp;
 	}
 
