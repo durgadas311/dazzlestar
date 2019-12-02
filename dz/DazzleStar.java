@@ -482,7 +482,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			// Assume this means commandline... stdin/out/err...
 			// TODO: allow org to be specified
 			try {
-				newJob(fi, 0x0100);
+				prog = new BinaryFile(fi, 0x0100);
+				newJob(fi);
 			} catch (Exception ee) {
 				ee.printStackTrace();
 				System.exit(1);
@@ -534,26 +535,24 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private void newJob(File com, int org) throws Exception {
-		jobActive(false);
-		ProgramFile prg = new BinaryFile(com, org);
-		brk = new byte[prg.size()];
-		rdx = new byte[prg.size()];
-		sty = new byte[prg.size()];
-		vst = new byte[prg.size()];
-		len = new byte[prg.size()];
-		prog = prg;
+	private void newJob(File com) throws Exception {
+		brk = new byte[prog.size()];
+		rdx = new byte[prog.size()];
+		sty = new byte[prog.size()];
+		vst = new byte[prog.size()];
+		len = new byte[prog.size()];
 		comFile = com;
 		statBase = String.format("Work: %s", com.getName());
 		statCom.setText(statBase);
-		base = prg.base();
-		end = prg.end();
+		base = prog.base();
+		end = prog.end();
 		prevs.clear();
 		calls.clear();
 		codes.clear();
 		mi_sch.setEnabled(false);
 		symtab.clear();
 		cmnts.clear();
+		prog.addSymbols(symtab);
 		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
 		baseName = com.getName();
@@ -2290,7 +2289,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				org = Integer.valueOf(com_org.getText(), 16);
 			}
 			try {
-				newJob(sfc.getSelectedFile(), org);
+				jobActive(false);
+				prog = new BinaryFile(sfc.getSelectedFile(), org);
+				newJob(sfc.getSelectedFile());
 			} catch (Exception ee) {
 				PopupFactory.warning(frame, "Load COM",
 					ee.getMessage());

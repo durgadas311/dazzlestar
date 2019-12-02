@@ -1,5 +1,7 @@
 // Copyright (c) 2019 Douglas Miller <durgadas311@gmail.com>
 
+import java.util.Map;
+
 // PRELIMINARY
 // Proposed interface to abstract details of various program file
 // images, such as COM, SPR, PRL, REL. Needs to provide the capability
@@ -20,8 +22,7 @@ public interface ProgramFile {
 	int baseSeg(int seg);	// lowest adr of segment
 	int endSeg(int seg);	// end adr of seg (+1)
 	//
-	boolean isReloc(int adr);	// is word *at* 'adr' relocatable?
-	// TODO: how to share symbol table info?
+	int addSymbols(Map<Integer,String> tab);
 	//
 	int read(int adr);	// read a byte from program
 	int read(int seg, int adr);	// read a byte from segment

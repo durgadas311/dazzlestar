@@ -1,6 +1,7 @@
 // Copyright (c) 2019 Douglas Miller <durgadas311@gmail.com>
 
 import java.io.*;
+import java.util.Map;
 
 public class BinaryFile implements ProgramFile {
 	byte[] obj;
@@ -30,7 +31,9 @@ public class BinaryFile implements ProgramFile {
 
 	public int endSeg(int seg) { return _end; }
 
-	public boolean isReloc(int adr) { return false; }
+	public int addSymbols(Map<Integer,String> tab) {
+		return 0;
+	}
 
 	public int read(int adr) {
 		adr -= _base;
