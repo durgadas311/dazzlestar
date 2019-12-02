@@ -1,6 +1,7 @@
 // Copyright (c) 2019 Douglas Miller <durgadas311@gmail.com>
 
 import java.util.Map;
+import java.io.*;
 
 // PRELIMINARY
 // Proposed interface to abstract details of various program file
@@ -22,9 +23,10 @@ public interface ProgramFile {
 	int baseSeg(int seg);	// lowest adr of segment
 	int endSeg(int seg);	// end adr of seg (+1)
 	//
-	int addSymbols(Map<Integer,String> tab);
+	int addSymbols(Map<Integer,String> tab); // ret: max reference
 	//
 	int read(int adr);	// read a byte from program
 	int read(int seg, int adr);	// read a byte from segment
 	//
+	void preASM(PrintStream ps, boolean prn);	// ASM to init (e.g. ORG xxxx)
 }

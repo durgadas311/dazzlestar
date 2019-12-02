@@ -91,6 +91,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	int base;
 	int end;
+	int max;
 	int cursor;
 	int cur_len;
 	int cwin = -1;
@@ -482,7 +483,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			// Assume this means commandline... stdin/out/err...
 			// TODO: allow org to be specified
 			try {
-				prog = new BinaryFile(fi, 0x0100);
+				prog = guessByType(fi);
 				newJob(fi);
 			} catch (Exception ee) {
 				ee.printStackTrace();
@@ -490,6 +491,25 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		} else {
 			comFile = new File(System.getProperty("user.dir"));
+		}
+	}
+
+	private ProgramFile guessByType(File fi) throws Exception {
+		String t = fi.getName();
+		int x = t.lastIndexOf('.');
+		if (x > 0) {
+			t = t.substring(x);
+		} else {
+			t = "";
+		}
+		if (t.equalsIgnoreCase(".PRL")) {
+			return new PrlFile(fi);
+		//} else if (t.equalsIgnoreCase(".SPR")) {
+		//	return new SprFile(fi);
+		//} else if (t.equalsIgnoreCase(".REL")) {
+		//	return new RelFile(fi);
+		} else {
+			return new BinaryFile(fi, 0x0100);
 		}
 	}
 
@@ -545,15 +565,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		statBase = String.format("Work: %s", com.getName());
 		statCom.setText(statBase);
 		base = prog.base();
-		end = prog.end();
+		end = max = prog.end();
 		prevs.clear();
 		calls.clear();
 		codes.clear();
 		mi_sch.setEnabled(false);
 		symtab.clear();
 		cmnts.clear();
-		prog.addSymbols(symtab);
-		resetBreaks(base, true);
 		basePath = com.getAbsolutePath();
 		baseName = com.getName();
 		uppercase = baseName.equals(baseName.toUpperCase());
@@ -566,14 +584,16 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			basePath = basePath.substring(0, x);
 		}
 		setExts();
+		resetSymtab();
 		File dz = new File(basePath + dzExt);
 		if (dz.exists()) {
-			loadDZ(dz);
+			loadDZ(dz, null);
 		}
 		dz = new File(basePath + hintExt);
 		if (dz.exists()) {
 			loadHints(dz);
 		}
+		resetBreaks(base, true);
 		jobActive(true);
 		setCodeWin(base);
 		setDumpWin(base);
@@ -779,7 +799,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int x = a;
 		while (x < end) {
 			if (prog.read(x++) == c) break;
-			if (brk && (anyBrk(x) || symbol(x))) break;
+			if (brk && x < end && (anyBrk(x) || symbol(x))) break;
 		}
 		return x - a;
 	}
@@ -790,7 +810,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int x = a;
 		while (x < end) {
 			if ((prog.read(x++) & 0x80) != 0) break;
-			if (brk && (anyBrk(x) || symbol(x))) break;
+			if (brk && x < end && (anyBrk(x) || symbol(x))) break;
 		}
 		return x - a;
 	}
@@ -1047,10 +1067,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return bk;
 	}
 
+	// does a symbol exist?
 	private boolean symbol(int a) {
 		return symtab.containsKey(a);
 	}
 
+	// return symbol or null if none.
 	private String lookup(int a) {
 		if (symbol(a)) {
 			return symtab.get(a);
@@ -1058,6 +1080,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return null;
 	}
 
+	// replaces any existing symbol.
 	private void putsym(int a, String l) {
 		if (symbol(a)) {
 			symtab.remove(a);
@@ -1065,6 +1088,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		symtab.put(a, l);
 	}
 
+	// return symbol, or constant representation if none.
+	// When must have something to print - never returns null.
 	private String getsym(int a) {
 		String l = lookup(a);
 		if (l != null) {
@@ -1074,19 +1099,23 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return l;
 	}
 
+	// create a symbol if none exists, and addr is "sane".
 	private void mksym(int a) {
-		String l = lookup(a);
-		if (l != null) {
+		if (symbol(a)) {
 			return;
 		}
 		// TODO: what is the upper limit?
 		if (a < base || a > 0xc000) return;
-		l = String.format("L%04x", a);
+		String l = String.format("L%04x", a);
 		putsym(a, l);
 	}
 
-	private void clearSymtab() {
+	// reset symbol table to base level.
+	private void resetSymtab() {
 		symtab.clear();
+		if (prog != null) {
+			max = prog.addSymbols(symtab);
+		}
 	}
 
 	private int callBreak(int addr, int n) {
@@ -1850,19 +1879,13 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		return true;
 	}
 
-	private void loadDZ(File dz) throws Exception {
-		BufferedReader lin = new BufferedReader(new FileReader(dz));
+	private void loadDZ(File dz, BufferedReader lin) throws Exception {
+		if (lin == null) {
+			lin = new BufferedReader(new FileReader(dz));
+		}
 		String s;
 		int a;
 		int bk;
-		// TODO: always wipe slate clean?
-		Arrays.fill(brk, (byte)0);
-		Arrays.fill(rdx, (byte)0);
-		Arrays.fill(sty, (byte)0);
-		Arrays.fill(len, (byte)0);
-		Arrays.fill(vst, (byte)0); // yes? or else
-		// OR: for (int x = 0; x < vst.length; ++x) resConst(x);
-		clearSymtab();
 		int c;
 		int e = 0;
 		int l = 0;
@@ -1890,6 +1913,19 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		resetBreaks(base, true);
 		setCursor(base);
 		statDZ.setText("DZ: " + dz.getName());
+	}
+
+	private void reloadDZ(File dz) throws Exception {
+		BufferedReader lin = new BufferedReader(new FileReader(dz));
+		// TODO: always wipe slate clean?
+		Arrays.fill(brk, (byte)0);
+		Arrays.fill(rdx, (byte)0);
+		Arrays.fill(sty, (byte)0);
+		Arrays.fill(len, (byte)0);
+		Arrays.fill(vst, (byte)0); // yes? or else
+		// OR: for (int x = 0; x < vst.length; ++x) resConst(x);
+		resetSymtab();
+		loadDZ(dz, lin);
 	}
 
 	// TODO: cummulative? or start from scratch?
@@ -1938,9 +1974,10 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		int last = end;
 		int b;
 		int n;
-		clearSymtab();	// optional?
+		resetSymtab();	// optional?
 		int bk = activeBreak(first);
 		if (bk == 0) bk = 'I';
+		// TODO: recompute max ref...
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			if (b != 0) bk = b;
@@ -1969,7 +2006,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		int rx = activeRadix(first);
 		if (rx == 0) rx = 'H';
 		// TODO: ps.print("\tmaclib\tz80\n");
-		ps.format("\torg\t0%04xh\n", base);
+		prog.preASM(ps, false);
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			s = getStyle(a);
@@ -2032,6 +2069,17 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (r != 0) rx = r;
 			a += n;
 		}
+		n = end;
+		for (int a = end; a < max; ++a) {
+			l = lookup(a);
+			if (l != null) {
+				if (a - n > 0) {
+					ps.format("\tds\t%d\n", a - n);
+				}
+				ps.format("%s:\tds\t0\n", l);
+				n = a;
+			}
+		}
 		ps.print("\tend\n");
 		ps.close();
 		statCom.setText(statBase + " ASM Saved");
@@ -2051,6 +2099,8 @@ if (orphaned(a)) t += '!'; else t += ' ';
 		if (st == 0) st = 'M';
 		int rx = activeRadix(first);
 		if (rx == 0) rx = 'H';
+		prog.preASM(ps, true);
+		// Note, addresses may be "wrong" for simulated RMAC PRN.
 		for (int a = first; a < last;) {
 			b = getBrk(a);
 			s = getStyle(a);
@@ -2099,6 +2149,22 @@ if (orphaned(a)) t += '!'; else t += ' ';
 			if (r != 0) rx = r;
 			a += n;
 		}
+		r = 0;
+		n = end;
+		for (z = end; z < max; ++z) {
+			l = lookup(z);
+			if (l != null) {
+				if (z - n > 0) {
+					ps.format("%04x             ", n);
+					ps.format("\tds\t%d\n", z - n);
+				}
+				ps.format("%04x             ", z);
+				ps.format("%s:\tds\t0\n", l);
+				n = z;
+			}
+		}
+		ps.format("%04x             ", n);
+		ps.print("\tend\n");
 		ps.close();
 		statCom.setText(statBase + " PRN Saved");
 	}
@@ -2214,7 +2280,7 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				return;
 			}
 			try {
-				loadDZ(sfc.getSelectedFile());
+				reloadDZ(sfc.getSelectedFile());
 			} catch (Exception ee) {
 				PopupFactory.warning(frame, "Load DZ",
 					ee.getMessage());

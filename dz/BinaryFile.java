@@ -32,7 +32,7 @@ public class BinaryFile implements ProgramFile {
 	public int endSeg(int seg) { return _end; }
 
 	public int addSymbols(Map<Integer,String> tab) {
-		return 0;
+		return _end;
 	}
 
 	public int read(int adr) {
@@ -44,5 +44,10 @@ public class BinaryFile implements ProgramFile {
 	public int read(int seg, int adr) {
 		// no segments here
 		return read(adr);
+	}
+
+	public void preASM(PrintStream ps, boolean prn) {
+		if (prn) ps.format("%04x             ", _base);
+		ps.format("\torg\t0%04xh\n", _base);
 	}
 }
