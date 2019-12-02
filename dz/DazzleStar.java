@@ -504,8 +504,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (t.equalsIgnoreCase(".PRL")) {
 			return new PrlFile(fi);
-		//} else if (t.equalsIgnoreCase(".SPR")) {
-		//	return new SprFile(fi);
+		} else if (t.equalsIgnoreCase(".SPR")) {
+			return new SprFile(fi);
 		//} else if (t.equalsIgnoreCase(".REL")) {
 		//	return new RelFile(fi);
 		} else {
