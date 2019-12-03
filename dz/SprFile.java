@@ -52,9 +52,9 @@ public class SprFile implements ProgramFile {
 		bldSyms();
 	}
 
-	// TODO: special handling for inter-module externals...
 	// bitmap space is unified, like code bytes, so access
 	// as contiguous region.
+	// NOTE: this does not get relative jump targets!
 	private void bldSyms() {
 		for (int x = 0; x < size(); ++x) {
 			int bit = (x & 7);
@@ -87,9 +87,9 @@ public class SprFile implements ProgramFile {
 		}
 	}
 
-	public int base() { return resBase; }
-	public int end() { return _end; }
-	public int size() { return resLen + bnkLen; }
+	private int base() { return resBase; }
+	private int end() { return _end; }
+	private int size() { return resLen + bnkLen; }
 	public int numSeg() { return nSeg; }
 	public int sizeSeg(int seg) {
 		if (seg == 0) {
@@ -112,11 +112,65 @@ public class SprFile implements ProgramFile {
 			return bnkBase + bnkLen;
 		}
 	}
+	public int maxSeg(int seg) {
+		if (nSeg == 1) {
+			return maxRef + 1;
+		} else if (seg == 0) {
+			return resBase + resLen;
+		} else {
+			return bnkBase + bnkLen;
+		}
+	}
 
-	public int addSymbols(Map<Integer,String> tab) {
-		// These will replace any dups...
-		tab.putAll(syms);
-		return maxRef + 1;
+	// Unified address space - still the simple case.
+	// (all addresses uniquely identify segment)
+
+	public int segAdr(int seg, int adr) { return adr; }
+	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
+	public int segOf(int sa) { return sa >= resBase + resLen ? 1 : 0; }
+	public int adrOf(int sa) { return sa; }
+
+	public boolean symbol(int seg, int a) {
+		return syms.containsKey(a);
+	}
+
+	public String lookup(int seg, int a) {
+		if (symbol(0, a)) {
+			return syms.get(a);
+		}
+		return null;
+	}
+
+	public void putsym(int sgc, int a, String l) {
+		// TODO: rename symbol...
+		// should this be accepted?
+		// at least check reloc bitmap first?
+		if (symbol(0, a)) {
+			//syms.remove(a);
+			return;
+		}
+		//syms.put(a, l);
+	}
+
+	public String getsym(int seg, Z80Dissed d) {
+		String l = lookup(0, d.addr);
+		if (l != null) return l;
+		l = String.format("0%04xh", d.addr);
+		return l;
+	}
+
+	public void mksym(int seg, Z80Dissed d) {
+		if (symbol(0, d.addr)) return;
+		if (!d.rel) {	// should have already been handled...
+			return;
+		}
+		syms.put(d.addr, String.format("L%04x", d.addr));
+	}
+
+	public void resetSymtab() {
+		// TODO: clear then rebuild?
+		syms.clear();
+		bldSyms();
 	}
 
 	public int read(int adr) {

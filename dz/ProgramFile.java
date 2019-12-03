@@ -1,6 +1,5 @@
 // Copyright (c) 2019 Douglas Miller <durgadas311@gmail.com>
 
-import java.util.Map;
 import java.io.*;
 
 // PRELIMINARY
@@ -13,17 +12,24 @@ import java.io.*;
 // Typical constructor is <extends ProgramFile>(File prog) throws exception
 //
 public interface ProgramFile {
-	// TODO: does segment API obsolete this?
-	int base();	// lowest address of program
-	int end();	// end address of program (+1)
-	int size();	// total size of all segments
 	// segment API
 	int numSeg();	// number of segments
 	int sizeSeg(int seg);	// size of specific segment
 	int baseSeg(int seg);	// lowest adr of segment
 	int endSeg(int seg);	// end adr of seg (+1)
+	int maxSeg(int seg);	// max adr of seg (+1)
 	//
-	int addSymbols(Map<Integer,String> tab); // ret: max reference
+	int segAdr(int seg, int adr);
+	int segAdr(int seg, Z80Dissed d);
+	int segOf(int sa);
+	int adrOf(int sa);
+	boolean symbol(int seg, int a);		// only used for breaks
+	String lookup(int seg, int a);		// only used for statement labels
+	void putsym(int sgc, int a, String l);	// for DZ/Hint interp
+	// For disassembly
+	String getsym(int seg, Z80Dissed d);	// always returns something
+	void mksym(int seg, Z80Dissed d);
+	void resetSymtab();
 	//
 	int read(int adr);	// read a byte from program
 	int read(int seg, int adr);	// read a byte from segment

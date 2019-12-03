@@ -2,26 +2,24 @@
 
 import java.io.*;
 import java.util.Map;
+import java.util.Map;
+import java.util.HashMap;
 
 public class BinaryFile implements ProgramFile {
 	byte[] obj;
 	int _base;
 	int _end;
+	Map<Integer,String> symtab;
 
 	public BinaryFile(File prog, int org) throws Exception {
 		InputStream f = new FileInputStream(prog);
 		obj = new byte[f.available()];
 		f.read(obj);
 		f.close();
+		symtab = new HashMap<Integer,String>();
 		_base = org;
 		_end = org + obj.length;
 	}
-
-	public int base() { return _base; }
-
-	public int end() { return _end; }
-
-	public int size() { return obj.length; }
 
 	public int numSeg() { return 1; }
 
@@ -31,8 +29,46 @@ public class BinaryFile implements ProgramFile {
 
 	public int endSeg(int seg) { return _end; }
 
-	public int addSymbols(Map<Integer,String> tab) {
-		return _end;
+	public int maxSeg(int seg) { return _end; }
+
+	public int segAdr(int seg, int adr) { return adr; }
+	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
+	public int segOf(int sa) { return 0; }
+	public int adrOf(int sa) { return sa; }
+
+	public boolean symbol(int seg, int a) {
+		return symtab.containsKey(a);
+	}
+
+	public String lookup(int seg, int a) {
+		if (symbol(0, a)) {
+			return symtab.get(a);
+		}
+		return null;
+	}
+
+	public void putsym(int sgc, int a, String l) {
+		if (symbol(0, a)) {
+			symtab.remove(a);
+		}
+		symtab.put(a, l);
+	}
+
+	public String getsym(int seg, Z80Dissed d) {
+		String l = lookup(0, d.addr);
+		if (l != null) return l;
+		l = String.format("0%04xh", d.addr);
+		return l;
+	}
+
+	public void mksym(int seg, Z80Dissed d) {
+		if (symbol(0, d.addr)) return;
+		if (d.addr < _base || d.addr > 0xc000) return;
+		symtab.put(d.addr, String.format("L%04x", d.addr));
+	}
+
+	public void resetSymtab() {
+		symtab.clear();
 	}
 
 	public int read(int adr) {

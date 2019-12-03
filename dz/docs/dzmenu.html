@@ -10,55 +10,83 @@ Certain menu items are disabled or altered based on context.
 For example, you can't "Close" a disassembly if none is open.
 
 <DL>
-<DT>File->New</DT>
-<DD>Open a dialog to load a new program file for disassembly.
-This will discard any current disassembly.
-Allows override of ORG for file, enter hex value in box on right side
-of file dialog.
+<DT>File-&gt;New</DT>
+<DD>Open a submenu for dialogs to load a new program file for disassembly.
+This will discard any current disassembly. Submenus are:
+<P>
+	<DL>
+	<DT>-&gt;Binary (.COM)</DT>
+	<DD>Open a binary (e.g. COM) file.
+	Allows override of ORG for file, enter hex value in box on right side
+	of file dialog.
+	The keyboard shortcut is <B>Alt-F-N-N</B>
+	</DD>
+	<DT>-&gt;PRL File</DT>
+	<DD>Opens a PRL file, which contains relocation information used
+	to construct the initial symbol table.
+	Note that it will be necessary to run <B>Disas-&gt;Rebuild Symtab</B>
+	(typically after identifying code sections) in order to
+	create symbol entries for relative jumps (which do not appear
+	in the relocation data).
+	The keyboard shortcut is <B>Alt-F-N-V</B>
+	</DD>
+	<DT>-&gt;SPR File</DT>
+	<DD>Opens an SPR file, which contains relocation information used
+	to construct the initial symbol table.
+	Some SPR files (e.g. BNKBIOS3.SPR) contain two program segments.
+	<B>Disas-&gt;Rebuild Symtab</B> may be required, same as PRL files.
+	The keyboard shortcut is <B>Alt-F-N-W</B>
+	</DD>
+	<DT>-&gt;REL File</DT>
+	<DD>Note yet implemented.
+	The keyboard shortcut is <B>Alt-F-N-X</B>
+	</DD>
+	</DL>
+<P>
 </DD>
-<DT>File->Close</DT>
+<DT>File-&gt;Close</DT>
 <DD>This will discard any currently disassembly, effectively "closing" it.
 </DD>
-<DT>File->Generate ASM</DT>
+<DT>File-&gt;Generate ASM</DT>
 <DD>Generates an ASM file for the current disassembly.
 file is generated in the same folder as the COM file.
 </DD>
-<DT>File->Generate PRN</DT>
+<DT>File-&gt;Generate PRN</DT>
 <DD>Generates a PRN (listing) file for the current disassembly.
 file is generated in the same folder as the COM file.
 </DD>
-<DT>File->Save DZ</DT>
+<DT>File-&gt;Save DZ</DT>
 <DD>Generates a DZ file for the current disassembly.
 file is generated in the same folder as the COM file.
 </DD>
-<DT>File->Load DZ</DT>
+<DT>File-&gt;Load DZ</DT>
 <DD>Open a dialog to loads a DZ file for the current disassembly.
 This replaces any existing breaks or symbols, effectively discarding those.
 This does not affect the folder used to generate output files.
 </DD>
-<DT>File->Save Hints</DT>
+<DT>File-&gt;Save Hints</DT>
 <DD>Save current hints to file, overwriting any previous contents.
 If no hints exist, pops up a warning and does nothing.
 </DD>
-<DT>File->Load Hints</DT>
+<DT>File-&gt;Load Hints</DT>
 <DD>Load code-scanner hints.
 See <A HREF="dzhints.html">Hint Syntax</A>.
 </DD>
-<DT>File->Quit</DT>
+<DT>File-&gt;Quit</DT>
 <DD>Discards any current disassembly and exits the program.
 </DD>
 <P>
-<DT>Disas->Scan from here</DT>
+<DT>Disas-&gt;Scan from here</DT>
 <DD>(Re)Start auto-code scan from current location.
 Note, the keyboard shortcut for this is <B>Alt-D-Z</B>
 </DD>
-<DT>Disas->Scan Hints</DT>
+<DT>Disas-&gt;Scan Hints</DT>
 <DD>Code scan all entry points from hints.
 Only enabled if some exist.</DD>
-<DT>Disas->Reset scan</DT>
+<DT>Disas-&gt;Reset scan</DT>
 <DD>Clear all code scan progress markers.
 Used to start over fresh.</DD>
-<DT>Disas->Apply Hint</DT>
+<DT>Disas-&gt;Apply Hint</DT>
 <DD> Enter and apply a single hint.
 Typically only useful for declaring inline function params.
 The single hint will be added to the hints table,
@@ -68,21 +96,21 @@ Note that calls which are hidden by previous mis-aligned breaks
 will not be fixed.
 See <A HREF="dzhints.html">Hint Syntax</A>.
 </DD>
-<DT>Disas->Rebuild Symtab</DT>
+<DT>Disas-&gt;Rebuild Symtab</DT>
 <DD>Discards any current symbols and rescans code according to
 current breaks, building a new symbol table.
 Note, the keyboard shortcut for this is <B>Alt-D-G</B>
 </DD>
-<DT>Disas->Use {MAC80|Zilog}</DT>
+<DT>Disas-&gt;Use {MAC80|Zilog}</DT>
 <DD>Change mnemonics used for disassembly of code.
 Menu reflects the opposite of the current mnemonics, i.e.
 what the mnemonics will be changed to.
 Note, the keyboard shortcut for this is <B>Alt-D-M</B>
 </DD>
 <P>
-<DT>Help->About</DT>
+<DT>Help-&gt;About</DT>
 <DD>Display basic information and credits
-<DT>Help->Show Help</DT>
+<DT>Help-&gt;Show Help</DT>
 <DD>Display this help document.
 </DD>
 

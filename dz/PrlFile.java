@@ -28,6 +28,7 @@ public class PrlFile implements ProgramFile {
 		bldSyms();
 	}
 
+	// NOTE: this does not get relative jump targets!
 	private void bldSyms() {
 		for (int x = 0; x < resLen; ++x) {
 			int bit = (x & 7);
@@ -49,18 +50,61 @@ public class PrlFile implements ProgramFile {
 		}
 	}
 
-	public int base() { return resBase; }
-	public int end() { return resBase + resLen; }
-	public int size() { return resLen; }
+	private int base() { return resBase; }
+	private int end() { return resBase + resLen; }
+	private int size() { return resLen; }
 	public int numSeg() { return 1; }
 	public int sizeSeg(int seg) { return resLen; }
 	public int baseSeg(int seg) { return resBase; }
 	public int endSeg(int seg) { return resBase + resLen; }
+	public int maxSeg(int seg) { return maxRef + 1; }
 
-	public int addSymbols(Map<Integer,String> tab) {
-		// These will replace any dups...
-		tab.putAll(syms);
-		return maxRef + 1;
+	public int segAdr(int seg, int adr) { return adr; }
+	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
+	public int segOf(int sa) { return 0; }
+	public int adrOf(int sa) { return sa; }
+
+	public boolean symbol(int seg, int a) {
+		return syms.containsKey(a);
+	}
+
+	public String lookup(int seg, int a) {
+		if (symbol(0, a)) {
+			return syms.get(a);
+		}
+		return null;
+	}
+
+	public void putsym(int sgc, int a, String l) {
+		// TODO: rename symbol...
+		// should this be accepted?
+		// at least check reloc bitmap first?
+		if (symbol(0, a)) {
+			//syms.remove(a);
+			return;
+		}
+		//syms.put(a, l);
+	}
+
+	public String getsym(int seg, Z80Dissed d) {
+		String l = lookup(0, d.addr);
+		if (l != null) return l;
+		l = String.format("0%04xh", d.addr);
+		return l;
+	}
+
+	public void mksym(int seg, Z80Dissed d) {
+		if (symbol(0, d.addr)) return;
+		if (!d.rel) {	// should have already been handled...
+			return;
+		}
+		syms.put(d.addr, String.format("L%04x", d.addr));
+	}
+
+	public void resetSymtab() {
+		// TODO: clear then rebuild?
+		syms.clear();
+		bldSyms();
 	}
 
 	public int read(int adr) {

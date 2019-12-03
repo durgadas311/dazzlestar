@@ -15,6 +15,9 @@ public class Z80Dissed {
 	public int addr;	// target, or -1
 	public int len;		// length of instruction
 	public int type;	// target type (if addr != -1)
+	public int pc;		// PC address of opcode (start)
+	public int off;		// offset of addr to pc.
+	public boolean rel;	// relative jump (no actual addr operand)
 	public Z80Dissed() {
 		addr = -1;
 	}
