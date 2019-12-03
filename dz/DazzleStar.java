@@ -519,13 +519,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		JMenuItem mi = new JMenuItem("Binary (.COM)", KeyEvent.VK_N);
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("SPR File (V)", KeyEvent.VK_V);
+		mi = new JMenuItem("PRL File (V)", KeyEvent.VK_V);
 		mi.addActionListener(this);
-		mi.setEnabled(false);	// TODO: implement and enable
 		mu.add(mi);
-		mi = new JMenuItem("PRL File (W)", KeyEvent.VK_W);
+		mi = new JMenuItem("SPR File (W)", KeyEvent.VK_W);
 		mi.addActionListener(this);
-		mi.setEnabled(false);	// TODO: implement and enable
 		mu.add(mi);
 		mi = new JMenuItem("REL File (X)", KeyEvent.VK_X);
 		mi.addActionListener(this);
@@ -2363,6 +2361,50 @@ if (orphaned(a)) t += '!'; else t += ' ';
 					ee.getMessage());
 				//ee.printStackTrace();
 			}
+			return;
+		}
+		if (key == KeyEvent.VK_V) {
+			// PRL file
+			SuffFileChooser sfc = new SuffFileChooser("PRL file",
+				new String[]{ "prl" },
+				new String[]{ "PRL file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
+				jobActive(false);
+				prog = new PrlFile(sfc.getSelectedFile());
+				newJob(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Load PRL",
+					ee.getMessage());
+			}
+			return;
+		}
+		if (key == KeyEvent.VK_W) {
+			// SPR file
+			SuffFileChooser sfc = new SuffFileChooser("SPR file",
+				new String[]{ "spr" },
+				new String[]{ "SPR file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
+				jobActive(false);
+				prog = new SprFile(sfc.getSelectedFile());
+				newJob(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Load SPR",
+					ee.getMessage());
+			}
+			return;
+		}
+		if (key == KeyEvent.VK_X) {
+			// TODO: REL file
 			return;
 		}
 		if (key == KeyEvent.VK_C) {
