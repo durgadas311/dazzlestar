@@ -47,7 +47,7 @@ public class BinaryFile implements ProgramFile {
 	}
 
 	public void preASM(PrintStream ps, boolean prn) {
-		if (prn) ps.format("%04x             ", _base);
+		if (prn) ps.format("%04x            ", _base);
 		ps.format("\torg\t0%04xh\n", _base);
 	}
 }

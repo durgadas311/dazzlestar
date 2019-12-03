@@ -76,11 +76,11 @@ public class PrlFile implements ProgramFile {
 	}
 
 	public void preASM(PrintStream ps, boolean prn) {
-		if (prn) ps.print("                 ");
+		if (prn) ps.print("                ");
 		ps.print("\tcseg\n");
 		for (int a = 0; a < base(); ++a) {
 			if (!syms.containsKey(a)) continue;
-			if (prn) ps.format("%04x =           ", a);
+			if (prn) ps.format("%04x =          ", a);
 			ps.format("%s:\tequ\t$-%d\n", syms.get(a), base() - a);
 		}
 	}

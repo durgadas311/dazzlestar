@@ -2,6 +2,8 @@
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Vector;
 import java.io.*;
 
@@ -20,6 +22,7 @@ public class SprFile implements ProgramFile {
 	int _end = 0;
 
 	Map<Integer,String> syms;
+	Map<Integer,Set<Integer>> exts;
 
 	public SprFile(File f) throws Exception {
 		FileInputStream fi = new FileInputStream(f);
@@ -32,8 +35,10 @@ public class SprFile implements ProgramFile {
 		int r = (img[10] & 0xff) | ((img[11] & 0xff) << 8);
 		resReloc = resStart + resLen;
 		syms = new HashMap<Integer,String>();
+		exts = new HashMap<Integer,Set<Integer>>();
 		if (r != 0) { // two segments...
 			++nSeg;
+			_end = resBase + resLen;
 			bnkLen = resLen - r;
 			resLen = r;
 			int b = resStart + resLen;
@@ -41,7 +46,6 @@ public class SprFile implements ProgramFile {
 			bnkBase = ((resBase + resLen + 0xff) & ~0xff);	// right after res
 			resReloc = b + bnkLen;
 			bnkReloc = resReloc + (((resLen + 0xff) & ~0xff) / 8);
-			_end = bnkBase + bnkLen;
 		} else {
 			_end = resBase + resLen;
 		}
@@ -65,9 +69,20 @@ public class SprFile implements ProgramFile {
 			}
 			int adr = ((img[resStart + x] & 0xff) << 8) |
 				(img[resStart + x - 1] & 0xff);
-			if (!syms.containsKey(adr)) {
-				syms.put(adr, String.format("L%04x", adr));
+			String l;
+			if (adr >= 0xf000) { // external references...
+				int ex = adr & ~0xff;
+				if (!exts.containsKey(ex)) {
+					exts.put(ex, new HashSet<Integer>());
+				}
+				exts.get(ex).add(adr);
+				l = String.format("X%04x", adr);
+			} else {
+				l = String.format("L%04x", adr);
 				if (adr > maxRef) maxRef = adr;
+			}
+			if (!syms.containsKey(adr)) {
+				syms.put(adr, l);
 			}
 		}
 	}
@@ -122,11 +137,32 @@ public class SprFile implements ProgramFile {
 	}
 
 	public void preASM(PrintStream ps, boolean prn, int seg) {
-		if (prn) ps.print("                 ");
+		if (prn) ps.print("                ");
 		if (seg == 0) {
 			ps.print("\tcseg\n");
 		} else {
 			ps.print("\tdseg\n");
+			return;
+		}
+		if (exts.size() == 0) {
+			return;
+		}
+		String l;
+		if (prn) ps.print("0000 =          ");
+		ps.print("X0000\tequ\t$\n");
+		for (int x : exts.keySet()) {
+			if (prn) ps.format("%04x =          ", x);
+			if (syms.containsKey(x)) {
+				l = syms.get(x);
+			} else {
+				l = String.format("X%04x", x);
+			}
+			ps.format("%s\tequ\tX0000+0%04xh\n", l, x);
+			for (int y : exts.get(x)) {
+				if (y == x) continue;
+				if (prn) ps.format("%04x =          ", y);
+				ps.format("%s\tequ\tX%04x+%d\n", syms.get(y), x, y - x);
+			}
 		}
 	}
 }

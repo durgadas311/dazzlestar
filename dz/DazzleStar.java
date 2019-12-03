@@ -2117,9 +2117,9 @@ if (orphaned(a)) t += '!'; else t += ' ';
 				}
 			}
 			if (z < n) {
-				ps.print("+ ");
+				ps.print("+");
 			} else {
-				ps.print("  ");
+				ps.print(" ");
 			}
 			l = lookup(a);
 			if (l != null) ps.format("%s:", l);
