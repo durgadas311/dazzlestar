@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.io.*;
 
+// NOTE: PRL files might have contained a dseg, but we can no longer tell.
 public class PrlFile implements ProgramFile {
 	byte[] img;
 	int resStart = 0;
@@ -14,6 +15,7 @@ public class PrlFile implements ProgramFile {
 	int maxRef = 0;
 
 	Map<Integer,String> syms;
+	Vector<Integer> pg0;
 
 	public PrlFile(File f) throws Exception {
 		FileInputStream fi = new FileInputStream(f);
@@ -25,6 +27,7 @@ public class PrlFile implements ProgramFile {
 		resLen = (img[1] & 0xff) | ((img[2] & 0xff) << 8);
 		resReloc = resStart + resLen;
 		syms = new HashMap<Integer,String>();
+		pg0 = new Vector<Integer>();
 		bldSyms();
 	}
 
@@ -43,10 +46,18 @@ public class PrlFile implements ProgramFile {
 			}
 			int adr = ((img[resStart + x] & 0xff) << 8) |
 				(img[resStart + x - 1] & 0xff);
-			if (!syms.containsKey(adr)) {
-				syms.put(adr, String.format("L%04x", adr));
+			if (syms.containsKey(adr)) {
+				continue;
+			}
+			String l;
+			if (adr < resBase) {
+				pg0.add(adr);
+				l = String.format("X%04x", adr);
+			} else {
+				l = String.format("L%04x", adr);
 				if (adr > maxRef) maxRef = adr;
 			}
+			syms.put(adr, l);
 		}
 	}
 
@@ -104,8 +115,12 @@ public class PrlFile implements ProgramFile {
 	public void resetSymtab() {
 		// TODO: clear then rebuild?
 		syms.clear();
+		pg0.clear();
 		bldSyms();
 	}
+
+	// Not used when numSeg() == 1
+	public String segName(int seg) { return ""; }
 
 	public int read(int adr) {
 		adr -= base();
@@ -119,13 +134,20 @@ public class PrlFile implements ProgramFile {
 		return read(adr);
 	}
 
-	public void preASM(PrintStream ps, boolean prn) {
+	public void preASM(PrintStream ps, boolean prn, int seg) {
 		if (prn) ps.print("                ");
 		ps.print("\tcseg\n");
-		for (int a = 0; a < base(); ++a) {
-			if (!syms.containsKey(a)) continue;
-			if (prn) ps.format("%04x =          ", a);
-			ps.format("%s:\tequ\t$-%d\n", syms.get(a), base() - a);
+		if (pg0.size() == 0) {
+			return;
 		}
+		if (prn) ps.format("0000 =          ");
+		ps.format("X0000\tequ\t$-256\n");
+		for (int a : pg0) {
+			if (a == 0) continue; 
+			if (!syms.containsKey(a)) continue; // can't happen?
+			if (prn) ps.format("%04x =          ", a);
+			ps.format("%s:\tequ\tX0000+%d\n", syms.get(a), a);
+		}
+		ps.print("\n");
 	}
 }

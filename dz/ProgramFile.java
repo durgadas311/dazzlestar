@@ -30,9 +30,11 @@ public interface ProgramFile {
 	String getsym(int seg, Z80Dissed d);	// always returns something
 	void mksym(int seg, Z80Dissed d);
 	void resetSymtab();
+	String segName(int seg);
 	//
 	int read(int adr);	// read a byte from program
 	int read(int seg, int adr);	// read a byte from segment
 	//
-	void preASM(PrintStream ps, boolean prn);	// ASM to init (e.g. ORG xxxx)
+	// ASM to init (e.g. ORG xxxx)
+	void preASM(PrintStream ps, boolean prn, int seg);
 }

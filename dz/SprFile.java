@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Vector;
 import java.io.*;
 
+// NOTE: Unless linked with [B], SPR files have merged cseg and dseg
+// so we can no longer differentiate.
 public class SprFile implements ProgramFile {
 	byte[] img;
 	int resStart = 0;
@@ -22,7 +24,7 @@ public class SprFile implements ProgramFile {
 	int _end = 0;
 
 	Map<Integer,String> syms;
-	Map<Integer,Set<Integer>> exts;
+	Map<Integer,Vector<Integer>> exts;
 
 	public SprFile(File f) throws Exception {
 		FileInputStream fi = new FileInputStream(f);
@@ -35,7 +37,7 @@ public class SprFile implements ProgramFile {
 		int r = (img[10] & 0xff) | ((img[11] & 0xff) << 8);
 		resReloc = resStart + resLen;
 		syms = new HashMap<Integer,String>();
-		exts = new HashMap<Integer,Set<Integer>>();
+		exts = new HashMap<Integer,Vector<Integer>>();
 		if (r != 0) { // two segments...
 			++nSeg;
 			_end = resBase + resLen;
@@ -69,11 +71,14 @@ public class SprFile implements ProgramFile {
 			}
 			int adr = ((img[resStart + x] & 0xff) << 8) |
 				(img[resStart + x - 1] & 0xff);
+			if (syms.containsKey(adr)) {
+				continue;
+			}
 			String l;
 			if (adr >= 0xf000) { // external references...
 				int ex = adr & ~0xff;
 				if (!exts.containsKey(ex)) {
-					exts.put(ex, new HashSet<Integer>());
+					exts.put(ex, new Vector<Integer>());
 				}
 				exts.get(ex).add(adr);
 				l = String.format("X%04x", adr);
@@ -81,9 +86,7 @@ public class SprFile implements ProgramFile {
 				l = String.format("L%04x", adr);
 				if (adr > maxRef) maxRef = adr;
 			}
-			if (!syms.containsKey(adr)) {
-				syms.put(adr, l);
-			}
+			syms.put(adr, l);
 		}
 	}
 
@@ -170,7 +173,17 @@ public class SprFile implements ProgramFile {
 	public void resetSymtab() {
 		// TODO: clear then rebuild?
 		syms.clear();
+		exts.clear();
 		bldSyms();
+	}
+
+	// Not used when numSeg() == 1
+	public String segName(int seg) {
+		if (seg == 0) {
+			return "res";
+		} else {
+			return "bnk";
+		}
 	}
 
 	public int read(int adr) {
@@ -186,11 +199,8 @@ public class SprFile implements ProgramFile {
 		return read(adr);
 	}
 
-	public void preASM(PrintStream ps, boolean prn) {
-		preASM(ps, prn, 0);
-	}
-
 	public void preASM(PrintStream ps, boolean prn, int seg) {
+		ps.print("\n");
 		if (prn) ps.print("                ");
 		if (seg == 0) {
 			ps.print("\tcseg\n");
@@ -218,5 +228,6 @@ public class SprFile implements ProgramFile {
 				ps.format("%s\tequ\tX%04x+%d\n", syms.get(y), x, y - x);
 			}
 		}
+		ps.print("\n");
 	}
 }

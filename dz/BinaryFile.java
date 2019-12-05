@@ -71,6 +71,9 @@ public class BinaryFile implements ProgramFile {
 		symtab.clear();
 	}
 
+	// Not used when numSeg() == 1
+	public String segName(int seg) { return ""; }
+
 	public int read(int adr) {
 		adr -= _base;
 		if (adr < 0 || adr >= obj.length) return 0;
@@ -82,7 +85,7 @@ public class BinaryFile implements ProgramFile {
 		return read(adr);
 	}
 
-	public void preASM(PrintStream ps, boolean prn) {
+	public void preASM(PrintStream ps, boolean prn, int seg) {
 		if (prn) ps.format("%04x            ", _base);
 		ps.format("\torg\t0%04xh\n", _base);
 	}

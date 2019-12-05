@@ -17,6 +17,7 @@ import java.awt.datatransfer.StringSelection;
 //	* cend not properly (re)computed sometimes.
 //	* do not pop-up results for "Scan from here", use status field...
 //	* make "Scan from here" a function key?
+//	* key to align cursor to nearest instruction/line?
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
@@ -66,6 +67,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JLabel statDZ;
 	JLabel statHint;
 	JLabel statSeg;
+	JLabel stat5;
+	JLabel stat6;
+	JLabel stat7;
 
 	JPanel com_pan;
 	JTextField com_org;
@@ -323,24 +327,33 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		setupFont();	// needs 'code' JPanel
 
 		dest = new JTextField();
-		dest.setPreferredSize(new Dimension(50, 20));
+		dest.setPreferredSize(new Dimension(50, (int)(fz + 4)));
 		dest.setEditable(true);
 		dest.setEnabled(false);
 		dest.setFont(font2);
 		dest.addActionListener(this);
 		int w = (_fw * ln_width) / 2;
 		statCom = new JLabel("Work:");
-		statCom.setPreferredSize(new Dimension(w, (int)(fz + 5)));
+		statCom.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statCom.setFont(font2);
 		statDZ = new JLabel("DZ:");
-		statDZ.setPreferredSize(new Dimension(w, (int)(fz + 5)));
+		statDZ.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statDZ.setFont(font2);
 		statHint = new JLabel("Hint:");
-		statHint.setPreferredSize(new Dimension(w, (int)(fz + 5)));
+		statHint.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statHint.setFont(font2);
 		statSeg = new JLabel("Seg:");
-		statSeg.setPreferredSize(new Dimension(w, (int)(fz + 5)));
+		statSeg.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statSeg.setFont(font2);
+		stat5 = new JLabel("");
+		stat5.setPreferredSize(new Dimension(w, (int)(fz + 2)));
+		stat5.setFont(font2);
+		stat6 = new JLabel("");
+		stat6.setPreferredSize(new Dimension(w, (int)(fz + 2)));
+		stat6.setFont(font2);
+		stat7 = new JLabel("");
+		stat7.setPreferredSize(new Dimension(w, (int)(fz + 2)));
+		stat7.setFont(font2);
 		gb.setConstraints(statCom, gc);
 		pan.add(statCom);
 		++gc.gridx;
@@ -350,9 +363,17 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		++gc.gridy;
 		gb.setConstraints(statDZ, gc);
 		pan.add(statDZ);
+		++gc.gridx;
+		gb.setConstraints(stat5, gc);
+		pan.add(stat5);
+		--gc.gridx;
 		++gc.gridy;
 		gb.setConstraints(statHint, gc);
 		pan.add(statHint);
+		++gc.gridx;
+		gb.setConstraints(stat6, gc);
+		pan.add(stat6);
+		--gc.gridx;
 		++gc.gridy;
 		gc.gridwidth = 2;
 		pn = new JPanel();
@@ -363,6 +384,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		pn.add(dest);
 		gb.setConstraints(pn, gc);
 		pan.add(pn);
+		++gc.gridx;
+		gb.setConstraints(stat7, gc);
+		pan.add(stat7);
+		--gc.gridx;
 		++gc.gridy;
 
 		pn = new JPanel();
@@ -609,7 +634,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		seg = g;
 		sg = segs[g];
 		if (nseg > 1) {
-			statSeg.setText(String.format("Segment %d / %d", seg + 1, nseg));
+			statSeg.setText(String.format("Segment %d / %d (%s)",
+				seg + 1, nseg, prog.segName(seg)));
 		}
 	}
 
@@ -1826,11 +1852,11 @@ else t += ' ';
 	private void generateASM(File asm, boolean prn) throws Exception {
 		// TODO: resetBreaks(sg.base, true); ?
 		PrintStream ps = new PrintStream(asm);
-		prog.preASM(ps, prn);
 		for (int x = 0; x < nseg; ++x) {
 			Segment g = segs[x];
 			int first = g.base;
 			int last = g.end;
+			prog.preASM(ps, prn, x);
 			String l;
 			Z80Dissed d;
 			int b, s, r;
@@ -1909,6 +1935,7 @@ else t += ' ';
 				for (z = 1; z < n; ++z) {
 					l = prog.lookup(x, a + z);
 					if (l != null) {
+						if (prn) ps.format("%04x =          ", a + z);
 						ps.format("%s\tequ\t$-%d\n", l, n - z);
 					}
 				}
@@ -1925,16 +1952,23 @@ else t += ' ';
 				l = prog.lookup(x, a);
 				if (l != null) {
 					if (a - n > 0) {
+						if (prn) ps.format("%04x            ", n);
 						ps.format("\tds\t%d\n", a - n);
 					}
+					if (prn) ps.format("%04x            ", a);
 					ps.format("%s:\tds\t0\n", l);
 					n = a;
 				}
 			}
 		}
+		if (prn) ps.print("                ");
 		ps.print("\tend\n");
 		ps.close();
-		statCom.setText(statBase + " ASM Saved");
+		if (prn) {
+			statCom.setText(statBase + " PRN Saved");
+		} else {
+			statCom.setText(statBase + " ASM Saved");
+		}
 	}
 
 	// Search for byte pattern.
@@ -2348,10 +2382,23 @@ else t += ' ';
 			dest.setEnabled(false);
 			if (dest.getText().length() == 0) return;
 			int a = -1;
-			try {
-				a = Integer.valueOf(dest.getText(), 16);
-			} catch (Exception ee) {}
+			int s = 0;
+			int x = 0;
+			String t = dest.getText();
 			dest.setText("");
+			if (t.charAt(x) == '+') {
+				++x;
+				s = 1;
+			} else if (t.charAt(x) == '-') {
+				++x;
+				s = -1;
+			}
+			try {
+				a = Integer.valueOf(t.substring(x), 16);
+			} catch (Exception ee) {}
+			if (s != 0) {
+				a = sg.cursor + s * a;
+			}
 			if (a < sg.base || a >= sg.end) return;
 			pushPrev(sg.cursor);
 			goAdr(a);
@@ -2478,12 +2525,14 @@ else t += ' ';
 		} else { // src_txt.isSelected()
 			cur_val = cur_str.getBytes();
 		}
-		if (src_beg.isSelected()) {
-			sg.cur_adr = sg.base;
-		} else {
-			sg.cur_adr = sg.cursor; // TODO: +1?
+		for (int x = 0; x < nseg; ++x) {
+			if (src_beg.isSelected()) {
+				segs[x].cur_adr = segs[x].base;
+			} else {
+				segs[x].cur_adr = segs[x].cursor; // TODO: +1?
+			}
+			segs[x].cur_beg = segs[x].cur_adr;
 		}
-		sg.cur_beg = sg.cur_adr;
 		cur_wrp = src_wrp.isSelected();
 		doSearchNext();
 	}
