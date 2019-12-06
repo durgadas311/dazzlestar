@@ -622,7 +622,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			loadHints(dz);
 		}
 		int base = sg.base;
-		resetBreaks(base, true);
+		resetBreaks(sg);
 		setCodeWin(base);
 		setDumpWin(base);
 		setCursor(base);
@@ -636,6 +636,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (nseg > 1) {
 			statSeg.setText(String.format("Segment %d / %d (%s)",
 				seg + 1, nseg, prog.segName(seg)));
+		}
+		if (!sg.init) {
+			int base = sg.base;
+			resetBreaks(sg);
+			setCodeWin(base);
+			setDumpWin(base);
+			setCursor(base);
+			sg.init = true;
 		}
 	}
 
@@ -718,44 +726,55 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return x - a;
 	}
 
+	private void resetBreaks() {
+		for (int x = 0; x < nseg; ++x) {
+			resetBreaks(segs[x]);
+		}
+	}
+
+	private void resetBreaks(Segment g) {
+		resetBreaks(g, g.base, true);
+	}
+
 	// Setup/rescan breaks and lengths...
 	// stop at next break unless 'all'.
-	private void resetBreaks(int a, boolean all) {
+	// Basically, resets the len[] array based on new break(s).
+	private void resetBreaks(Segment g, int a, boolean all) {
 		Z80Dissed d;
 		int n;
 		int b, s, r;
 		int x = a;
-		while (!all && x > sg.base && sg.getLen(x) == 0) --x;
-		int bk = sg.activeBreak(x);
+		while (!all && x > g.base && g.getLen(x) == 0) --x;
+		int bk = g.activeBreak(x);
 		if (bk == 0) bk = 'I';
-		int st = sg.activeStyle(x);
+		int st = g.activeStyle(x);
 		if (st == 0) st = 'M';
-		int rx = sg.activeRadix(x);
+		int rx = g.activeRadix(x);
 		if (rx == 0) rx = 'H';
-		while (x < sg.end) {
-			if (!all && x > a && sg.anyBrk(x)) break;
-			b = sg.getBrk(x);
-			s = sg.getStyle(x);
-			r = sg.getRadix(x);
+		while (x < g.end) {
+			if (!all && x > a && g.anyBrk(x)) break;
+			b = g.getBrk(x);
+			s = g.getStyle(x);
+			r = g.getRadix(x);
 			if (b != 0) bk = b;
 			if (s != 0) st = s;
 			if (r != 0) rx = r;
-			sg.resTerm(x);	// try and keep things clean(er)
+			g.resTerm(x);	// try and keep things clean(er)
 			switch (bk) {
 			case 'I':
-				d = dis.disas(sg.idx, x);
+				d = dis.disas(g.idx, x);
 				n = d.len;
 				if (d.type == Z80Dissed.JMP ||
 						d.type == Z80Dissed.RET) {
-					sg.setTerm(x);
+					g.setTerm(x);
 				}
 				break;
 			case 'B':
 			case 'C':
 			case 'U':
 				n = 1;
-				while (n < 16 && x + n < sg.end &&
-					!sg.anyBrk(x + n) && !prog.symbol(sg.idx, x + n)) ++n;
+				while (n < 16 && x + n < g.end && !g.anyBrk(x + n) &&
+							!prog.symbol(g.idx, x + n)) ++n;
 				break;
 			case 'L':
 			case 'W':
@@ -773,26 +792,27 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				break;
 			case 'S':
 				n = 1;
-				while (x + n < sg.end && !sg.anyBrk(x + n)) ++n;
+				while (x + n < g.end && !g.anyBrk(x + n) &&
+						!prog.symbol(g.idx, x + n)) ++n;
 				break;
 			case '$':
-				n = lenTo(sg, x, '$', true);
+				n = lenTo(g, x, '$', true);
 				break;
 			case '0':
-				n = lenTo(sg, x, 0, true);
+				n = lenTo(g, x, 0, true);
 				break;
 			case '7':
-				n = lenToBit7(sg, x, true);
+				n = lenToBit7(g, x, true);
 				break;
 			default:
 				n = 1;
 				break;
 			}
-			sg.setLen(x, n);
+			g.setLen(x, n);
 			// honor any breaks we skipped over...
-			b = sg.lastBrk(x, n);
-			s = sg.lastStyle(x, n);
-			r = sg.lastRadix(x, n);
+			b = g.lastBrk(x, n);
+			s = g.lastStyle(x, n);
+			r = g.lastRadix(x, n);
 			if (b != 0) bk = b;
 			if (s != 0) st = s;
 			if (r != 0) rx = r;
@@ -980,6 +1000,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	// TODO: detect bogus/nonsense instructions (derailings)
+	// This (potentially) alters all segments.
 	private void analyze(Segment g, int addr) {
 		int bk;
 		if (addr < g.base || addr >= g.end) return; // TODO: report this?
@@ -1024,25 +1045,27 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 				break;
 			}
+			int f = prog.segAdr(g.idx, d);
+			int x = prog.segOf(f);
 			if (d.type == Z80Dissed.JMP) {
 				// mark next address as potential orphan
 				if (!g.visited(addr)) {
 					g.orphan(addr);
 				}
-				addr = d.addr;
+				addr = prog.adrOf(f);
+				g = segs[x];
 				bk = 0; // g.activeBreak(addr);
 				//if (bk == 0) bk = 'I';
 				continue;
 			}
 			// user must have pre-registered calls with inline parameters...
-			int f = prog.segAdr(g.idx, d);
 			if (d.type == Z80Dissed.CALL && calls.containsKey(f)) {
 				// must be unconditional CALL if inline params...
 				int n = callBreak(addr, calls.get(f));
 				addr += n;
 			}
 			// Only CJMP, CALL left...
-			analyze(g, d.addr);
+			analyze(segs[x], prog.adrOf(f));
 		}
 		// System.out.format("Break at %04x\n", addr);
 	}
@@ -1058,14 +1081,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	// TODO: when to auto-create symbols?
-	private void symLine(Segment g, int a, int n, int bk) {
+	private Z80Dissed getDissed(Segment g, int a, int n, int bk) {
 		Z80Dissed d;
 		int z;
 		if (bk == 'I') {
 			d = dis.disas(g.idx, a);
-			if (d.addr < 0 || g.constant(a)) {
-				return;
-			}
 		} else {
 			d = new Z80Dissed();
 			d.pc = a;
@@ -1093,8 +1113,17 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				d.addr = prog.read(g.idx, a + 2) | (prog.read(g.idx, a + 3) << 8);
 				break;
 			default:
-				return;
+				break;	// d.addr == -1
 			}
+		}
+		return d;
+	}
+
+	// TODO: when to auto-create symbols?
+	private void symLine(Segment g, int a, int n, int bk) {
+		Z80Dissed d = getDissed(g, a, n, bk);
+		if (d.addr < 0 || g.constant(a)) {
+			return;
 		}
 		prog.mksym(g.idx, d);
 	}
@@ -1479,8 +1508,9 @@ else t += ' ';
 	private void generateDZ(File dz) throws Exception {
 		PrintStream ps = new PrintStream(dz);
 		for (int x = 0; x < nseg; ++x) {
-			int first = sg.base;
-			int last = sg.end;
+			Segment g = segs[x];
+			int first = g.base;
+			int last = g.end;
 			int bk = 0;
 			int st = 0;
 			int rx = 0;
@@ -1493,17 +1523,17 @@ else t += ' ';
 					ps.format("%s\n", l);
 				}
 				String s = "";
-				int b = sg.getBrk(a);
+				int b = g.getBrk(a);
 				if (b != 0) { // skip dups: && b != bk)
 					s += (char)b;
 					bk = b;
 				} else s += " ";
-				b = sg.getStyle(a);
+				b = g.getStyle(a);
 				if (b != 0) { // skip dups: && b != st)
 					s += (char)b;
 					st = b;
 				} else s += " ";
-				b = sg.getRadix(a);
+				b = g.getRadix(a);
 				if (b != 0) { // skip dups: && b != rx)
 					s += (char)b;
 					rx = b;
@@ -1515,7 +1545,7 @@ else t += ' ';
 				if (cmnts.containsKey(a)) {
 					ps.format("/%04x %s\n", a, cmnts.get(a));
 				}
-				if (sg.constant(a)) {
+				if (g.constant(a)) {
 					ps.format("%%%04x\n", a);
 				}
 			}
@@ -1567,6 +1597,7 @@ else t += ' ';
 	// TODO: how to separate segments
 	// (like REL files which overlap address spaces)
 	private boolean processDZ(int c, String s) {
+		Segment g;
 		int a;
 		int bk = 0;
 		int st = 0;
@@ -1580,9 +1611,12 @@ else t += ' ';
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
+			// Address may have segment spec
+			int x = prog.segOf(a);
+			a = prog.adrOf(a);
+			g = segs[x];
 			// TODO: error, or ignored?
-			if (a < sg.base || a >= sg.end) return false;
-			// TODO: validate each char...
+			if (a < g.base || a >= g.end) return false;
 			if (ss[1].length() > 0) {
 				// Special case, from orig "SA" command,
 				// 'U' = Unknown break from analyzer.
@@ -1600,9 +1634,9 @@ else t += ' ';
 			if (bk < 0 || st < 0 || rx < 0) {
 				return false;
 			}
-			if (bk != 0) sg.putBrk(a, bk);
-			if (st != 0) sg.putStyle(a, st);
-			if (rx != 0) sg.putRadix(a, rx);
+			if (bk != 0) g.putBrk(a, bk);
+			if (st != 0) g.putStyle(a, st);
+			if (rx != 0) g.putRadix(a, rx);
 		} else if (c == '/') {	// minor comment /AAAA s...
 			ss = s.split(" ", 2);
 			if (ss.length != 2) return false;
@@ -1611,6 +1645,7 @@ else t += ' ';
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
+			// cmnts uses seg-adr
 			cmnts.put(a, ss[1]);
 		} else if (c == '%') {	// LXI constant operand
 			try {
@@ -1618,9 +1653,12 @@ else t += ' ';
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
+			int x = prog.segOf(a);
+			a = prog.adrOf(a);
+			g = segs[x];
 			// TODO: error, or ignored?
-			if (a < sg.base || a >= sg.end) return false;
-			sg.setConst(a);
+			if (a < g.base || a >= g.end) return false;
+			g.setConst(a);
 		} else if (Character.isLetter(c)) { // symbol: XAAAA[ name]
 			ss = s.split(" ");
 			try {
@@ -1628,7 +1666,7 @@ else t += ' ';
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
-			// TODO: determine segment index...
+			// 'c' is segment "hint"
 			if (ss.length > 1) {
 				prog.putsym(c, a, ss[1]);
 			} else {
@@ -1640,8 +1678,6 @@ else t += ' ';
 		return true;
 	}
 
-	// TODO: how to separate segments
-	// (like REL files which overlap address spaces)
 	// TODO: need better, extensible, way to pass codes,calls,...
 	private boolean processHint(int c, String s,
 				Vector<Integer> codes,
@@ -1680,9 +1716,11 @@ else t += ' ';
 			} else {
 				b = 1;
 			}
+			// uses seg-adr
 			calls.put(a, b); // duplicates overwritten
 		} else if (c == '+') {
 			if (ss.length != 1) return false;
+			// uses seg-adr
 			codes.add(a); // TODO: reject duplicates
 		} else {
 			return false;
@@ -1704,33 +1742,36 @@ else t += ' ';
 			return true;
 		}
 		this.calls.putAll(calls);
-		int a = sg.base;
-		int bk = sg.getBrk(a);
-		if (bk == 0) bk = 'I';
-		int b;
-		int n;
-		Z80Dissed d;
-		while (a < sg.end) {
-			b = sg.getBrk(a);
-			if (b != 0) bk = b;
-			n = sg.getLen(a);
-			if (n == 0) n = 1;
-			if (bk != 'I') {
-				b = sg.lastBrk(a, n);
+		for (int x = 0; x < nseg; ++x) {
+			Segment g = segs[x];
+			int a = g.base;
+			int bk = g.getBrk(a);
+			if (bk == 0) bk = 'I';
+			int b;
+			int n;
+			Z80Dissed d;
+			while (a < g.end) {
+				b = g.getBrk(a);
+				if (b != 0) bk = b;
+				n = g.getLen(a);
+				if (n == 0) n = 1;
+				if (bk != 'I') {
+					b = g.lastBrk(a, n);
+					if (b != 0) bk = b;
+					a += n;
+					continue;
+				}
+				d = dis.disas(x, a);
+				int f = prog.segAdr(x, d);
+				// assert n == d.len
+				if (d.type == Z80Dissed.CALL &&
+						calls.containsKey(f)) {
+					n += callBreak(a + n, calls.get(f));
+				}
+				b = g.lastBrk(a, n);
 				if (b != 0) bk = b;
 				a += n;
-				continue;
 			}
-			d = dis.disas(sg.idx, a);
-			int f = prog.segAdr(sg.idx, d);
-			// assert n == d.len
-			if (d.type == Z80Dissed.CALL &&
-					calls.containsKey(f)) {
-				n += callBreak(a + n, calls.get(f));
-			}
-			b = sg.lastBrk(a, n);
-			if (b != 0) bk = b;
-			a += n;
 		}
 		return true;
 	}
@@ -1766,7 +1807,7 @@ else t += ' ';
 						JOptionPane.WARNING_MESSAGE);
 			// TODO: save to file?
 		}
-		resetBreaks(sg.base, true);
+		resetBreaks();
 		setCursor(sg.base);
 		statDZ.setText("DZ: " + dz.getName());
 	}
@@ -1815,7 +1856,7 @@ else t += ' ';
 						JOptionPane.WARNING_MESSAGE);
 			// TODO: save to file?
 		}
-		resetBreaks(sg.base, true);
+		resetBreaks();
 		// TODO: preserve current location?
 		setCursor(sg.base);
 		statHint.setText("Hint: " + in.getName());
@@ -2270,7 +2311,7 @@ else t += ' ';
 		}
 		// We have no idea how far-reaching this was...
 		// probably need to rebuild all breaks...???
-		resetBreaks(sg.base, true);
+		resetBreaks();
 		code.repaint();
 	}
 
@@ -2287,7 +2328,7 @@ else t += ' ';
 		}
 		// We have no idea how far-reaching this was...
 		// probably need to rebuild all breaks...???
-		resetBreaks(sg.base, true);
+		resetBreaks();
 		code.repaint();
 	}
 
@@ -2309,7 +2350,7 @@ else t += ' ';
 		} else {
 			return false;
 		}
-		resetBreaks(sg.cursor, false);
+		resetBreaks(sg, sg.cursor, false);
 		sg.cur_len = sg.getLen(sg.cursor);
 		setCodeWin(sg.cwin);
 		code.repaint();
@@ -2317,11 +2358,25 @@ else t += ' ';
 		return true;
 	}
 
-	private void pushPrev(int adr) {
+	private void pushPrev() {
 		// TODO: configure stack size limit
-		prevs.push(adr);
+		int sa = prog.segAdr(sg.idx, sg.cursor);
+		prevs.push(sa);
 		if (prevs.size() > 100) {
 			prevs.setSize(100);
+		}
+	}
+
+	private void popPrev() {
+		if (prevs.empty()) return;
+		int sa = prevs.pop();
+		int x = prog.segOf(sa);
+		int a = prog.adrOf(sa);
+		if (x != seg) {
+			setSeg(x);
+			goAdr(a, true);
+		} else {
+			goAdr(a);
 		}
 	}
 
@@ -2329,23 +2384,18 @@ else t += ' ';
 		int a = -1;
 		int bk = sg.activeBreak(sg.cursor);
 		if (bk == 0) bk = 'I';
-		if (bk == 'I') {
-			Z80Dissed d = dis.disas(sg.idx, sg.cursor);
-			a = d.addr;
-		} else if (bk == 'L') {
-			a = prog.read(sg.cursor) | (prog.read(sg.cursor + 1) << 8);
-		} else if (bk == 'R') {
-			a = prog.read(sg.cursor) | (prog.read(sg.cursor + 1) << 8);
-			a += sg.cursor;
-			a &= 0xffff;
-		} else if (bk == 'T') {
-			a = prog.read(sg.cursor + 1) | (prog.read(sg.cursor + 2) << 8);
-		} else if (bk == 'Q') {
-			a = prog.read(sg.cursor + 2) | (prog.read(sg.cursor + 3) << 8);
+		Z80Dissed d = getDissed(sg, sg.cursor, sg.cur_len, bk);
+		int f = prog.segAdr(sg.idx, d);
+		int x = prog.segOf(f);
+		a = prog.adrOf(f);
+		if (a < segs[x].base || a >= segs[x].end) return;
+		pushPrev();
+		if (x != seg) {
+			setSeg(x);
+			goAdr(a, true);
+		} else {
+			goAdr(a);
 		}
-		if (a < sg.base || a >= sg.end) return;
-		pushPrev(sg.cursor);
-		goAdr(a);
 	}
 
 	private void keyAlted(int k) {
@@ -2361,10 +2411,15 @@ else t += ' ';
 			int c = sg.end;
 			int x = clines;
 			while (x > 0 && c > sg.base) {
-				c = sg.oneBack(c);
+				int cc = sg.oneBack(c);
+				if (sg.terminal(cc)) {
+					if (--x <= 0) break;
+				}
+				c = cc;
 				--x;
 			}
 			goAdr(c);
+			setCursor(sg.oneBack(sg.cend));
 		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
 			shiftDown();
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
@@ -2400,7 +2455,7 @@ else t += ' ';
 				a = sg.cursor + s * a;
 			}
 			if (a < sg.base || a >= sg.end) return;
-			pushPrev(sg.cursor);
+			pushPrev();
 			goAdr(a);
 		}
 	}
@@ -2429,10 +2484,7 @@ else t += ' ';
 		} else if (c == 'K') {
 			doConstant();
 		} else if (c == 'V') {
-			if (!prevs.empty()) {
-				int a = prevs.pop();
-				goAdr(a);
-			}
+			popPrev();
 		} else if (doBrkKey(c)) {
 			return;
 		} else {
@@ -2468,7 +2520,7 @@ else t += ' ';
 			PopupFactory.inform(frame, "Apply Hint",
 				String.format("Hint failed \"%s\"", hnt_txt.getText()));
 		}
-		resetBreaks(sg.base, true);
+		resetBreaks();
 		code.repaint();
 	}
 
@@ -2585,14 +2637,6 @@ else t += ' ';
 		int g = seg + 1;
 		if (g >= nseg) g = 0;
 		setSeg(g);
-		if (!sg.init) {
-			int base = sg.base;
-			resetBreaks(base, true);
-			setCodeWin(base);
-			setDumpWin(base);
-			setCursor(base);
-			sg.init = true;
-		}
 		code.repaint();
 		dump.repaint();
 	}
