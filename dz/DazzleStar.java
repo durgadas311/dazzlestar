@@ -1516,11 +1516,15 @@ else t += ' ';
 			int rx = 0;
 			// TODO: decide whether to strip duplicates...
 			for (int a = first; a < last; ++a) {
+				// TODO: don't save auto labels?
 				String l = prog.lookup(x, a);
 				if (l != null) {
-					// TODO: support non-auto names:
-					// ps.format("L%04x %s\n", a, l);
-					ps.format("%s\n", l);
+					String d = prog.defLabel(x, a);
+					if (l.equals(d)) {
+						ps.format("%s\n", l);
+					} else {
+						ps.format("%s %s\n", d, l);
+					}
 				}
 				String s = "";
 				int b = g.getBrk(a);

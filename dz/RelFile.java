@@ -100,7 +100,7 @@ public class RelFile implements ProgramFile {
 	public int segAdr(int seg, Z80Dissed d) {
 		int sa = segAdr(seg, d.pc + d.off);
 		if (!site.containsKey(sa)) {
-			return segAdr(SEG_ABS, d.addr); // what? error? fault?
+			return segAdr(seg, d.addr); // what? error? fault?
 		}
 		return site.get(sa);
 	}
@@ -138,22 +138,29 @@ public class RelFile implements ProgramFile {
 
 	public String getsym(int seg, Z80Dissed d) {
 		int sa = segAdr(seg, d.pc + d.off);	// site address...
-		if (!site.containsKey(sa)) {
-			// might be external...
-			if (!offs.containsKey(sa)) {
-				if (!isExt(d.addr)) {
-					// what? error?
-					return String.format("0%04xh", d.addr);
-				}
-				return exts.get(d.addr);
+		if (site.containsKey(sa)) {
+			int va = site.get(sa);
+			if (syms.containsKey(va)) {
+				return syms.get(va);
 			}
-			return String.format("%s%+d", exts.get(d.addr), offs.get(sa));
+			return String.format("0%04xh", d.addr);
 		}
-		int va = site.get(sa);
-		if (syms.containsKey(va)) {
-			return syms.get(va);
+		// might be external... or rel...
+		if (d.rel) {
+			int va = segAdr(seg, d.addr);
+			if (syms.containsKey(va)) {
+				return syms.get(va);
+			}
+			return String.format("0%04xh", d.addr);
 		}
-		return String.format("0%04xh", d.addr);
+		if (!offs.containsKey(sa)) {
+			if (!isExt(d.addr)) {
+				// what? error?
+				return String.format("0%04xh", d.addr);
+			}
+			return exts.get(d.addr);
+		}
+		return String.format("%s%+d", exts.get(d.addr), offs.get(sa));
 	}
 
 	public void mksym(int seg, Z80Dissed d) {
@@ -173,6 +180,10 @@ public class RelFile implements ProgramFile {
 		int x = segOf(sa);
 		String l = String.format("%c%04x", segChars.charAt(x), a);
 		syms.put(sa, l);
+	}
+
+	public String defLabel(int seg, int adr) {
+		return String.format("%c%04x", segChars.charAt(seg), adr);
 	}
 
 	public void resetSymtab() {

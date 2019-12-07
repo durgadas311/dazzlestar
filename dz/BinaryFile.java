@@ -71,6 +71,10 @@ public class BinaryFile implements ProgramFile {
 		symtab.put(d.addr, String.format("L%04x", d.addr));
 	}
 
+	public String defLabel(int seg, int adr) {
+		return String.format("L%04x", adr);
+	}
+
 	public void resetSymtab() {
 		symtab.clear();
 	}

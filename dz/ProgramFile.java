@@ -29,6 +29,7 @@ public interface ProgramFile {
 	// For disassembly
 	String getsym(int seg, Z80Dissed d);	// always returns something
 	void mksym(int seg, Z80Dissed d);
+	String defLabel(int seg, int adr);
 	void resetSymtab();
 	String segName(int seg);
 	//
