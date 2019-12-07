@@ -86,15 +86,18 @@ public class PrlFile implements ProgramFile {
 		return null;
 	}
 
+	// called from loadDZ...
 	public void putsym(int sgc, int a, String l) {
 		// TODO: rename symbol...
 		// should this be accepted?
 		// at least check reloc bitmap first?
 		if (symbol(0, a)) {
-			//syms.remove(a);
-			return;
+			syms.remove(a);
 		}
-		//syms.put(a, l);
+		if (l == null) {
+			l = String.format("%c%04x", sgc, a);
+		}
+		syms.put(a, l);
 	}
 
 	public String getsym(int seg, Z80Dissed d) {
@@ -122,16 +125,12 @@ public class PrlFile implements ProgramFile {
 	// Not used when numSeg() == 1
 	public String segName(int seg) { return ""; }
 
-	public int read(int adr) {
+	public int read(int seg, int adr) {
 		adr -= base();
 		if (adr < 0 || adr >= resLen) {
 			return 0;
 		}
 		return img[adr + resStart] & 0xff;
-	}
-
-	public int read(int seg, int adr) {
-		return read(adr);
 	}
 
 	public void preASM(PrintStream ps, boolean prn, int seg) {

@@ -32,7 +32,6 @@ public interface ProgramFile {
 	void resetSymtab();
 	String segName(int seg);
 	//
-	int read(int adr);	// read a byte from program
 	int read(int seg, int adr);	// read a byte from segment
 	//
 	// ASM to init (e.g. ORG xxxx)

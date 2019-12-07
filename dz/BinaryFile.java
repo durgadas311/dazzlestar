@@ -47,9 +47,13 @@ public class BinaryFile implements ProgramFile {
 		return null;
 	}
 
+	// called from loadDZ...
 	public void putsym(int sgc, int a, String l) {
 		if (symbol(0, a)) {
 			symtab.remove(a);
+		}
+		if (l == null) {
+			l = String.format("%c%04x", sgc, a);
 		}
 		symtab.put(a, l);
 	}
@@ -74,15 +78,11 @@ public class BinaryFile implements ProgramFile {
 	// Not used when numSeg() == 1
 	public String segName(int seg) { return ""; }
 
-	public int read(int adr) {
+	public int read(int seg, int adr) {
+		// no segments here
 		adr -= _base;
 		if (adr < 0 || adr >= obj.length) return 0;
 		return obj[adr] & 0xff;
-	}
-
-	public int read(int seg, int adr) {
-		// no segments here
-		return read(adr);
 	}
 
 	public void preASM(PrintStream ps, boolean prn, int seg) {

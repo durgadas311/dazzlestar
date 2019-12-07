@@ -144,15 +144,19 @@ public class SprFile implements ProgramFile {
 		return null;
 	}
 
+	// called from loadDZ...
 	public void putsym(int sgc, int a, String l) {
-		// TODO: rename symbol...
+		// rename symbol...
 		// should this be accepted?
 		// at least check reloc bitmap first?
 		if (symbol(0, a)) {
-			//syms.remove(a);
-			return;
+			if (l == null) return;
+			syms.remove(a);
 		}
-		//syms.put(a, l);
+		if (l == null) {
+			l = String.format("%c%04x", sgc, a);
+		}
+		syms.put(a, l);
 	}
 
 	public String getsym(int seg, Z80Dissed d) {
@@ -186,17 +190,13 @@ public class SprFile implements ProgramFile {
 		}
 	}
 
-	public int read(int adr) {
+	public int read(int seg, int adr) {
+		// address space is unified, no special handling.
 		adr -= base();
 		if (adr < 0 || adr >= end()) {
 			return 0;
 		}
 		return img[adr + resStart] & 0xff;
-	}
-
-	public int read(int seg, int adr) {
-		// address space is unified, no special handling.
-		return read(adr);
 	}
 
 	public void preASM(PrintStream ps, boolean prn, int seg) {

@@ -38,7 +38,15 @@ This will discard any current disassembly. Submenus are:
 	The keyboard shortcut is <B>Alt-F-N-W</B>
 	</DD>
 	<DT>-&gt;REL File</DT>
-	<DD>Note yet implemented.
+	<DD>Opens a REL file, which contains a lot of information that
+	is used to construct the initial symbol table. Note, this
+	version combines all related segment snippets into a single
+	segment, and thus does not reconstruct the original ASM file's
+	interspersing of CSEG, DSEG, etc. This is done to keep the user
+	interface simpler. Also, ASEG data is not loaded - if there was
+	any contents (symbols are still constructed). This is similar
+	to the handling of ASEG in LINK.
+	<B>Disas-&gt;Rebuild Symtab</B> may be required, same as PRL files.
 	The keyboard shortcut is <B>Alt-F-N-X</B>
 	</DD>
 	</DL>

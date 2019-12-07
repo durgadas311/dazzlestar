@@ -342,7 +342,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		statHint = new JLabel("Hint:");
 		statHint.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statHint.setFont(font2);
-		statSeg = new JLabel("Seg:");
+		statSeg = new JLabel("");
 		statSeg.setPreferredSize(new Dimension(w, (int)(fz + 2)));
 		statSeg.setFont(font2);
 		stat5 = new JLabel("");
@@ -537,8 +537,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			return new PrlFile(fi);
 		} else if (t.equalsIgnoreCase(".SPR")) {
 			return new SprFile(fi);
-		//} else if (t.equalsIgnoreCase(".REL")) {
-		//	return new RelFile(fi);
+		} else if (t.equalsIgnoreCase(".REL")) {
+			return new RelFile(fi);
 		} else {
 			return new BinaryFile(fi, 0x0100);
 		}
@@ -1670,7 +1670,8 @@ else t += ' ';
 			if (ss.length > 1) {
 				prog.putsym(c, a, ss[1]);
 			} else {
-				prog.putsym(c, a, (char)c + ss[0]);
+				// TODO: ignore these?
+				prog.putsym(c, a, null);
 			}
 		} else {
 			return false;
@@ -2251,7 +2252,23 @@ else t += ' ';
 			return;
 		}
 		if (key == KeyEvent.VK_X) {
-			// TODO: REL file
+			// REL file
+			SuffFileChooser sfc = new SuffFileChooser("REL file",
+				new String[]{ "rel" },
+				new String[]{ "REL file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
+				jobActive(false);
+				prog = new RelFile(sfc.getSelectedFile());
+				newJob(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Load REL",
+					ee.getMessage());
+			}
 			return;
 		}
 		if (key == KeyEvent.VK_C) {
