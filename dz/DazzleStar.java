@@ -13,11 +13,9 @@ import java.util.Vector;
 import java.awt.datatransfer.StringSelection;
 
 // TODO:
-//	* cur_len is not getting update after analyze()...
-//	* cend not properly (re)computed sometimes.
 //	* do not pop-up results for "Scan from here", use status field...
 //	* make "Scan from here" a function key?
-//	* key to align cursor to nearest instruction/line?
+//	* key to align cursor to nearest instruction/line? Ctrl-Home?
 
 public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			KeyListener, ActionListener {
@@ -1016,6 +1014,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		// handle long strings...
+		// TODO: fix this for asmStringLen...
 		int m = n;
 		while (m > 16) {
 			sg.setLen(addr, 16);
@@ -1564,6 +1563,25 @@ else t += ' ';
 			y += _fh;
 			a += 16;
 		}
+	}
+
+	private void dumpLen() {
+		try {
+			PrintStream ps = new PrintStream(new File("dzlengths"));
+			for (int x = 0; x < nseg; ++x) {
+				Segment g = segs[x];
+				int first = g.base;
+				int last = g.end;
+				for (int a = first; a < last; ++a) {
+					if (g.getLen(a) != 0) {
+						ps.format("=%04x,%d\n",
+							prog.segAdr(g.idx, a),
+							g.getLen(a));
+					}
+				}
+			}
+			ps.close();
+		} catch (Exception ee) {}
 	}
 
 	// TODO: how to separate segments
@@ -2422,21 +2440,34 @@ else t += ' ';
 
 	// TODO: use some modifier for single/double byte B-I?
 	private boolean doBrkKey(int k) {
+		int c = sg.cursor;
+		int c1 = c;
+		boolean fix = false;
+		if (sg.getLen(c) == 0) {
+			int bk = sg.activeBreak(c);
+			fix = (bk == 0 || bk == 'I');
+		}
 		if (k == ' ') {
-			sg.putBrk(sg.cursor, 0);
-			sg.putStyle(sg.cursor, 0);
-			sg.putRadix(sg.cursor, 0);
+			sg.putBrk(c, 0);
+			sg.putStyle(c, 0);
+			sg.putRadix(c, 0);
 		} else if (validBrk(k) > 0) {
-			sg.putBrk(sg.cursor, k);
+			sg.putBrk(c, k);
 		} else if (validStyle(k) > 0) {
-			sg.putStyle(sg.cursor, k);
+			sg.putStyle(c, k);
 		} else if (validRadix(k) > 0) {
-			sg.putRadix(sg.cursor, k);
+			sg.putRadix(c, k);
 		} else {
 			return false;
 		}
-		resetBreaks(sg, sg.cursor, false);
-		sg.cur_len = sg.getLen(sg.cursor);
+		if (fix) {
+			c1 = sg.oneBack(c);
+			sg.putBrk(c1, 'B');
+			sg.setLen(c1, c - c1);
+		}
+		//resetBreaks(sg, c1, false);
+		resetBreaks(sg); // TODO: avoid total rescan...
+		sg.cur_len = sg.getLen(c);
 		setCodeWin(sg.cwin);
 		code.repaint();
 		dump.repaint();
@@ -2764,6 +2795,9 @@ else t += ' ';
 			doUnknown();
 		} else if (k == KeyEvent.VK_F5) {
 			doSeg();
+		// debugging...
+		//} else if (k == KeyEvent.VK_F12) {
+		//	dumpLen();
 		}
 	}
 	public void keyReleased(KeyEvent e) {}
