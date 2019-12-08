@@ -23,6 +23,7 @@ public class RelFile implements ProgramFile {
 	int nSeg = 0;
 
 	Map<Integer,String> syms;	// key is seg-adr
+	Map<Integer,String> sym0;	// key is seg-adr
 	Map<Integer,Integer> site;	// addr site, key is seg-adr
 	Map<Integer,Integer> offs;	// extrn+/-off, key is seg-adr
 	Vector<String> pubs;	// also entered into syms
@@ -62,6 +63,7 @@ public class RelFile implements ProgramFile {
 		fi.read(rel);
 		fi.close();
 		syms = new HashMap<Integer,String>();
+		sym0 = new HashMap<Integer,String>();
 		site = new HashMap<Integer,Integer>();
 		offs = new HashMap<Integer,Integer>();
 		exts = new HashMap<Integer,String>();
@@ -118,7 +120,8 @@ public class RelFile implements ProgramFile {
 		return syms.get(sa);
 	}
 
-	// called from loadDZ... rename a symbol if 'l' not null
+	// called from loadDZ... rename a symbol if 'l' not null.
+	// must preserve rename in 'sym0' also.
 	public void putsym(int sgc, int a, String l) {
 		// rename symbol...
 		// should this be accepted?
@@ -126,17 +129,18 @@ public class RelFile implements ProgramFile {
 		int x = segChars.indexOf(sgc);
 		if (x < 0) x = 0; // what's the right action here?
 		int sa = segAdr(x, a);
-		if (syms.containsKey(sa)) {
-			if (l == null) return;
-			syms.remove(sa);
-		}
+		if (syms.containsKey(sa) && l == null) return;
 		if (l == null) {
-			l = String.format("%c%04x", segChars.charAt(x), a);
+			l = defLabel(x, a);
 		}
 		syms.put(sa, l);
+		if (sym0.containsKey(sa)) {
+			sym0.put(sa, l);
+		}
 	}
 
 	public String getsym(int seg, Z80Dissed d) {
+		// TODO: cleanup this mess
 		int sa = segAdr(seg, d.pc + d.off);	// site address...
 		if (site.containsKey(sa)) {
 			int va = site.get(sa);
@@ -178,7 +182,7 @@ public class RelFile implements ProgramFile {
 		}
 		int a = adrOf(sa);
 		int x = segOf(sa);
-		String l = String.format("%c%04x", segChars.charAt(x), a);
+		String l = defLabel(x, a);
 		syms.put(sa, l);
 	}
 
@@ -187,10 +191,8 @@ public class RelFile implements ProgramFile {
 	}
 
 	public void resetSymtab() {
-		// TODO: clear then rebuild? must loadRel()???
-		// syms.clear();
-		// exts.clear();
-		// ...
+		syms.clear();
+		syms.putAll(sym0);
 	}
 
 	// Translates REL segment id to local segment index.
@@ -265,6 +267,7 @@ public class RelFile implements ProgramFile {
 		for (int va : site.values()) {
 			bldSym(va);
 		}
+		sym0.putAll(syms); // set baseline symbols, for reset
 	}
 
 	private void initSegs() {
