@@ -266,10 +266,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		pan.setLayout(gb);
 		JPanel pn = new JPanel();
 		pn.setPreferredSize(new Dimension(5, 5));
-		gc.gridwidth = 2;
 		gb.setConstraints(pn, gc);
 		pan.add(pn);
-		gc.gridwidth = 1;
 		++gc.gridx;
 		++gc.gridy;
 
@@ -375,7 +373,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		pan.add(stat6);
 		--gc.gridx;
 		++gc.gridy;
-		gc.gridwidth = 2;
 		pn = new JPanel();
 		JLabel lb = new JLabel("A(ddr):");
 		lb.setFont(font2);
@@ -389,6 +386,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		pan.add(stat7);
 		--gc.gridx;
 		++gc.gridy;
+		gc.gridwidth = 2;
 
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(5, 5));
@@ -417,7 +415,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		++gc.gridy;
 		frame.add(pan);
 
-		++gc.gridx;
+		gc.gridx += gc.gridwidth;
+		gc.gridwidth = 1;
 		pn = new JPanel();
 		pn.setPreferredSize(new Dimension(5, 5));
 		gb.setConstraints(pn, gc);
