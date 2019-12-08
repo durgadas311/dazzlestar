@@ -24,6 +24,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	static final String allBreaks = "BILWXRC07$TQS";
 	static final String allStyles = "MN";
 	static final String allRadix = "HD2";
+	static final String BINZERO = "00000000";
 
 	static DazzleStar _us;
 	ProgramFile prog;
@@ -703,24 +704,51 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return -1;
 	}
 
-	private int lenTo(Segment g, int a, int c, boolean brk) {
+	private int lenTo(Segment g, int a, int c, int rdx) {
 		// TODO: some max length...
-		// Must never break on first char
+		// Must never return len 0
+		inQ = false;
+		boolean fmt = (rdx != 0);
+		int col = 0;
+		int b;
+		int w;
 		int x = a;
 		while (x < g.end) {
-			if (prog.read(g.idx, x++) == c) break;
-			if (brk && x < g.end && (g.anyBrk(x) || prog.symbol(g.idx, x))) break;
+			b = prog.read(g.idx, x++);
+			if (fmt) {
+				w = asmFmtOne(b, col, false, rdx).length();
+				if (col + w > 60) {
+					--x;
+					break;
+				}
+				col += w;
+			}
+			if (b == c) break;
+			if (fmt && x < g.end && (g.anyBrk(x) || prog.symbol(g.idx, x))) break;
 		}
 		return x - a;
 	}
 
-	private int lenToBit7(Segment g, int a, boolean brk) {
+	private int lenToBit7(Segment g, int a, int rdx) {
 		// TODO: some max length...
-		// Must never break on first char
+		// Must never return len 0
+		boolean fmt = (rdx != 0);
+		int col = 0;
+		int b;
+		int w;
 		int x = a;
 		while (x < g.end) {
-			if ((prog.read(g.idx, x++) & 0x80) != 0) break;
-			if (brk && x < g.end && (g.anyBrk(x) || prog.symbol(g.idx, x))) break;
+			b = prog.read(g.idx, x++);
+			if (fmt) {
+				w = asmFmtOne(b, col, false, rdx).length();
+				if (col + w > 60) {
+					--x;
+					break;
+				}
+				col += w;
+			}
+			if ((b & 0x80) != 0) break;
+			if (fmt && x < g.end && (g.anyBrk(x) || prog.symbol(g.idx, x))) break;
 		}
 		return x - a;
 	}
@@ -741,6 +769,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void resetBreaks(Segment g, int a, boolean all) {
 		Z80Dissed d;
 		int n;
+		int m;	// line wrap target
 		int b, s, r;
 		int x = a;
 		while (!all && x > g.base && g.getLen(x) == 0) --x;
@@ -751,6 +780,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int rx = g.activeRadix(x);
 		if (rx == 0) rx = 'H';
 		while (x < g.end) {
+			// TODO: need to extend to next radix if radix set...
+			// TODO: need to extend to next style if style set...
 			if (!all && x > a && g.anyBrk(x)) break;
 			b = g.getBrk(x);
 			s = g.getStyle(x);
@@ -771,9 +802,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			case 'B':
 			case 'C':
 			case 'U':
-				n = 1;
-				while (n < 16 && x + n < g.end && !g.anyBrk(x + n) &&
-							!prog.symbol(g.idx, x + n)) ++n;
+				n = asmStringLen(g, x, bk, rx);
 				break;
 			case 'L':
 			case 'W':
@@ -795,13 +824,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 						!prog.symbol(g.idx, x + n)) ++n;
 				break;
 			case '$':
-				n = lenTo(g, x, '$', true);
+				n = lenTo(g, x, '$', rx);
 				break;
 			case '0':
-				n = lenTo(g, x, 0, true);
+				n = lenTo(g, x, 0, rx);
 				break;
 			case '7':
-				n = lenToBit7(g, x, true);
+				n = lenToBit7(g, x, rx);
 				break;
 			default:
 				n = 1;
@@ -967,13 +996,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				n = 2;
 				break;
 			case '0':
-				n = lenTo(sg, addr, 0, false); // n >= 1
+				n = lenTo(sg, addr, 0, 0); // n >= 1
 				break;
 			case '$':
-				n = lenTo(sg, addr, '$', false); // n >= 1
+				n = lenTo(sg, addr, '$', 0); // n >= 1
 				break;
 			case '7':
-				n = lenToBit7(sg, addr, false); // n >= 1
+				n = lenToBit7(sg, addr, 0); // n >= 1
 				break;
 			}
 		}
@@ -1127,71 +1156,107 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		prog.mksym(g.idx, d);
 	}
 
-	private String fmtNum(int n, int rdx) {
-		if (rdx == 'H') {
-			String s = Integer.toHexString(n);
-			if (!Character.isDigit(s.charAt(0))) s = '0' + s;
-			if (s.length() > 1) s += 'h';
+	private String fmtNum(int n, int rdx, boolean bin) {
+		String s;
+		if (rdx == '2' && bin) {
+			s = Integer.toBinaryString(n);
+			int l = s.length();
+			if (l < 8) {
+				s = BINZERO.substring(l) + s;
+			}
+			s += 'b';
 			return s;
-		} else if (rdx == '2') {
-			// TODO: only for bytes...
-			// TODO: pad to 8 bits...
-			return Integer.toBinaryString(n) + 'b';
+		} else if (rdx == 'D') {
+			return Integer.toString(n);
 		}
-		// } else if (rdx == 'D') {
-		return Integer.toString(n);
+		// } else if (rdx == 'H') {
+		s = Integer.toHexString(n);
+		if (!Character.isDigit(s.charAt(0))) s = '0' + s;
+		if (s.length() > 1) s += 'h';
+		return s;
 	}
 
 	// TODO: make this usable from asmString()...
 	private String asmChar(int e, int rdx) {
 		if (e < ' ' || e > '~' || e == '!') {
-			return fmtNum(e, rdx);
+			return fmtNum(e, rdx, true);
 		} else {
 			if (e == '\'') return "''''";
 			else return String.format("'%c'", (char)e);
 		}
 	}
 
+	private boolean inQ;
+
+	private String asmFmtOne(int c, int col, boolean last, int rdx) {
+		String s = "";
+		int e;
+		if (last) {
+			e = (c & 0x7f);
+		} else {
+			e = c;
+		}
+		if (e < ' ' || e > '~' || e == '!') {
+			if (inQ) { s += '\''; inQ = false; }
+			if (col > 0) s += ',';
+			s += fmtNum(c, rdx, true);
+		} else {
+			if (last && inQ) {
+				s += '\'';
+				inQ = false;
+			}
+			if (!inQ) {
+				if (col > 0) s += ',';
+				s += '\'';
+				inQ = true;
+			}
+			s += (char)e;
+			if (e == '\'') s += (char)e;
+			if (last) {
+				s += "'+80h";
+				inQ = false;
+			}
+		}
+		return s;
+	}
+
+	private int asmStringLen(Segment g, int a, int brk, int rdx) {
+		// must take at least 1 char...
+		int x = a;
+		inQ = false;
+		boolean bit7 = (brk == '7');
+		int c = prog.read(g.idx, x++);
+		boolean last = (bit7 && (c & 0x80) != 0);
+		int len = asmFmtOne(c, 0, last, rdx).length();
+		while (!last && x < g.end) {
+			if (g.anyBrk(x) || prog.symbol(g.idx, x)) break;
+			c = prog.read(g.idx, x++);
+			last = (bit7 && (c & 0x80) != 0);
+			int n = asmFmtOne(c, len, last, rdx).length();
+			if (len + n > 60) {
+				--x;
+				break;
+			}
+			len += n;
+		}
+		return x - a;
+	}
+
 	private String asmString(Segment g, int a, int n, int brk, int rdx) {
 		String s = "";
-		boolean q = false;
+		inQ = false;
 		boolean bit7 = (brk == '7');
-		// TODO: honor rdx H,D,2... and style M,N
+		// TODO: should strings use binary?
 		int c;
-		int e;
+		int x = 0;
 		while (n > 0) {
 			c = prog.read(g.idx, a);
 			boolean last = (bit7 && n == 1 && (c & 0x80) != 0);
-			if (last) {
-				e = (c & 0x7f);
-			} else {
-				e = c;
-			}
-			if (e < ' ' || e > '~' || e == '!') {
-				if (q) { s += '\''; q = false; }
-				if (s.length() > 0) s += ',';
-				s += fmtNum(c, rdx);
-			} else {
-				if (last && q) {
-					s += '\'';
-					q = false;
-				}
-				if (!q) {
-					if (s.length() > 0) s += ',';
-					s += '\'';
-					q = true;
-				}
-				s += (char)e;
-				if (e == '\'') s += (char)e;
-				if (last) {
-					s += "'+80h";
-					q = false;
-				}
-			}
+			s += asmFmtOne(c, x++, last, rdx);
 			++a;
 			--n;
 		}
-		if (q) s += "'";
+		if (inQ) s += "'";
 		return s;
 	}
 
@@ -1252,13 +1317,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			// assert: n == 2
 			z = prog.read(g.idx, a) | (prog.read(g.idx, a + 1) << 8);
 			d.op = "dw";
-			d.fmt = fmtNum(z, rx);
+			d.fmt = fmtNum(z, rx, false);
 			break;
 		case 'X':
 			// assert: n == 2
 			z = prog.read(g.idx, a + 1) | (prog.read(g.idx, a) << 8);
 			d.op = "dw";
-			d.fmt = fmtNum(z, rx);
+			d.fmt = fmtNum(z, rx, false);
 			break;
 		case 'R':
 			// assert: n == 2
@@ -1278,7 +1343,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			if (st == 'M') {
 				d.fmt = asmChar(y, rx);
 			} else {
-				d.fmt = fmtNum(y, rx);
+				d.fmt = fmtNum(y, rx, true);
 			}
 			zd.add(d);
 			d = new Z80Dissed();
@@ -1292,7 +1357,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			y = prog.read(g.idx, a) | (prog.read(g.idx, a + 1) << 8);
 			z = prog.read(g.idx, a + 2) | (prog.read(g.idx, a + 3) << 8);
 			d.op = "dw";
-			d.fmt = fmtNum(y, rx);
+			d.fmt = fmtNum(y, rx, false);
 			zd.add(d);
 			d = new Z80Dissed();
 			d.op = "dw";
@@ -1314,7 +1379,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				s = "";
 				for (z = 0; z < n; ++z) {
 					if (z != 0) s += ',';
-					s += fmtNum(prog.read(g.idx, a++), rx);
+					s += fmtNum(prog.read(g.idx, a++), rx, true);
 				}
 				d.fmt = s;
 			}
