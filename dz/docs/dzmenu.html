@@ -19,7 +19,7 @@ This will discard any current disassembly. Submenus are:
 	<DD>Open a binary (e.g. COM) file.
 	Allows override of ORG for file, enter hex value in box on right side
 	of file dialog.
-	The keyboard shortcut is <B>Alt-F-N-N</B>
+	The keyboard shortcut is <B>Alt-F-N-B</B>
 	</DD>
 	<DT>-&gt;PRL File</DT>
 	<DD>Opens a PRL file, which contains relocation information used
@@ -28,14 +28,14 @@ This will discard any current disassembly. Submenus are:
 	(typically after identifying code sections) in order to
 	create symbol entries for relative jumps (which do not appear
 	in the relocation data).
-	The keyboard shortcut is <B>Alt-F-N-V</B>
+	The keyboard shortcut is <B>Alt-F-N-P</B>
 	</DD>
 	<DT>-&gt;SPR File</DT>
 	<DD>Opens an SPR file, which contains relocation information used
 	to construct the initial symbol table.
 	Some SPR files (e.g. BNKBIOS3.SPR) contain two program segments.
 	<B>Disas-&gt;Rebuild Symtab</B> may be required, same as PRL files.
-	The keyboard shortcut is <B>Alt-F-N-W</B>
+	The keyboard shortcut is <B>Alt-F-N-S</B>
 	</DD>
 	<DT>-&gt;REL File</DT>
 	<DD>Opens a REL file, which contains a lot of information that
@@ -47,7 +47,7 @@ This will discard any current disassembly. Submenus are:
 	any contents (symbols are still constructed). This is similar
 	to the handling of ASEG in LINK.
 	<B>Disas-&gt;Rebuild Symtab</B> may be required, same as PRL files.
-	The keyboard shortcut is <B>Alt-F-N-X</B>
+	The keyboard shortcut is <B>Alt-F-N-R</B>
 	</DD>
 	</DL>
 <P>
@@ -63,30 +63,51 @@ file is generated in the same folder as the COM file.
 <DD>Generates a PRN (listing) file for the current disassembly.
 file is generated in the same folder as the COM file.
 </DD>
-<DT>File-&gt;Save DZ</DT>
-<DD>Generates a DZ file for the current disassembly.
-file is generated in the same folder as the COM file.
-</DD>
-<DT>File-&gt;Load DZ</DT>
-<DD>Open a dialog to loads a DZ file for the current disassembly.
-This replaces any existing breaks or symbols, effectively discarding those.
-This does not affect the folder used to generate output files.
-</DD>
-<DT>File-&gt;Save Hints</DT>
-<DD>Save current hints to file, overwriting any previous contents.
-If no hints exist, pops up a warning and does nothing.
-</DD>
-<DT>File-&gt;Load Hints</DT>
-<DD>Load code-scanner hints.
-See <A HREF="dzhints.html">Hint Syntax</A>.
-</DD>
+<DT>File-&gt;Save</DT>
+<DD>Open a submenu for dialogs to save current progress. Submenus are:
+	<DL>
+	<DT>-&gt;Save DZ</DT>
+	<DD>Generates a .DZ file for the current disassembly.
+	file is generated in the same folder as the COM file.
+	The keyboard shortcut is <B>Alt-F-S-D</B>
+	</DD>
+	<DT>-&gt;Save Hints</DT>
+	<DD>Save current hints to file (.DZH), overwriting any previous contents.
+	If no hints exist, pops up a warning and does nothing.
+	The keyboard shortcut is <B>Alt-F-S-H</B>
+	</DD>
+	<DT>-&gt;Save Scan</DT>
+	<DD>Save current code-scanner results (.DZS), overwriting any previous contents.
+	If no scanner data exist, pops up a warning and does nothing.
+	The keyboard shortcut is <B>Alt-F-S-S</B>
+	</DD>
+	</DL>
+<DT>File-&gt;Load</DT>
+<DD>Open a submenu for dialogs to load additional data. Submenus are:
+	<DL>
+	<DT>-&gt;Load DZ</DT>
+	<DD>Open a dialog to loads a DZ file for the current disassembly.
+	This replaces any existing breaks or symbols, effectively discarding those.
+	This does not affect the folder used to generate output files.
+	The keyboard shortcut is <B>Alt-F-L-D</B>
+	</DD>
+	<DT>-&gt;Load Hints</DT>
+	<DD>Load code-scanner hints.
+	See <A HREF="dzhints.html">Hint Syntax</A>.
+	The keyboard shortcut is <B>Alt-F-L-H</B>
+	</DD>
+	<DT>-&gt;Load Scan</DT>
+	<DD>Load code-scanner results.
+	The keyboard shortcut is <B>Alt-F-L-S</B>
+	</DD>
+	</DL>
 <DT>File-&gt;Quit</DT>
 <DD>Discards any current disassembly and exits the program.
 </DD>
 <P>
 <DT>Disas-&gt;Scan from here</DT>
 <DD>(Re)Start auto-code scan from current location.
-Note, the keyboard shortcut for this is <B>Alt-D-Z</B>
+Note, the keyboard shortcut for this is <B>Alt-D-S</B>
 </DD>
 <DT>Disas-&gt;Scan Hints</DT>
 <DD>Code scan all entry points from hints.
@@ -107,13 +128,13 @@ See <A HREF="dzhints.html">Hint Syntax</A>.
 <DT>Disas-&gt;Rebuild Symtab</DT>
 <DD>Discards any current symbols and rescans code according to
 current breaks, building a new symbol table.
-Note, the keyboard shortcut for this is <B>Alt-D-G</B>
+Note, the keyboard shortcut for this is <B>Alt-D-B</B>
 </DD>
 <DT>Disas-&gt;Use {MAC80|Zilog}</DT>
 <DD>Change mnemonics used for disassembly of code.
 Menu reflects the opposite of the current mnemonics, i.e.
 what the mnemonics will be changed to.
-Note, the keyboard shortcut for this is <B>Alt-D-M</B>
+Note, the keyboard shortcut for this is <B>Alt-D-U</B>
 </DD>
 <P>
 <DT>Help-&gt;About</DT>

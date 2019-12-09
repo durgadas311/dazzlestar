@@ -56,6 +56,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JMenuItem mi_sch;
 	JMenuItem mi_sym;
 	JMenuItem mi_dis;
+	JMenuItem mi_ssc;
+	JMenuItem mi_lsc;
 	GenericHelp help;
 	JFrame frame;
 	DZCodePane code;
@@ -194,55 +196,52 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mu.setMnemonic(KeyEvent.VK_F);
 		mu.add(newSubMenu());
 		mi = mi_cls = new JMenuItem("Close", KeyEvent.VK_C);
+		mi.setActionCommand("C");
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = mi_asm = new JMenuItem("Generate ASM", KeyEvent.VK_A);
+		mi.setActionCommand("A");
 		mi.addActionListener(this);
-		mi.setDisplayedMnemonicIndex(9);
 		mu.add(mi);
 		mi = mi_prn = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi.setActionCommand("P");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_sav = new JMenuItem("Save DZ", KeyEvent.VK_S);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_L);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = mi_shn = new JMenuItem("Save Hints (D)", KeyEvent.VK_D);
-		mi.addActionListener(this);
-		mu.add(mi);
-		mi = mi_hn = new JMenuItem("Load Hints (I)", KeyEvent.VK_I);
-		mi.setDisplayedMnemonicIndex(12);
-		mi.addActionListener(this);
-		mu.add(mi);
+		mu.add(saveSubMenu());
+		mu.add(loadSubMenu());
 		mi = new JMenuItem("Quit (no save)", KeyEvent.VK_Q);
+		mi.setActionCommand("Q");
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
 		// done with File menu
 		mu = new JMenu("Disas");
 		mu.setMnemonic(KeyEvent.VK_D);
-		mi = new JMenuItem("Scan from here (Z)", KeyEvent.VK_Z);
+		mi = new JMenuItem("Scan from here", KeyEvent.VK_S);
+		mi.setActionCommand("Z");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_sch = new JMenuItem("Scan Hints (Y)", KeyEvent.VK_Y);
+		mi = mi_sch = new JMenuItem("Scan Hints", KeyEvent.VK_H);
+		mi.setActionCommand("Y");
 		mi.addActionListener(this);
 		mi_sch.setEnabled(false);
 		mu.add(mi);
 		mi = new JMenuItem("Reset scan", KeyEvent.VK_R);
+		mi.setActionCommand("R");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_hnt = new JMenuItem("Apply Hint (B)", KeyEvent.VK_B);
+		mi = mi_hnt = new JMenuItem("Apply Hint", KeyEvent.VK_A);
+		mi.setActionCommand("B");
 		mi.addActionListener(this);
 		mi_hnt.setEnabled(false);
 		mu.add(mi);
-		mi = mi_sym = new JMenuItem("Rebuild Symtab (G)", KeyEvent.VK_G);
+		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_B);
+		mi.setActionCommand("G");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_dis = new JMenuItem("Use ----- (M)", KeyEvent.VK_M);
+		mi = mi_dis = new JMenuItem("Use -----", KeyEvent.VK_U);
+		mi.setActionCommand("M");
 		mi.addActionListener(this);
-		mi.setDisplayedMnemonicIndex(11);
 		mu.add(mi);
 		mb.add(mu);
 		disHint();
@@ -250,10 +249,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// Help is always last... far right.
 		mu = new JMenu("Help");
 		mu.setMnemonic(KeyEvent.VK_H);
-		mi = new JMenuItem("About", KeyEvent.VK_T);
+		mi = new JMenuItem("About", KeyEvent.VK_A);
+		mi.setActionCommand("T");
 		mi.addActionListener(this);
 		mu.add(mi);
 		mi = new JMenuItem("Show Help", KeyEvent.VK_H);
+		mi.setActionCommand("H");
+		mi.setDisplayedMnemonicIndex(5);
 		mi.addActionListener(this);
 		mu.add(mi);
 		mb.add(mu);
@@ -545,18 +547,61 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private JMenuItem newSubMenu() {
 		JMenu mu = new JMenu("New");
 		mu.setMnemonic(KeyEvent.VK_N);
-		JMenuItem mi = new JMenuItem("Binary (.COM)", KeyEvent.VK_N);
+		JMenuItem mi = new JMenuItem("Binary (.COM)", KeyEvent.VK_B);
+		mi.setActionCommand("N");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("PRL File (V)", KeyEvent.VK_V);
+		mi = new JMenuItem("PRL File (V)", KeyEvent.VK_P);
+		mi.setActionCommand("V");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("SPR File (W)", KeyEvent.VK_W);
+		mi = new JMenuItem("SPR File (W)", KeyEvent.VK_S);
+		mi.setActionCommand("W");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("REL File (X)", KeyEvent.VK_X);
+		mi = new JMenuItem("REL File (X)", KeyEvent.VK_R);
+		mi.setActionCommand("X");
 		mi.addActionListener(this);
-		mi.setEnabled(false);	// TODO: implement and enable
+		mu.add(mi);
+		return mu;
+	}
+
+	private JMenuItem saveSubMenu() {
+		JMenu mu = new JMenu("Save");
+		mu.setMnemonic(KeyEvent.VK_S);
+		JMenuItem mi = mi_sav = new JMenuItem("Save DZ", KeyEvent.VK_D);
+		mi.setActionCommand("S");
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_shn = new JMenuItem("Save Hints", KeyEvent.VK_H);
+		mi.setActionCommand("D");
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_ssc = new JMenuItem("Save Scan", KeyEvent.VK_S);
+		mi.setActionCommand("E");
+		mi.setDisplayedMnemonicIndex(5);
+		mi.addActionListener(this);
+		mi.setEnabled(false);	// TODO: implement this
+		mu.add(mi);
+		return mu;
+	}
+
+	private JMenuItem loadSubMenu() {
+		JMenu mu = new JMenu("Load");
+		mu.setMnemonic(KeyEvent.VK_L);
+		JMenuItem mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_D);
+		mi.setDisplayedMnemonicIndex(5);
+		mi.setActionCommand("L");
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_hn = new JMenuItem("Load Hints", KeyEvent.VK_H);
+		mi.setActionCommand("I");
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = mi_lsc = new JMenuItem("Load Scan", KeyEvent.VK_S);
+		mi.setActionCommand("F");
+		mi.addActionListener(this);
+		mi.setEnabled(false);	// TODO: implement this
 		mu.add(mi);
 		return mu;
 	}
@@ -569,16 +614,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi_asm.setEnabled(act);
 		mi_prn.setEnabled(act);
 		mi_cls.setEnabled(act);
+		mi_shn.setEnabled(act);
 		mi_sav.setEnabled(act);
+		// TODO: implement these...
+		//mi_ssc.setEnabled(act); // TODO: only activate after scan?
+		//mi_lsc.setEnabled(act);
 	}
 
 	private void disHint() {
 		if (dis instanceof Z80DisassemblerMAC80) {
-			mi_dis.setText("Use Zilog (M)");
-			mi_dis.setDisplayedMnemonicIndex(11);
+			mi_dis.setText("Use Zilog");
 		} else {
-			mi_dis.setText("Use MAC80 (M)");
-			mi_dis.setDisplayedMnemonicIndex(11);
+			mi_dis.setText("Use MAC80");
 		}
 	}
 
@@ -2146,11 +2193,11 @@ else t += ' ';
 	}
 
 	private void menuAction(JMenuItem m) {
-		int key = m.getMnemonic();
-		if (key == KeyEvent.VK_Q) {
+		int key = m.getActionCommand().charAt(0);
+		if (key == 'Q') {
 			System.exit(1);
 		}
-		if (key == KeyEvent.VK_P) {
+		if (key == 'P') {
 			File prn = new File(basePath + prnExt);
 			try {
 				generateASM(prn, true);
@@ -2161,7 +2208,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_A) {
+		if (key == 'A') {
 			File asm = new File(basePath + asmExt);
 			try {
 				generateASM(asm, false);
@@ -2172,7 +2219,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_S) {
+		if (key == 'S') {
 			// TODO: pick file? "append" option? backup existing?
 			File dz = new File(basePath + dzExt);
 			try {
@@ -2184,7 +2231,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_D) {
+		if (key == 'D') {
 			// Save Hints...
 			// TODO: pick file? backup existing?
 			if (calls.size() == 0 && codes.size() == 0) {
@@ -2202,7 +2249,11 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_L) {
+		if (key == 'E') {
+			// Save Scan data to file...
+			return;
+		}
+		if (key == 'L') {
 			SuffFileChooser sfc = new SuffFileChooser("DZ file",
 				new String[]{ "dz" },
 				new String[]{ "DZ file" },
@@ -2220,7 +2271,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_I) {
+		if (key == 'I') {
 			SuffFileChooser sfc = new SuffFileChooser("Hints file",
 				new String[]{ "dzh" },
 				new String[]{ "Hints file" },
@@ -2238,28 +2289,32 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_G) {
+		if (key == 'F') {
+			// Load Scan file...
+			return;
+		}
+		if (key == 'G') {
 			regenSymtab();
 			return;
 		}
-		if (key == KeyEvent.VK_Z) {
+		if (key == 'Z') {
 			doAnalyze();
 			return;
 		}
-		if (key == KeyEvent.VK_Y) {
+		if (key == 'Y') {
 			doAnaHints();
 			return;
 		}
-		if (key == KeyEvent.VK_B) {
+		if (key == 'B') {
 			doHint();
 			return;
 		}
-		if (key == KeyEvent.VK_R) {
+		if (key == 'R') {
 			// In somecases, this warrants a repaint...
 			sg.fresh();
 			return;
 		}
-		if (key == KeyEvent.VK_M) {
+		if (key == 'M') {
 			// switch mnemonics
 			if (dis instanceof Z80DisassemblerMAC80) {
 				dis = new Z80DisassemblerZilog(this);
@@ -2271,7 +2326,7 @@ else t += ' ';
 			code.repaint();
 			return;
 		}
-		if (key == KeyEvent.VK_N) {
+		if (key == 'N') {
 			// new job (disassembly)
 			com_org.setText("0100");
 			SuffFileChooser sfc = new SuffFileChooser("Binary file",
@@ -2297,7 +2352,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_V) {
+		if (key == 'V') {
 			// PRL file
 			SuffFileChooser sfc = new SuffFileChooser("PRL file",
 				new String[]{ "prl" },
@@ -2317,7 +2372,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_W) {
+		if (key == 'W') {
 			// SPR file
 			SuffFileChooser sfc = new SuffFileChooser("SPR file",
 				new String[]{ "spr" },
@@ -2337,7 +2392,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_X) {
+		if (key == 'X') {
 			// REL file
 			SuffFileChooser sfc = new SuffFileChooser("REL file",
 				new String[]{ "rel" },
@@ -2357,7 +2412,7 @@ else t += ' ';
 			}
 			return;
 		}
-		if (key == KeyEvent.VK_C) {
+		if (key == 'C') {
 			// close current
 			// TODO: auto-save?
 			segs = null;
@@ -2379,7 +2434,7 @@ else t += ' ';
 			dump.repaint();
 			return;
 		}
-		if (key == KeyEvent.VK_T) {
+		if (key == 'T') {
 			java.net.URL url = this.getClass().getResource("docs/About.html");
 			try {
 				JEditorPane about = new JEditorPane(url);
@@ -2392,7 +2447,7 @@ else t += ' ';
 			} catch (Exception ee) { }
 			return;
 		}
-		if (key == KeyEvent.VK_H) {
+		if (key == 'H') {
 			if (help != null) {
 				help.setVisible(true);
 			}
