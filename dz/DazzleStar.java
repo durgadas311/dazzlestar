@@ -31,6 +31,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	String basePath;
 	String dzExt;
 	String hintExt;
+	String scanExt;
 	String asmExt;
 	String prnExt;
 	boolean uppercase;
@@ -93,6 +94,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	Color liter;
 	int clines;
 	int dlines;
+	boolean scanning;
 
 	// current search criteria
 	byte[] cur_val;
@@ -581,7 +583,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi.setActionCommand("E");
 		mi.setDisplayedMnemonicIndex(5);
 		mi.addActionListener(this);
-		mi.setEnabled(false);	// TODO: implement this
 		mu.add(mi);
 		return mu;
 	}
@@ -601,7 +602,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi = mi_lsc = new JMenuItem("Load Scan", KeyEvent.VK_S);
 		mi.setActionCommand("F");
 		mi.addActionListener(this);
-		mi.setEnabled(false);	// TODO: implement this
 		mu.add(mi);
 		return mu;
 	}
@@ -616,9 +616,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi_cls.setEnabled(act);
 		mi_shn.setEnabled(act);
 		mi_sav.setEnabled(act);
-		// TODO: implement these...
-		//mi_ssc.setEnabled(act); // TODO: only activate after scan?
-		//mi_lsc.setEnabled(act);
+		mi_ssc.setEnabled(act); // TODO: only activate after scan?
+		mi_lsc.setEnabled(act);
 	}
 
 	private void disHint() {
@@ -1100,14 +1099,6 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				g.resTerm(addr);
 			}
 			addr += d.len;
-			if (d.addr < 0) {
-				continue;
-			}
-			if (!k) prog.mksym(g.idx, d);
-			if (d.type == Z80Dissed.LXI || d.type == Z80Dissed.LDI) {
-				// can't make any assumptions
-				continue;
-			}
 			if (d.type == Z80Dissed.CRET) {
 				// ignore diversion
 				continue;
@@ -1117,10 +1108,30 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				if (!g.visited(addr)) {
 					g.orphan(addr);
 				}
-				break;
+				break; // done with this branch
 			}
+			if (d.addr < 0) {
+				continue;
+			}
+			if (!k) prog.mksym(g.idx, d);
+			if (d.type == Z80Dissed.LXI || d.type == Z80Dissed.LDI) {
+				// can't make any assumptions
+				continue;
+			}
+			// 'k' is no longer relavent...
+			// only JMP, CJMP, and CALL remain...
 			int f = prog.segAdr(g.idx, d);
 			int x = prog.segOf(f);
+			// user must have pre-registered calls with inline parameters...
+			if (d.type == Z80Dissed.CALL && calls.containsKey(f)) {
+				// must be unconditional CALL if inline params...
+				// but should we verify?
+				int n = callBreak(addr, calls.get(f));
+				addr += n;
+			}
+			if (x >= nseg) {
+				continue; // If ABS ref, can't chase it...
+			}
 			if (d.type == Z80Dissed.JMP) {
 				// mark next address as potential orphan
 				if (!g.visited(addr)) {
@@ -1128,15 +1139,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				}
 				addr = prog.adrOf(f);
 				g = segs[x];
-				bk = 0; // g.activeBreak(addr);
-				//if (bk == 0) bk = 'I';
+				bk = 0;	// bk = g.activeBreak(addr);
+				//	// if (bk == 0) bk = 'I';
 				continue;
-			}
-			// user must have pre-registered calls with inline parameters...
-			if (d.type == Z80Dissed.CALL && calls.containsKey(f)) {
-				// must be unconditional CALL if inline params...
-				int n = callBreak(addr, calls.get(f));
-				addr += n;
 			}
 			// Only CJMP, CALL left...
 			analyze(segs[x], prog.adrOf(f));
@@ -1152,6 +1157,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			g.putBrk(pc, 0);
 			analyze(g, pc);
 		}
+		// TODO: exe.clear()?
 	}
 
 	// TODO: when to auto-create symbols?
@@ -1536,9 +1542,11 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			} else {
 				t += ' ';
 			}
-if (g.orphaned(a)) t += '!';
-else if (g.visited(a)) t += '*';
-else t += ' ';
+			// TODO: make this display configurable?
+			if (g.orphaned(a)) t += '?';
+			else if (g.constant(a)) t += '#';
+			else if (g.visited(a)) t += '*';
+			else t += ' ';
 			String lbl = prog.lookup(g.idx, a);
 			if (lbl != null) {
 				t += String.format("%-8s", lbl + ':');
@@ -1731,22 +1739,25 @@ else t += ' ';
 	// (like REL files which overlap address spaces)
 	private boolean processDZ(int c, String s) {
 		Segment g;
+		int sa;
+		int x;
 		int a;
 		int bk = 0;
 		int st = 0;
 		int rx = 0;
 		String[] ss;
 		if (c == '-') {	// standard break: -AAAA,BSR
+			// seg-adr is not compatible with DZ.COM...
 			ss = s.split(",");
 			if (ss.length != 2) return false;
 			try {
-				a = Integer.valueOf(ss[0], 16);
+				sa = Integer.valueOf(ss[0], 16);
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
 			// Address may have segment spec
-			int x = prog.segOf(a);
-			a = prog.adrOf(a);
+			x = prog.segOf(sa);
+			a = prog.adrOf(sa);
 			g = segs[x];
 			// TODO: error, or ignored?
 			if (a < g.base || a >= g.end) return false;
@@ -1771,28 +1782,30 @@ else t += ' ';
 			if (st != 0) g.putStyle(a, st);
 			if (rx != 0) g.putRadix(a, rx);
 		} else if (c == '/') {	// minor comment /AAAA s...
+			// seg-adr is not compatible with DZ.COM...
 			ss = s.split(" ", 2);
 			if (ss.length != 2) return false;
 			try {
-				a = Integer.valueOf(ss[0], 16);
+				sa = Integer.valueOf(ss[0], 16);
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
 			// cmnts uses seg-adr
-			cmnts.put(a, ss[1]);
+			cmnts.put(sa, ss[1]);
 		} else if (c == '%') {	// LXI constant operand
 			try {
-				a = Integer.valueOf(s, 16);
+				sa = Integer.valueOf(s, 16);
 			} catch (Exception ee) {
 				return false; // provide ee.getString()?
 			}
-			int x = prog.segOf(a);
-			a = prog.adrOf(a);
+			x = prog.segOf(sa);
+			a = prog.adrOf(sa);
 			g = segs[x];
 			// TODO: error, or ignored?
 			if (a < g.base || a >= g.end) return false;
 			g.setConst(a);
 		} else if (Character.isLetter(c)) { // symbol: XAAAA[ name]
+			// This is NOT a seg-adr... (for backward compat)
 			ss = s.split(" ");
 			try {
 				a = Integer.valueOf(ss[0], 16);
@@ -1816,11 +1829,11 @@ else t += ' ';
 	private boolean processHint(int c, String s,
 				Vector<Integer> codes,
 				Map<Integer,Integer> calls) {
-		int a;
+		int sa;
 		int b;
 		String[] ss = s.split(",");
 		try {
-			a = Integer.valueOf(ss[0], 16);
+			sa = Integer.valueOf(ss[0], 16);
 		} catch (Exception ee) {
 			return false; // provide ee.getString()?
 		}
@@ -1851,11 +1864,11 @@ else t += ' ';
 				b = 1;
 			}
 			// uses seg-adr
-			calls.put(a, b); // duplicates overwritten
+			calls.put(sa, b); // duplicates overwritten
 		} else if (c == '+') {
 			if (ss.length != 1) return false;
 			// uses seg-adr
-			codes.add(a); // TODO: reject duplicates
+			codes.add(sa); // TODO: reject duplicates
 		} else {
 			return false;
 		}
@@ -2146,6 +2159,85 @@ else t += ' ';
 		}
 	}
 
+	private void generateScan(File fi) throws Exception {
+		PrintStream ps = new PrintStream(fi);
+		for (int x = 0; x < nseg; ++x) {
+			Segment g = segs[x];
+			int first = g.base;
+			int last = g.end;
+			for (int a = first; a < last; ++a) {
+				int sa = prog.segAdr(g.idx, a);
+				if (g.orphaned(a)) {
+					ps.format("?%04x\n", sa);
+				}
+				if (g.visited(a)) {
+					ps.format(":%04x\n", sa);
+				}
+			}
+		}
+		ps.close();
+		stat5.setText("Scan Data Saved");
+	}
+
+	private void loadScan(File in) throws Exception {
+		BufferedReader lin = new BufferedReader(new FileReader(in));
+		String s;
+		int a;
+		int bk;
+		int c;
+		int e = 0;
+		int l = 0;
+		int sa;
+		int x;
+		String es = "";
+		while ((s = lin.readLine()) != null) {
+			++l;
+			if (s.length() == 0) continue;
+			c = s.charAt(0);
+			if (c == 0x1a) break;	// CP/M EOF (Ctrl-Z)
+			if (c == '#') continue;
+			try {
+				sa = Integer.valueOf(s.substring(1), 16);
+			} catch (Exception ee) {
+				es += String.format("%d: Invalid address in \"%s\"\n",
+									l, s);
+				++e;
+				continue;
+			}
+			a = prog.adrOf(sa);
+			x = prog.segOf(sa);
+			if (x >= nseg ||
+					a < prog.baseSeg(x) || a >= prog.endSeg(x)) {
+				es += String.format("%d: Address out of bounds in \"%s\"\n",
+									l, s);
+				++e;
+				continue;
+			}
+			switch (c) {
+			case '?':
+				segs[x].orphan(a);
+				break;
+			case ':':
+				segs[x].visit(a);
+				break;
+			default:
+				es += String.format("%d: Unrecognized Scan data \"%s\"\n",
+									l, s);
+				++e;
+			}
+		}
+		lin.close();
+		if (e > 0) {
+			err_txt.setText(es);
+			err_txt.setCaretPosition(0);
+			err_lbl.setText(String.format("Found %d errors out of %d lines", e, l));
+			JOptionPane.showMessageDialog(frame, err_pan, "Load Scan",
+						JOptionPane.WARNING_MESSAGE);
+			// TODO: save to file?
+		}
+		stat5.setText("Scan: " + in.getName());
+	}
+
 	// Search for byte pattern.
 	private int search(int start, int stop, byte[] val, boolean wrap) {
 		int a = start;
@@ -2177,6 +2269,7 @@ else t += ' ';
 	private void setExts() {
 		dzExt = ".dz";
 		hintExt = ".dzh";
+		scanExt = ".dzs";
 		if (dis instanceof Z80DisassemblerMAC80) {
 			asmExt = ".asm";
 			prnExt = ".prn";
@@ -2187,6 +2280,7 @@ else t += ' ';
 		if (uppercase) {
 			dzExt = dzExt.toUpperCase();
 			hintExt = hintExt.toUpperCase();
+			scanExt = scanExt.toUpperCase();
 			asmExt = asmExt.toUpperCase();
 			prnExt = prnExt.toUpperCase();
 		}
@@ -2251,6 +2345,19 @@ else t += ' ';
 		}
 		if (key == 'E') {
 			// Save Scan data to file...
+			// TODO: how best to determine "no scan data"?
+			if (!scanning) {
+				PopupFactory.warning(frame, "Save Scan",
+					"No Scan data to save");
+				return;
+			}
+			File dz = new File(basePath + scanExt);
+			try {
+				generateScan(dz);
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Save Scan",
+					ee.getMessage());
+			}
 			return;
 		}
 		if (key == 'L') {
@@ -2274,7 +2381,7 @@ else t += ' ';
 		if (key == 'I') {
 			SuffFileChooser sfc = new SuffFileChooser("Hints file",
 				new String[]{ "dzh" },
-				new String[]{ "Hints file" },
+				new String[]{ "DZ Hints file" },
 				comFile, null);
 			int rv = sfc.showOpenDialog(frame);
 			if (rv != JFileChooser.APPROVE_OPTION) {
@@ -2291,6 +2398,20 @@ else t += ' ';
 		}
 		if (key == 'F') {
 			// Load Scan file...
+			SuffFileChooser sfc = new SuffFileChooser("Scan file",
+				new String[]{ "dzs" },
+				new String[]{ "DZ Scan file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
+				loadScan(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Scan file",
+					ee.getMessage());
+			}
 			return;
 		}
 		if (key == 'G') {
@@ -2312,6 +2433,8 @@ else t += ' ';
 		if (key == 'R') {
 			// In somecases, this warrants a repaint...
 			sg.fresh();
+			scanning = false;
+			code.repaint();
 			return;
 		}
 		if (key == 'M') {
@@ -2456,13 +2579,15 @@ else t += ' ';
 	}
 
 	private void doAnalyze() {
-		// TODO: more stats?
-		sg.orphans = 0;
+		scanning = true;
+		for (int x = 0; x < nseg; ++x) segs[x].orphans = 0;
+		// This will cross segment boundaries...
 		analyze(sg, sg.cursor);
-		// TODO: analyze codes? destructively?
-		if (sg.orphans > 0) {
+		int num = 0;
+		for (int x = 0; x < nseg; ++x) num += segs[x].orphans;
+		if (num > 0) {
 			PopupFactory.inform(frame, "Scan",
-				String.format("%d New Orphans Found", sg.orphans));
+				String.format("%d New Orphans Found", num));
 		} else {
 			PopupFactory.inform(frame, "Scan",
 				String.format("No New Orphans Found"));
@@ -2475,11 +2600,14 @@ else t += ' ';
 
 	private void doAnaHints() {
 		// TODO: more stats?
-		sg.orphans = 0;
+		for (int x = 0; x < nseg; ++x) segs[x].orphans = 0;
+		scanning = true;
 		analyze(codes);	// this may operate on all segments...
-		if (sg.orphans > 0) {
+		int num = 0;
+		for (int x = 0; x < nseg; ++x) num += segs[x].orphans;
+		if (num > 0) {
 			PopupFactory.inform(frame, "Scan Hints",
-				String.format("%d New Orphans Found", sg.orphans));
+				String.format("%d New Orphans Found", num));
 		} else {
 			PopupFactory.inform(frame, "Scan Hints",
 				String.format("No New Orphans Found"));
@@ -2559,7 +2687,7 @@ else t += ' ';
 		int f = prog.segAdr(sg.idx, d);
 		int x = prog.segOf(f);
 		a = prog.adrOf(f);
-		if (a < segs[x].base || a >= segs[x].end) return;
+		if (x >= nseg || a < segs[x].base || a >= segs[x].end) return;
 		pushPrev();
 		if (x != seg) {
 			setSeg(x);

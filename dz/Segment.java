@@ -3,6 +3,11 @@
 import java.util.Arrays;
 
 public class Segment {
+	static final int VST_V = 1;	// visited
+	static final int VST_O = 2;	// orphaned
+	static final int VST_K = 4;	// constant operands
+	static final int VST_T = 8;	// terminal instructions
+
 	public int idx;
 	public int base;
 	public int end;
@@ -22,7 +27,7 @@ public class Segment {
 	byte[] brk;	// breaks
 	byte[] rdx;	// radix
 	byte[] sty;	// styles
-	byte[] vst;	// visits and orphans 
+	byte[] vst;	// visits and orphans (and...)
 	byte[] len;	// length of "instructions" (lines) 
 
 	public Segment(ProgramFile p, int x) {
@@ -84,57 +89,60 @@ public class Segment {
 	}
 
 	public boolean visited(int a) {
-		return ((vst[a - base] & 1) != 0);
+		return ((vst[a - base] & VST_V) != 0);
 	}
 
 	public boolean orphaned(int a) {
-		return ((vst[a - base] & 2) != 0);
+		return ((vst[a - base] & VST_O) != 0);
 	}
 
 	public boolean constant(int a) {
-		return ((vst[a - base] & 4) != 0);
+		return ((vst[a - base] & VST_K) != 0);
 	}
 
 	public void toggleConst(int a) {
-		vst[a - base] ^= 4;
+		vst[a - base] ^= VST_K;
 	}
 
 	public void setConst(int a) {
-		vst[a - base] |= 4;
+		vst[a - base] |= VST_K;
 	}
 
 	public void resConst(int a) {
-		vst[a - base] &= ~4;
+		vst[a - base] &= ~VST_K;
 	}
 
 	public void visit(int a) {
-		vst[a - base] |= 1;
+		vst[a - base] |= VST_V;
 	}
 
 	public void orphan(int a) {
-		++orphans;
-		vst[a - base] |= 2;
+		if (!orphaned(a)) ++orphans;
+		vst[a - base] |= VST_O;
 	}
 
 	public void adopt(int a) {
-		vst[a - base] &= ~2;
+		if (orphaned(a)) --orphans;
+		vst[a - base] &= ~VST_O;
 	}
 
 	public void fresh() {
-		// TODO: don't lose constants?
-		Arrays.fill(vst, (byte)0);
+		// don't lose constants...
+		for (int a = base; a < end; ++a) {
+			vst[a] &= ~(VST_V|VST_O);
+		}
 	}
 
 	public boolean terminal(int a) {
-		return ((vst[a - base] & 8) != 0);
+		return ((vst[a - base] & VST_T) != 0);
 	}
 
 	public void setTerm(int a) {
-		vst[a - base] |= 8;
+		vst[a - base] |= VST_T;
 	}
 
 	public void resTerm(int a) {
-		vst[a - base] &= ~8;
+		vst[a - base] &= ~VST_T;
 	}
 
 	public int lastBrk(int a, int n) {

@@ -7,6 +7,8 @@ import java.io.*;
 
 // NOTE: PRL files might have contained a dseg, but we can no longer tell.
 public class PrlFile implements ProgramFile {
+	static final int SEG_ABS = 3; // never a valid segment
+
 	byte[] img;
 	int resStart = 0;
 	int resLen = 0;
@@ -61,6 +63,16 @@ public class PrlFile implements ProgramFile {
 		}
 	}
 
+	// Unified addr space, no seg idx needed...
+	// Determine if the *site* addr contains a reloc.
+	// Note, only hi byte has reloc bit, so site adr + 1.
+	private boolean isReloc(int a) {
+		int bit = (a & 7);
+		int byt = (a >> 3);
+		int rel = (img[resReloc + byt] & 0xff);
+		return (((rel << bit) & 0x80) != 0);
+	}
+
 	private int base() { return resBase; }
 	private int end() { return resBase + resLen; }
 	private int size() { return resLen; }
@@ -70,10 +82,21 @@ public class PrlFile implements ProgramFile {
 	public int endSeg(int seg) { return resBase + resLen; }
 	public int maxSeg(int seg) { return maxRef + 1; }
 
-	public int segAdr(int seg, int adr) { return adr; }
-	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
-	public int segOf(int sa) { return 0; }
-	public int adrOf(int sa) { return sa; }
+	public int segAdr(int seg, int adr) { return (seg << 16) | adr; }
+	public int segAdr(int seg, Z80Dissed d) {
+		int x;
+		// hi byte has reloc bit, so site adr + 1...
+		if (d.rel) {
+			x = seg;
+		} else if (!isReloc(d.pc + d.off + 1)) {
+			x = SEG_ABS;
+		} else {
+			x = 0;
+		}
+		return segAdr(x, d.addr);
+	}
+	public int segOf(int sa) { return (sa >> 16); }
+	public int adrOf(int sa) { return sa & 0xffff; }
 
 	public boolean symbol(int seg, int a) {
 		return syms.containsKey(a);
@@ -88,10 +111,11 @@ public class PrlFile implements ProgramFile {
 
 	// called from loadDZ...
 	public void putsym(int sgc, int a, String l) {
-		// TODO: rename symbol...
+		// rename symbol...
 		// should this be accepted?
 		// at least check reloc bitmap first?
 		if (symbol(0, a)) {
+			if (l == null) return;
 			syms.remove(a);
 		}
 		if (l == null) {
@@ -108,10 +132,10 @@ public class PrlFile implements ProgramFile {
 	}
 
 	public void mksym(int seg, Z80Dissed d) {
-		if (symbol(0, d.addr)) return;
 		if (!d.rel) {	// should have already been handled...
 			return;
 		}
+		if (symbol(0, d.addr)) return;
 		syms.put(d.addr, String.format("L%04x", d.addr));
 	}
 
@@ -130,6 +154,7 @@ public class PrlFile implements ProgramFile {
 	public String segName(int seg) { return ""; }
 
 	public int read(int seg, int adr) {
+		// address space is unified, no special handling.
 		adr -= base();
 		if (adr < 0 || adr >= resLen) {
 			return 0;

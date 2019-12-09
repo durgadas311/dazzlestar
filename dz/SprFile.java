@@ -10,6 +10,8 @@ import java.io.*;
 // NOTE: Unless linked with [B], SPR files have merged cseg and dseg
 // so we can no longer differentiate.
 public class SprFile implements ProgramFile {
+	static final int SEG_ABS = 3; // never a valid segment
+
 	byte[] img;
 	int resStart = 0;
 	int resLen = 0;
@@ -90,6 +92,16 @@ public class SprFile implements ProgramFile {
 		}
 	}
 
+	// Unified addr space, no seg idx needed...
+	// Determine if the *site* addr contains a reloc.
+	// Note, only hi byte has reloc bit, so site adr + 1.
+	private boolean isReloc(int a) {
+		int bit = (a & 7);
+		int byt = (a >> 3);
+		int rel = (img[resReloc + byt] & 0xff);
+		return (((rel << bit) & 0x80) != 0);
+	}
+
 	private int base() { return resBase; }
 	private int end() { return _end; }
 	private int size() { return resLen + bnkLen; }
@@ -128,10 +140,22 @@ public class SprFile implements ProgramFile {
 	// Unified address space - still the simple case.
 	// (all addresses uniquely identify segment)
 
-	public int segAdr(int seg, int adr) { return adr; }
-	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
-	public int segOf(int sa) { return sa >= resBase + resLen ? 1 : 0; }
-	public int adrOf(int sa) { return sa; }
+	public int segAdr(int seg, int adr) { return (seg << 16) | adr; }
+	public int segAdr(int seg, Z80Dissed d) {
+		int x;
+		// hi byte has reloc bit, so site adr + 1...
+		if (d.rel) {
+			x = seg;
+		} else if (!isReloc(d.pc + d.off + 1)) {
+			x = SEG_ABS;
+		} else {
+			x = _segOf(d.addr);
+		}
+		return segAdr(x, d.addr);
+	}
+	private int _segOf(int sa) { return sa >= resBase + resLen ? 1 : 0; }
+	public int segOf(int sa) { return (sa >> 16); }
+	public int adrOf(int sa) { return sa & 0xffff; }
 
 	public boolean symbol(int seg, int a) {
 		return syms.containsKey(a);
@@ -167,10 +191,10 @@ public class SprFile implements ProgramFile {
 	}
 
 	public void mksym(int seg, Z80Dissed d) {
-		if (symbol(0, d.addr)) return;
 		if (!d.rel) {	// should have already been handled...
 			return;
 		}
+		if (symbol(0, d.addr)) return;
 		syms.put(d.addr, String.format("L%04x", d.addr));
 	}
 

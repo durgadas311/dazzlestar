@@ -382,6 +382,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "00h";
 				instr.addr = 0;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xC8:       /* RET Z */
@@ -422,6 +423,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "08h";
 				instr.addr = 8;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xD0:       /* RET NC */
@@ -461,6 +463,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "10h";
 				instr.addr = 16;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xD8:       /* RET C */
@@ -498,6 +501,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "18h";
 				instr.addr = 24;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xE0:       /* RET PO */
@@ -537,6 +541,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "20h";
 				instr.addr = 32;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xE8:       /* RET PE */
@@ -576,6 +581,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "28h";
 				instr.addr = 40;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xF0:       /* RET P */
@@ -614,6 +620,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "30h";
 				instr.addr = 48;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 			case 0xF8:       /* RET M */
@@ -651,6 +658,7 @@ public class Z80DisassemblerZilog implements Z80Disassembler {
 				instr.op = "rst";
 				instr.fmt = "38h";
 				instr.addr = 56;
+				instr.off = 0; // TODO: need -1?
 				instr.type = Z80Dissed.CALL;
 				break;
 		}
