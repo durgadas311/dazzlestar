@@ -4,6 +4,7 @@ SOURCE = dz.tgz
 JARS = DazzleStar.jar
 SHIPS = $(SOURCE) $(JARS)
 DEST = durgadas.com:/http/durgadas.com/sebhc/dazzlestar
+DEST2 = durgadas.com:/http/durgadas.com/dazzlestar
 # DEST=/var/www/html/sebhc/mms89/dazzlestar
 
 all: $(CLASSES)
@@ -31,6 +32,9 @@ release: # jar src
 ship: release # jar src
 	rsync -Wuv ../jar/*.jar README $(DEST)
 	rsync -Wuv docs/dz*.html dzrc.example $(DEST)
+	rsync -Wuv www/* ../dz*.png $(DEST2)
+
+ship2:
 	rsync -Wuv ../disas/dz-out.* ../disas/dz-out2.* \
 		../disas/dzi-out2.* \
 		../disas/dzxterm.asm ../disas/dzh19.asm \

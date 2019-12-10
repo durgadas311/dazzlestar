@@ -1,0 +1,56 @@
+<HTML>
+<HEAD>
+<TITLE>DazzleStar TNG</TITLE>
+<META NAME="description" LANG="en" CONTENT="DazzleStar Z80 Disassembler">
+<META NAME="keywords" LANG="en" CONTENT="Z80 Disassembler,
+DazzleStar Disassembler,
+CP/M Disassembler,
+">
+</HEAD>
+<BODY>
+<H2>DazzleStar TNG</H2>
+<P>Inspired by the original DazzleStar Z80 Disassembler,
+copyright 1986 John Washington. This reincarnation is
+built as a JAVA app and uses a modern GUI.
+
+<P>It supports binaray files (.COM, ROM images, etc. at any ORG)
+but also can disassemble
+PRL (Page ReLocatable, typically used for programs on MP/M and CP/M 3),
+SPR (System Page Relocatable, for CP/NET, MP/M, and CP/M 3 system components),
+and REL files (linkable modules produced by RMAC.COM).
+
+<P>It includes a "code scanner" feature where you specifiy an "entry point"
+and it will trace through all code paths and identify sections of the program
+that are not executed (possible data). This is an iterative process, but still
+allows one to quickly separate data regions from instructions.
+
+<P>DazzleStar uses something called a "break" to identify changes in
+program byte interpretation, selecting a region of the program
+as being instructions or some type of data. A large number of data types
+are supported. Breaks are entered by positioning the cursor where the
+break should begin and pressing the key associated with the break.
+The break takes affect until the next break.
+The effects of the change are shown on the screen.
+
+<P>The output mnemonics may be set to either
+MAC80 (default, CP/M MAC/RMAC with Z80.LIB macros),
+or Zilog. Both styles should work with <A HREF="http://48k.ca/zmac.html">ZMAC</A>,
+although the "--dri" option may be needed for Digital Research (CP/M) compatability.
+MAC80 is required if the CP/M assemblers are to be used.
+
+<P>PRL, SPR, and REL files provide relocation information that allows
+DazzleStar to differentiate constants from statement labels.
+
+<P>The latest JAR is available on the 
+<A HREF="http://sebhc.durgadas.com/dazzlestar">download page</A>.
+
+<P>Documentation is online <A HREF="http://sebhc.durgadas.com/dazzlestar/dzhelp.html">here</A>.
+
+<P>Maintained as a
+<A HREF="https://github.com/durgadas311/dazzlestar">github project</A>.
+
+<P>Contact: <A HREF="emailto:durgadas311@gmail.com">durgadas311@gmail</A>
+<P><IMG SRC="dz.png">
+<P><IMG SRC="dz2.png">
+</BODY>
+</HTML>
