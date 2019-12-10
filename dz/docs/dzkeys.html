@@ -43,12 +43,26 @@ Note that this can
 <DT>F1</DT>
 <DD>Start new search. 
 See <A HREF="dzsearch.html">Searching</A>.
+<DT>Shift+F1</DT>
+<DD>Start new search for references to current address.
+Only instructions (currently under "I" breaks) or addresses of L, T, Q, R breaks
+are scanned.</DD>
+<DT>Ctrl+F1</DT>
+<DD>Start new search for references to operand of current instruction
+(or address of L, T, Q, R breaks).</DD>
 <DT>F2</DT>
 <DD>Search next using criteria setup by F1.
 If not wrapping at end, stops when reaching start address (F1).
 Resets search after "not found".</DD>
+<DT>Shift+F2</DT>
+<DD>Search next reference as set by Shift+F1 or Ctrl+F1.</DD>
+<DT>Ctrl+F2</DT>
+<DD>Search next reference as set by Shift+F1 or Ctrl+F1.</DD>
 <DT>F3</DT>
 <DD>Locate next "orphaned" section of code, after a scan.</DD>
+<DT>Shift+F3</DT>
+<DD>Locate next break in code. Any change of break, style or radix
+will stop search.</DD>
 <DT>F4</DT>
 <DD>Locate next unknmown section of code, after all scanning.</DD>
 <DT>F5</DT>
@@ -67,6 +81,9 @@ relative to the current address.
 </DD>
 <DT>F</DT>
 <DD>Follow the address in the current instruction or DW (if a label).</DD>
+<DT>V</DT>
+<DD>Return to previous address before last 'A' or 'F'.
+Stack depth is limited to 100.</DD>
 <DT>/</DT>
 <DD>Enter/edit minor comment for current address.
 Blank comments are deleted.
@@ -75,10 +92,8 @@ Blank comments are deleted.
 <DD>Toggle whether the operand of an LXI
 (load regpair immediate) instruction is a constant
 or a label. Ignored for all other instructions or data.
+Not needed for files that contain relocation data.
 </DD>
-<DT>V</DT>
-<DD>Return to previous address before last 'A' or 'F'.
-Stack depth is limited to 100.</DD>
 <DT>I</DT>
 <DD>Set an Instruction break. (default)</DD>
 <DT>B</DT>

@@ -95,6 +95,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	int clines;
 	int dlines;
 	boolean scanning;
+	int refSeg;
+	int refAdr = -1;
 
 	// current search criteria
 	byte[] cur_val;
@@ -699,6 +701,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		_fh = _fm.getHeight();
 	}
 
+	private int nextBreak(int a) {
+		while (++a < sg.end) {
+			if (sg.anyBrk(a)) {
+				return a;
+			}
+		}
+		return -1;
+	}
+
 	private int nextOrphan(int a) {
 		while (++a < sg.end) {
 			if (sg.orphaned(a)) {
@@ -723,6 +734,32 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (a < sg.end) {
 			return a;
+		}
+		return -1;
+	}
+
+	// Stays within segment, caller knows which one...
+	private int nextRef(int a) {
+		while (a < sg.end && sg.getLen(a) == 0) ++a;
+		int bk = sg.activeBreak(a);
+		if (bk == 0) bk = 'I';
+		while (a < sg.end) {
+			int b = sg.getBrk(a);
+			if (b != 0) bk = b;
+			int n = sg.getLen(a);
+			Z80Dissed d = getDissed(sg, a, n, bk);
+			a += n;
+			if (d.addr >= 0) {
+				int f = prog.segAdr(sg.idx, d);
+				int x = prog.segOf(f);
+				if (refSeg == x && refAdr == d.addr) {
+					return d.pc;
+				}
+			}
+			if (refSeg == sg.idx && refAdr == a) {
+				// TODO: require label exists?
+				return a;
+			}
 		}
 		return -1;
 	}
@@ -2703,6 +2740,14 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void keyCtrl(int k) {
+		if (k == KeyEvent.VK_F1) {
+			doRefOperand();
+		} else if (k == KeyEvent.VK_F2) {
+			doRefNext();
+		}
+	}
+
 	private void keyShifted(int k) {
 		if (k == KeyEvent.VK_HOME) {
 			goAdr(sg.base);
@@ -2723,6 +2768,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			shiftDown();
 		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
 			shiftUp();
+		} else if (k == KeyEvent.VK_F1) {
+			doRefCur();
+		} else if (k == KeyEvent.VK_F2) {
+			doRefNext();
+		} else if (k == KeyEvent.VK_F3) {
+			doNextBreak();
 		}
 	}
 
@@ -2905,12 +2956,79 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		goAdr(a);
 	}
 
+	private void doNextBreak() {
+		int a;
+		a = nextBreak(sg.cursor);
+		if (a < 0) {
+			// TODO: "Continue" or "Cancel" pop-up...
+			PopupFactory.inform(frame, "Break",
+				"At End of Segment. Resetting to Start for next.");
+			goAdr(sg.base);
+			return;
+		}
+		goAdr(a);
+	}
+
 	private void doOrphaned() {
 		int a;
 		a = nextOrphan(sg.cursor);
 		if (a < 0) {
+			// TODO: "Continue" or "Cancel" pop-up...
 			PopupFactory.inform(frame, "Orphan",
-				"At End of Program. Resetting to Start for next.");
+				"At End of Segment. Resetting to Start for next.");
+			goAdr(sg.base);
+			return;
+		}
+		goAdr(a);
+	}
+
+	private void setRef(int x, int a) {
+		refAdr = a;
+		refSeg = x;
+		if (nseg > 1) {
+			stat6.setText(String.format("Find ref: %s %04x",
+				prog.segName(refSeg), refAdr));
+		} else {
+			stat6.setText(String.format("Find ref: %04x", refAdr));
+		}
+	}
+
+	// Find reference (operand or L/T/Q/R) to current address.
+	private void doRefCur() {
+		setRef(sg.idx, sg.cursor);
+		doRefNext();
+	}
+
+	private void doRefOperand() {
+		int a = sg.cursor;
+		while (a < sg.end && sg.getLen(a) == 0) ++a;
+		int bk = sg.activeBreak(a);
+		if (bk == 0) bk = 'I';
+		int n = sg.getLen(a);
+		Z80Dissed d = getDissed(sg, a, n, bk);
+		if (d.addr < 0) {
+			PopupFactory.inform(frame, "Operand Search",
+				"No operand to reference.");
+			return;
+		}
+		int f = prog.segAdr(sg.idx, d);
+		int x = prog.segOf(f);
+		setRef(x, d.addr);
+		doRefNext();
+	}
+
+	private void doRefNext() {
+		if (refAdr < 0) {
+			PopupFactory.warning(frame, "Ref Search",
+				"No previous ref search");
+			return;
+		}
+		int a;
+		a = nextRef(sg.cursor + 1);
+		if (a < 0) {
+			// TODO: "Continue" or "Cancel" pop-up...
+			PopupFactory.inform(frame, "Ref Search",
+				"At End of Segment. Resetting to Start for next.");
 			goAdr(sg.base);
 			return;
 		}
@@ -2949,6 +3067,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if ((m & InputEvent.SHIFT_MASK) != 0) {
 			keyShifted(k);
+		} else if ((m & InputEvent.CTRL_MASK) != 0) {
+			keyCtrl(k);
 		} else if ((m & InputEvent.ALT_MASK) != 0) {
 			keyAlted(k);
 		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
