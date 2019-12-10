@@ -10,29 +10,43 @@
 <P>The general workflow when starting a new disassembly is:
 
 <OL>
-<LI><B>File->New</B> and select COM file. There is not normally a DZ file to accompany it.
+<LI><B>File-&gt;New</B> (desired submenu file type) and select program file.
+There is not normally a DZ file to accompany it.
 <LI>Identify/register functions that use inline parameters (parameters follow the
-CALL instruction). Use <B>File->Load Hints</B> to add these to the session.
+CALL instruction). Use <B>File-&gt;Load Hints</B> or <B>Disas-&gt;Apply Hint</B>
+to add these to the session. Note that "Apply Hints" boths adds the hint to the list
+and performs a scan to apply it. "Load Hints" only adds to the list.
 See <A HREF="dzhints.html">Hint Syntax</A>.
-<LI>Set location to entry point (normally 0100H) and select <B>Disas->Scan from here</B>.
+<LI>Set location to entry point (normally at Shift+Home)
+and select <B>Disas-&gt;Scan from here</B>.
 <LI>Use <B>F3</B> to locate each orphaned section of code, decide if it is code or data,
-and (if code) run <B>Disas->Scan from here</B>. If not code, data breaks may be set.
+and (if code) use the <B>E</B> key to add it to the list of code entries
+(or use <B>Disas-&gt;Scan from here</B> to scan that code entry now).
+If not code, data breaks may be set.
+<LI>Scan the list of added code entries (periodically) using <B>Disas-&gt;Scan Hints</B>,
+which may introduce more orphans.
 <LI>Each scan may introduce new orphaned sections, so repeat until no more exist.
-<LI>Use <B>F4</B> to locate unknown sections and determine use. Run scan or set data
-breaks as appropriate.
+<LI>Use <B>F4</B> to locate unknown sections and determine use.
+Run scan or set data breaks as appropriate.
 <LI>Prior to generating ASM/PRN (at least) it is a good idea
-to regenerate the symbol table (<B>Disas->Rebuild Symtab</B>).
+to regenerate the symbol table (<B>Disas-&gt;Rebuild Symtab</B>).
 This ensures that data which was
 formerly (incorrectly) interpretted as code will not pollute the symbol table.
 <LI>Save the breaks/symbols (DZ file).
+<LI>Save the hints, if used (DZH file).
 <LI>Generate ASN and/or PRN files.
-<LI>Continue editing the ASM file to clean it up and prepare it
-for assembly.
+<LI>Continue editing the ASM file (outside of DazzleStar)
+to clean it up and prepare it for assembly and comparing to original binary.
 </OL>
 
 <P>Note that hints are only used during scanning, where they result in
 insertion of breaks in instruction streams. Hints should be loaded
 before any scanning is done (or else scanning should be reset and started over).
+
+<P>Instructions that have been visited during a scan will have an asterisk '*'
+in column 20. Locations marked as "orphaned" will have an question mark
+'?' in column 20. Instruction operands marked as "constant" will have
+a hash '#' in column 20.
 
 <P>Also, it is not the intent of DazzleStar TNG produce an ASM file that
 will compile successfully and generate the original code. The final, manual, steps
@@ -41,7 +55,7 @@ and making sensible names for labels (or changing to constants).
 
 <H3>Saving disassembly</H3>
 
-<P>Use <B>File->Save DZ</B> to record current progress of disassembly.
+<P>Use <B>File-&gt;Save DZ</B> to record current progress of disassembly.
 Note the scan results are lost when you exit DazzleStar, or if you start
 a new project. Hints should have manually created and should be available
 next time. Note that hints affect both scanning and final disassembly
@@ -52,8 +66,8 @@ next time. Note that hints affect both scanning and final disassembly
 <P>To resume a prior disassembly session:
 
 <OL>
-<LI><B>File->New</B> and select COM file. This should also load the prior DZ file.
-<LI><B>File->Load Hints</B> and select hint file.
+<LI><B>File-&gt;New</B> and select COM file. This should also load the prior DZ file.
+<LI><B>File-&gt;Load Hints</B> and select hint file.
 <LI>If more scanning is required, start with the scan steps.
 <LI>Continue locating un-identified sections and identify them.
 </OL>

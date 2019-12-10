@@ -13,7 +13,6 @@ import java.util.Vector;
 import java.awt.datatransfer.StringSelection;
 
 // TODO:
-//	* do not pop-up results for "Scan from here", use status field...
 //	* make "Scan from here" a function key?
 //	* key to align cursor to nearest instruction/line? Ctrl-Home?
 
@@ -44,21 +43,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	Stack<Integer> prevs;
 	Map<Integer,Integer> calls;	// registered inline-param functs
 	Vector<Integer> codes;	// pre-register code sections/entries
+	Vector<Integer> code0;
 	Z80Disassembler dis;
 	Font font2;
-	JMenuItem mi_ld;
-	JMenuItem mi_shn;
-	JMenuItem mi_hn;
-	JMenuItem mi_sav;
-	JMenuItem mi_asm;
-	JMenuItem mi_prn;
-	JMenuItem mi_cls;
-	JMenuItem mi_hnt;
+	Vector<JMenuItem> mi_deps;
 	JMenuItem mi_sch;
-	JMenuItem mi_sym;
 	JMenuItem mi_dis;
-	JMenuItem mi_ssc;
-	JMenuItem mi_lsc;
 	GenericHelp help;
 	JFrame frame;
 	DZCodePane code;
@@ -171,7 +161,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		cmnts = new HashMap<Integer,String>();
 		calls = new HashMap<Integer,Integer>();
 		codes = new Vector<Integer>();
+		code0 = new Vector<Integer>();
 		prevs = new Stack<Integer>();
+
+		mi_deps = new Vector<JMenuItem>();
 		frame = new JFrame("DazzleStar TNG");
 		frame.getContentPane().setName("DazzleStar TNG");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // TODO: save!
@@ -199,15 +192,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		JMenu mu = new JMenu("File");
 		mu.setMnemonic(KeyEvent.VK_F);
 		mu.add(newSubMenu());
-		mi = mi_cls = new JMenuItem("Close", KeyEvent.VK_C);
+		mi = new JMenuItem("Close", KeyEvent.VK_C);
+		mi_deps.add(mi);
 		mi.setActionCommand("C");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_asm = new JMenuItem("Generate ASM", KeyEvent.VK_A);
+		mi = new JMenuItem("Generate ASM", KeyEvent.VK_A);
+		mi_deps.add(mi);
 		mi.setActionCommand("A");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_prn = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi = new JMenuItem("Generate PRN", KeyEvent.VK_P);
+		mi_deps.add(mi);
 		mi.setActionCommand("P");
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -222,28 +218,37 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mu = new JMenu("Disas");
 		mu.setMnemonic(KeyEvent.VK_D);
 		mi = new JMenuItem("Scan from here", KeyEvent.VK_S);
+		mi_deps.add(mi);
 		mi.setActionCommand("Z");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_sch = new JMenuItem("Scan Hints", KeyEvent.VK_H);
+		mi = mi_sch = new JMenuItem("Scan Entry Hints", KeyEvent.VK_H);
 		mi.setActionCommand("Y");
 		mi.addActionListener(this);
 		mi_sch.setEnabled(false);
 		mu.add(mi);
 		mi = new JMenuItem("Reset scan", KeyEvent.VK_R);
+		mi_deps.add(mi);
 		mi.setActionCommand("R");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_hnt = new JMenuItem("Apply Hint", KeyEvent.VK_A);
+		mi = new JMenuItem("Apply Hint", KeyEvent.VK_A);
+		mi_deps.add(mi);
 		mi.setActionCommand("B");
 		mi.addActionListener(this);
-		mi_hnt.setEnabled(false);
 		mu.add(mi);
-		mi = mi_sym = new JMenuItem("Rebuild Symtab", KeyEvent.VK_B);
+		mi = new JMenuItem("Rebuild Symtab", KeyEvent.VK_B);
+		mi_deps.add(mi);
 		mi.setActionCommand("G");
 		mi.addActionListener(this);
 		mu.add(mi);
+		mi = new JMenuItem("Show Stats", KeyEvent.VK_T);
+		mi_deps.add(mi);
+		mi.setActionCommand("J");
+		mi.addActionListener(this);
+		mu.add(mi);
 		mi = mi_dis = new JMenuItem("Use -----", KeyEvent.VK_U);
+		mi_deps.add(mi);
 		mi.setActionCommand("M");
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -573,15 +578,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private JMenuItem saveSubMenu() {
 		JMenu mu = new JMenu("Save");
 		mu.setMnemonic(KeyEvent.VK_S);
-		JMenuItem mi = mi_sav = new JMenuItem("Save DZ", KeyEvent.VK_D);
+		JMenuItem mi = new JMenuItem("Save DZ", KeyEvent.VK_D);
+		mi_deps.add(mi);
 		mi.setActionCommand("S");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_shn = new JMenuItem("Save Hints", KeyEvent.VK_H);
+		mi = new JMenuItem("Save Hints", KeyEvent.VK_H);
+		mi_deps.add(mi);
 		mi.setActionCommand("D");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_ssc = new JMenuItem("Save Scan", KeyEvent.VK_S);
+		mi = new JMenuItem("Save Scan", KeyEvent.VK_S);
+		mi_deps.add(mi);
 		mi.setActionCommand("E");
 		mi.setDisplayedMnemonicIndex(5);
 		mi.addActionListener(this);
@@ -592,16 +600,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private JMenuItem loadSubMenu() {
 		JMenu mu = new JMenu("Load");
 		mu.setMnemonic(KeyEvent.VK_L);
-		JMenuItem mi = mi_ld = new JMenuItem("Load DZ", KeyEvent.VK_D);
+		JMenuItem mi = new JMenuItem("Load DZ", KeyEvent.VK_D);
+		mi_deps.add(mi);
 		mi.setDisplayedMnemonicIndex(5);
 		mi.setActionCommand("L");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_hn = new JMenuItem("Load Hints", KeyEvent.VK_H);
+		mi = new JMenuItem("Load Hints", KeyEvent.VK_H);
+		mi_deps.add(mi);
 		mi.setActionCommand("I");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = mi_lsc = new JMenuItem("Load Scan", KeyEvent.VK_S);
+		mi = new JMenuItem("Load Scan", KeyEvent.VK_S);
+		mi_deps.add(mi);
 		mi.setActionCommand("F");
 		mi.addActionListener(this);
 		mu.add(mi);
@@ -609,17 +620,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void jobActive(boolean act) {
-		mi_ld.setEnabled(act);
-		mi_hn.setEnabled(act);
-		mi_hnt.setEnabled(act);
-		mi_sav.setEnabled(act);
-		mi_asm.setEnabled(act);
-		mi_prn.setEnabled(act);
-		mi_cls.setEnabled(act);
-		mi_shn.setEnabled(act);
-		mi_sav.setEnabled(act);
-		mi_ssc.setEnabled(act); // TODO: only activate after scan?
-		mi_lsc.setEnabled(act);
+		for (JMenuItem mi : mi_deps) {
+			mi.setEnabled(act);
+		}
 	}
 
 	private void disHint() {
@@ -644,6 +647,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		prevs.clear();
 		calls.clear();
 		codes.clear();
+		code0.clear();
 		mi_sch.setEnabled(false);
 		cmnts.clear();
 		basePath = com.getAbsolutePath();
@@ -1737,6 +1741,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void generateHints(File dzh) throws Exception {
 		PrintStream ps = new PrintStream(dzh);
 		String h;
+		for (int a : code0) {
+			ps.format("+%04x\n", a);
+		}
 		for (int a : codes) {
 			ps.format("+%04x\n", a);
 		}
@@ -1923,6 +1930,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		// Only one can be non-zero...
 		if (codes.size() > 0) {
 			this.codes.addAll(codes);
+			mi_sch.setEnabled(true);
 			return true;
 		}
 		this.calls.putAll(calls);
@@ -2072,6 +2080,39 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			}
 		}
 		code.repaint();
+	}
+
+	private void showStats() {
+		int t = 0;
+		int o = 0;
+		int v = 0;
+		int b = 0;
+		int i = 0;
+		for (int x = 0; x < nseg; ++x) {
+			Segment g = segs[x];
+			t += prog.sizeSeg(x);
+			int bk = 'I';
+			for (int a = g.base; a < g.end; ++a) {
+				int bb = g.getBrk(a);
+				if (bb != 0) bk = bb;
+				if (bk == 'I' && g.getLen(a) != 0) ++i;
+				if (g.orphaned(a)) ++o;
+				if (g.visited(a)) ++v;
+				if (g.anyBrk(a)) ++b;
+			}
+		}
+		String s = "<HTML><TABLE>";
+		s += String.format("<TR><TD>Total program bytes:</TD><TD>%d</TD></TR>", t);
+		s += String.format("<TR><TD>Instructions (guess):</TD><TD>%d</TD></TR>", i);
+		s += String.format("<TR><TD>Instructions visited:</TD><TD>%d</TD></TR>", v);
+		s += String.format("<TR><TD>Orphans detected:</TD><TD>%d</TD></TR>", o);
+		s += String.format("<TR><TD>Total breaks:</TD><TD>%d</TD></TR>", b);
+		s += String.format("<TR><TD>Entry points:</TD><TD>%d</TD></TR>",
+							code0.size() + codes.size());
+		s += String.format("<TR><TD>Entry points todo:</TD><TD>%d</TD></TR>",
+							codes.size());
+		s += "</TABLE></HTML>";
+		PopupFactory.inform(frame, "Stats", s);
 	}
 
 	private void generateASM(File asm, boolean prn) throws Exception {
@@ -2365,7 +2406,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (key == 'D') {
 			// Save Hints...
 			// TODO: pick file? backup existing?
-			if (calls.size() == 0 && codes.size() == 0) {
+			if (calls.size() == 0 && codes.size() == 0 && code0.size() == 0) {
 				PopupFactory.warning(frame, "Save Hints",
 					"No Hints to save");
 				return;
@@ -2453,6 +2494,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		if (key == 'G') {
 			regenSymtab();
+			return;
+		}
+		if (key == 'J') {
+			showStats();
 			return;
 		}
 		if (key == 'Z') {
@@ -2590,6 +2635,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			len = null;
 			calls.clear();
 			codes.clear();
+			code0.clear();
+			mi_sch.setEnabled(false);
 			code.repaint();
 			dump.repaint();
 			return;
@@ -2615,20 +2662,30 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
-	private void doAnalyze() {
-		scanning = true;
+	private void zeroOrphans() {
 		for (int x = 0; x < nseg; ++x) segs[x].orphans = 0;
-		// This will cross segment boundaries...
-		analyze(sg, sg.cursor);
+	}
+
+	private void updateOrphans() {
 		int num = 0;
 		for (int x = 0; x < nseg; ++x) num += segs[x].orphans;
 		if (num > 0) {
-			PopupFactory.inform(frame, "Scan",
-				String.format("%d New Orphans Found", num));
+			stat5.setText(String.format("Scan: %d New Orphans Found", num));
+			//PopupFactory.inform(frame, "Scan",
+			//	String.format("%d New Orphans Found", num));
 		} else {
-			PopupFactory.inform(frame, "Scan",
-				String.format("No New Orphans Found"));
+			stat5.setText("Scan: No New Orphans Found");
+			//PopupFactory.inform(frame, "Scan",
+			//	String.format("No New Orphans Found"));
 		}
+	}
+
+	private void doAnalyze() {
+		scanning = true;
+		zeroOrphans();
+		// This will cross segment boundaries...
+		analyze(sg, sg.cursor);
+		updateOrphans();
 		// We have no idea how far-reaching this was...
 		// probably need to rebuild all breaks...???
 		resetBreaks();
@@ -2637,22 +2694,26 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void doAnaHints() {
 		// TODO: more stats?
-		for (int x = 0; x < nseg; ++x) segs[x].orphans = 0;
+		zeroOrphans();
 		scanning = true;
+		// only trace calls added since last time
 		analyze(codes);	// this may operate on all segments...
-		int num = 0;
-		for (int x = 0; x < nseg; ++x) num += segs[x].orphans;
-		if (num > 0) {
-			PopupFactory.inform(frame, "Scan Hints",
-				String.format("%d New Orphans Found", num));
-		} else {
-			PopupFactory.inform(frame, "Scan Hints",
-				String.format("No New Orphans Found"));
-		}
+		code0.addAll(codes);
+		codes.clear();
+		mi_sch.setEnabled(false);
+		updateOrphans();
 		// We have no idea how far-reaching this was...
 		// probably need to rebuild all breaks...???
 		resetBreaks();
 		code.repaint();
+	}
+
+	private void addCurrent() {
+		int sa = prog.segAdr(seg, sg.cursor);
+		codes.add(sa);
+		mi_sch.setEnabled(true);
+		stat5.setText(String.format("Scan: added entry %s %04x",
+					prog.segName(seg), sg.cursor));
 	}
 
 	private void buttonAction(JButton b) {
@@ -2835,6 +2896,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			doConstant();
 		} else if (c == 'V') {
 			popPrev();
+		} else if (c == 'E') {
+			addCurrent();
 		} else if (doBrkKey(c)) {
 			return;
 		} else {

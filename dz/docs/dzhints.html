@@ -12,7 +12,8 @@ to allow giving hints for the code scanner.
 <DT>+AAAA</DT>
 <DD>Add "AAAA" (code address) to the list of auxiliary (hidden)
 entry points or functions. These are only scanned when the
-menu item <B>Disas->Scan Hints</B> is selected.
+menu item <B>Disas-&gt;Scan Hints</B> is selected, or
+if the <B>Disas-&gt;Apply Hint</B> option is used to add it.
 </DD>
 <DT>*AAAA,X</DT>
 <DD>All calls to the function (at address) "AAAA" have inline parameters
@@ -45,12 +46,15 @@ a general programming style.
 </DL>
 
 <P>These hints are only used by the code scanner.
-They enable the <B>Disas->Scan Hints</B> menu item,
+They enable the <B>Disas-&gt;Scan Hints</B> menu item,
 and result in insertion of breaks when a matching instruction is scanned.
+Note that the <B>Disas-&gt;Apply Hint</B> option adds a single hint,
+but will scan the program to apply that hint.
 
 <P>Note that hints are not case-sensitive. All addresses (e.g. "AAAA")
 are hexadecimal. For programs with multiple segments, addresses may have a fifth
-digit in order to uniquely identify them to their segment.
+digit in order to uniquely identify them to their segment. Segment numbers
+are specific to the particular program being disassembled.
 
 </BODY>
 </HTML>
