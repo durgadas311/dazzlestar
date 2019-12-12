@@ -93,4 +93,10 @@ public class BinaryFile implements ProgramFile {
 		if (prn) ps.format("%04x            ", _base);
 		ps.format("\torg\t0%04xh\n", _base);
 	}
+
+	public void postASM(PrintStream ps, boolean prn, int seg) {
+		// only 1 segment...
+		if (prn) ps.format("%04x            ", _end);
+		ps.print("\tend\n");
+	}
 }

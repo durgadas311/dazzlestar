@@ -258,4 +258,11 @@ public class SprFile implements ProgramFile {
 		}
 		ps.print("\n");
 	}
+
+	public void postASM(PrintStream ps, boolean prn, int seg) {
+		if (seg + 1 < nSeg) return; // only on last segment...
+		if (prn) ps.format("%04x            ", endSeg(seg));
+		// No entry point - yet
+		ps.print("\tend\n");
+	}
 }

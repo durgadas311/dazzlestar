@@ -220,36 +220,6 @@ public class RelFile implements ProgramFile {
 		return img[seg][adr] & 0xff;
 	}
 
-	public void preASM(PrintStream ps, boolean prn, int seg) {
-		if (seg == 0) {
-			if (exts.size() > 0) {
-				if (prn) ps.print("                ");
-				ps.print("\textrn\t");
-				int x = 0;
-				for (String xt : exts.values()) {
-					if (x++ > 0) ps.print(",");
-					ps.print(xt);
-				}
-				ps.print("\n");
-			}
-			if (exts.size() > 0 && pubs.size() > 0) {
-				ps.print("\n");
-			}
-			if (pubs.size() > 0) {
-				if (prn) ps.print("                ");
-				ps.print("\tpublic\t");
-				for (int x = 0; x < pubs.size(); ++x) {
-					if (x > 0) ps.print(",");
-					ps.print(pubs.get(x));
-				}
-				ps.print("\n");
-			}
-		}
-		ps.print("\n");
-		if (prn) ps.print("                ");
-		ps.print("\t" + segMns.get(seg) + "\n");
-	}
-
 	private void loadRel() {
 		resetExt();
 		bitter = 8;
@@ -606,5 +576,45 @@ public class RelFile implements ProgramFile {
 		}
 		ref(t);
 		return 0;
+	}
+
+	public void preASM(PrintStream ps, boolean prn, int seg) {
+		if (seg == 0) {
+			if (exts.size() > 0) {
+				if (prn) ps.print("                ");
+				ps.print("\textrn\t");
+				int x = 0;
+				for (String xt : exts.values()) {
+					if (x++ > 0) ps.print(",");
+					ps.print(xt);
+				}
+				ps.print("\n");
+			}
+			if (exts.size() > 0 && pubs.size() > 0) {
+				ps.print("\n");
+			}
+			if (pubs.size() > 0) {
+				if (prn) ps.print("                ");
+				ps.print("\tpublic\t");
+				for (int x = 0; x < pubs.size(); ++x) {
+					if (x > 0) ps.print(",");
+					ps.print(pubs.get(x));
+				}
+				ps.print("\n");
+			}
+		}
+		ps.print("\n");
+		if (prn) ps.print("                ");
+		ps.print("\t" + segMns.get(seg) + "\n");
+	}
+
+	public void postASM(PrintStream ps, boolean prn, int seg) {
+		if (seg + 1 < nSeg) return;	// only on last segment...
+		if (prn) ps.format("%04x            ", endSeg(seg));
+		if (endStart >= 0) {
+			ps.format("\tend\t%s\n", sym0.get(endStart));
+		} else {
+			ps.print("\tend\n");
+		}
 	}
 }

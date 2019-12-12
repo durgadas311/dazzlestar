@@ -2252,9 +2252,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 					n = a;
 				}
 			}
+			prog.postASM(ps, prn, x);
 		}
-		if (prn) ps.print("                ");
-		ps.print("\tend\n");
 		ps.close();
 		if (prn) {
 			statCom.setText(statBase + " PRN Saved");

@@ -178,4 +178,10 @@ public class PrlFile implements ProgramFile {
 		}
 		ps.print("\n");
 	}
+
+	public void postASM(PrintStream ps, boolean prn, int seg) {
+		// only 1 segment...
+		if (prn) ps.format("%04x            ", end());
+		ps.print("\tend\n");
+	}
 }

@@ -37,4 +37,5 @@ public interface ProgramFile {
 	//
 	// ASM to init (e.g. ORG xxxx)
 	void preASM(PrintStream ps, boolean prn, int seg);
+	void postASM(PrintStream ps, boolean prn, int seg);
 }
