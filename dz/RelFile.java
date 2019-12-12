@@ -51,12 +51,6 @@ public class RelFile implements ProgramFile {
 	int[] lptr;	// current loc ptr in each seg
 	int endStart = -1;	// param on 'end' statement
 
-	class RelException extends RuntimeException {
-		public RelException(String m) {
-			super(m);
-		}
-	}
-
 	public RelFile(File f) throws Exception {
 		FileInputStream fi = new FileInputStream(f);
 		rel = new byte[fi.available()];
@@ -81,7 +75,7 @@ public class RelFile implements ProgramFile {
 		lptr = new int[n];
 		img = new byte[n][];	// [SEG_ABS] not used
 		loadRel();	// sets up the rest... may throw...
-		if (nSeg == 0) throw new RelException("REL File empty?");
+		if (nSeg == 0) throw new RuntimeException("REL File empty?");
 	}
 
 	public int numSeg() { return nSeg; }
@@ -278,7 +272,7 @@ public class RelFile implements ProgramFile {
 		if (dsegSize > 0) ++ns;
 		ns += comm.size();
 		if (ns >= segChars.length()) {
-			throw new RelException("Too many segments");
+			throw new RuntimeException("Too many segments");
 		}
 		if (csegSize > 0) {
 			csegSeg = nSeg;
@@ -451,44 +445,44 @@ public class RelFile implements ProgramFile {
 		short sss;
 		String s;
 		int t = getBits(4);
-		if (t < 0) throw new RelException("REL sync error");
+		if (t < 0) throw new RuntimeException("REL sync error");
 		switch (t) {
 		case 0b0000:	// entry symbol - declares a public symbol - no value
 			// handled later, in DEFINE ENTRY POINT
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			break;
 		case 0b0001:	// select common block - TBD
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			initSegs();
 			if (!commSegs.containsKey(s)) {
-				throw new RelException("Unknown COMMON block");
+				throw new RuntimeException("Unknown COMMON block");
 			}
 			curComm = commSegs.get(s);
 			break;
 		case 0b0010:	// program name
 			name = pname();
-			if (name == null) throw new RelException("REL sync error");
+			if (name == null) throw new RuntimeException("REL sync error");
 			break;
 		case 0b0011:	// request lib search - TBD
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			libs.add(s);
 			break;
 		case 0b0100:	// extension link items...
 			initSegs();
 			s = pname(); // op string, not label...
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			// perform(s); // must save and decode when printed
 			break;
 		case 0b0101:	// define comm size
 			// TBD: what to do with this
 			xxx = value(t);
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			xxx = adrOf(xxx); // ignore segment?
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			if (xxx == 0) break; // yes?
 			if (!comm.containsKey(s)) {
 				comm.put(s, xxx);
@@ -497,9 +491,9 @@ public class RelFile implements ProgramFile {
 		case 0b0110:	// chain external
 			initSegs();
 			xxx = value(t); // this is the head of list...
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			// walk chain and fixup...
 			// cleanout previous "fake" symbols...
 			t = getExt(s);
@@ -507,9 +501,9 @@ public class RelFile implements ProgramFile {
 			break;
 		case 0b0111:	// define entry point - public definitions
 			xxx = value(t);
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			s = pname();
-			if (s == null) throw new RelException("REL sync error");
+			if (s == null) throw new RuntimeException("REL sync error");
 			syms.put(xxx, s);
 			pubs.add(s);
 			break;
@@ -517,7 +511,7 @@ public class RelFile implements ProgramFile {
 			// NOTE: RMAC converts this to "external plus offset"
 			initSegs();
 			xxx = value(t);
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			xxx = adrOf(xxx); // ignore segment?
 			// must immediately precede address
 			offs.put(segAdr(lseg, lptr[lseg]), -xxx);
@@ -527,7 +521,7 @@ public class RelFile implements ProgramFile {
 			initSegs();
 			// so we need to sign-extend the value.
 			xxx = value(t); // TBD
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			sss = (short)adrOf(xxx); // ignore segment?
 			xxx = sss;	// needs sign-extension
 			// must immediately precede address
@@ -535,7 +529,7 @@ public class RelFile implements ProgramFile {
 			break;
 		case 0b1010:	// define data size
 			xxx = value(t);	// TBD: seg-adr to length?
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			xxx = adrOf(xxx); // ignore segment?
 			if (xxx == 0) break;
 			dsegSize = xxx;
@@ -543,18 +537,18 @@ public class RelFile implements ProgramFile {
 		case 0b1011:	// set location counter
 			initSegs();
 			xxx = setloc();
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			break;
 		case 0b1100:	// chain address - ?
 			initSegs();
 			xxx = value(t);
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			// run chain...??? what is this for?
 			chain(segAdr(lseg, lptr[lseg]), xxx);
 			break;
 		case 0b1101:	// define prog size
 			xxx = value(t);	// TBD: seg-adr to length?
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			xxx = adrOf(xxx); // ignore segment?
 			if (xxx == 0) break;
 			csegSize = xxx;
@@ -562,7 +556,7 @@ public class RelFile implements ProgramFile {
 		case 0b1110:	//  end module
 			initSegs();
 			xxx = value(t); // value on 'end' statement, or ABS-0
-			if (xxx < 0) throw new RelException("REL sync error");
+			if (xxx < 0) throw new RuntimeException("REL sync error");
 			if (xxx != ABS_0) {
 				endStart = xxx;
 			}
@@ -580,7 +574,7 @@ public class RelFile implements ProgramFile {
 	private void ref(int t) {
 		initSegs();
 		int a = addr();
-		if (a < 0) throw new RelException("REL sync error");
+		if (a < 0) throw new RuntimeException("REL sync error");
 		int x = transSeg(t);
 		int sa = segAdr(x, a);
 		// need to record call site...
@@ -596,14 +590,14 @@ public class RelFile implements ProgramFile {
 
 	private int command() {
 		int t = getBits(1);
-		if (t < 0) throw new RelException("REL sync error");
+		if (t < 0) throw new RuntimeException("REL sync error");
 		if (t == 0) {
 			t = doByte();
-			if (t < 0) throw new RelException("REL sync error");
+			if (t < 0) throw new RuntimeException("REL sync error");
 			return 0;
 		}
 		t = getBits(2);
-		if (t < 0) throw new RelException("REL sync error");
+		if (t < 0) throw new RuntimeException("REL sync error");
 		if (t == 0) { // special item... incl. END FILE
 			return special(); // may throw
 		}

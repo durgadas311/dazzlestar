@@ -560,6 +560,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			return new SprFile(fi);
 		} else if (t.equalsIgnoreCase(".REL")) {
 			return new RelFile(fi);
+		} else if (t.equalsIgnoreCase(".HEX")) {
+			return new HexFile(fi);
 		} else {
 			return new BinaryFile(fi, 0x0100);
 		}
@@ -572,16 +574,20 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		mi.setActionCommand("N");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("PRL File (V)", KeyEvent.VK_P);
+		mi = new JMenuItem("PRL File", KeyEvent.VK_P);
 		mi.setActionCommand("V");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("SPR File (W)", KeyEvent.VK_S);
+		mi = new JMenuItem("SPR File", KeyEvent.VK_S);
 		mi.setActionCommand("W");
 		mi.addActionListener(this);
 		mu.add(mi);
-		mi = new JMenuItem("REL File (X)", KeyEvent.VK_R);
+		mi = new JMenuItem("REL File", KeyEvent.VK_R);
 		mi.setActionCommand("X");
+		mi.addActionListener(this);
+		mu.add(mi);
+		mi = new JMenuItem("HEX File", KeyEvent.VK_H);
+		mi.setActionCommand("K");
 		mi.addActionListener(this);
 		mu.add(mi);
 		return mu;
@@ -2633,6 +2639,26 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				newJob(sfc.getSelectedFile());
 			} catch (Exception ee) {
 				PopupFactory.warning(frame, "Load REL",
+					ee.getMessage());
+			}
+			return;
+		}
+		if (key == 'K') {
+			// HEX file
+			SuffFileChooser sfc = new SuffFileChooser("HEX file",
+				new String[]{ "hex" },
+				new String[]{ "HEX file" },
+				comFile, null);
+			int rv = sfc.showOpenDialog(frame);
+			if (rv != JFileChooser.APPROVE_OPTION) {
+				return;
+			}
+			try {
+				jobActive(false);
+				prog = new HexFile(sfc.getSelectedFile());
+				newJob(sfc.getSelectedFile());
+			} catch (Exception ee) {
+				PopupFactory.warning(frame, "Load HEX",
 					ee.getMessage());
 			}
 			return;
