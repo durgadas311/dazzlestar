@@ -10,43 +10,56 @@
 <P>The general workflow when starting a new disassembly is:
 
 <OL>
-<LI><B>File-&gt;New</B> (desired submenu file type) and select program file.
+<LI><B>File-&gt;New-&gt;...</B> (desired submenu for file type) and select program file.
 There is not normally a DZ file to accompany it.
 <LI>Identify/register functions that use inline parameters (parameters follow the
-CALL instruction). Use <B>File-&gt;Load Hints</B> or <B>Disas-&gt;Apply Hint</B>
-to add these to the session. Note that "Apply Hints" boths adds the hint to the list
-and performs a scan to apply it. "Load Hints" only adds to the list.
+CALL instruction).
+Use <B>P</B> (inline Parameters), when positioned on one of the call sites,
+to add these to the session.
 See <A HREF="dzhints.html">Hint Syntax</A>.
 <LI>Set location to entry point (normally at Shift+Home)
 and select <B>Disas-&gt;Scan from here</B>.
 <LI>Use <B>F3</B> to locate each orphaned section of code, decide if it is code or data,
-and (if code) use the <B>E</B> key to add it to the list of code entries
-(or use <B>Disas-&gt;Scan from here</B> to scan that code entry now).
-If not code, data breaks may be set.
+and (if code) use the <B>E</B> key to add it to the list of code entries.
+If it is not code, then data breaks may be set.
+<LI>Use the <B>G</B> key to add the <U>target</U> of an instruction
+(or data identified as a label) to the code entries list. This is
+typically needed for LXI instructions that reference code entries,
+or tables (L, R, T, Q breaks) that reference code entries.
 <LI>Scan the list of added code entries (periodically) using <B>Disas-&gt;Scan Hints</B>,
 which may introduce more orphans.
 <LI>Each scan may introduce new orphaned sections, so repeat until no more exist.
 <LI>Use <B>F4</B> to locate unknown sections and determine use.
-Run scan or set data breaks as appropriate.
+Run scan (add to code entries) or set data breaks as appropriate.
 <LI>Prior to generating ASM/PRN (at least) it is a good idea
 to regenerate the symbol table (<B>Disas-&gt;Rebuild Symtab</B>).
 This ensures that data which was
 formerly (incorrectly) interpretted as code will not pollute the symbol table.
-<LI>Save the breaks/symbols (DZ file).
-<LI>Save the hints, if used (DZH file).
+<LI>If disassembly is not complete, or if more disassembly may be required,
+or to simply record all disassembly data for posterity,
+follow procedures in "Saving disassembly" below.
 <LI>Generate ASN and/or PRN files.
 <LI>Continue editing the ASM file (outside of DazzleStar)
 to clean it up and prepare it for assembly and comparing to original binary.
 </OL>
 
-<P>Note that hints are only used during scanning, where they result in
-insertion of breaks in instruction streams. Hints should be loaded
-before any scanning is done (or else scanning should be reset and started over).
+<P>Note that <B>File-&gt;Load Hints</B> or <B>Disas-&gt;Apply Hint</B>
+may also be used to introduce hints to the disassembly.
+"Apply Hint" both adds the hint to the list
+and perform a scan to apply it.
+"Load Hints" only adds to the list.
+Instead of adding a code entry to the list and scanning later,
+use <B>Disas-&gt;Scan from here</B> to scan that code entry now.
+
+<P>Note that inline-parameter hints are only used during scanning,
+where they result in insertion of breaks in instruction streams.
+Hints should be loaded before any scanning is done
+(or else scanning should be reset and started over).
 
 <P>Instructions that have been visited during a scan will have an asterisk '*'
-in column 20. Locations marked as "orphaned" will have an question mark
-'?' in column 20. Instruction operands marked as "constant" will have
-a hash '#' in column 20.
+in column 21. Locations marked as "orphaned" will have an question mark
+'?' in column 21. Instruction operands marked as "constant" will have
+a hash '#' in column 21.
 
 <P>Also, it is not the intent of DazzleStar TNG produce an ASM file that
 will compile successfully and generate the original code. The final, manual, steps
@@ -55,19 +68,20 @@ and making sensible names for labels (or changing to constants).
 
 <H3>Saving disassembly</H3>
 
-<P>Use <B>File-&gt;Save DZ</B> to record current progress of disassembly.
-Note the scan results are lost when you exit DazzleStar, or if you start
-a new project. Hints should have manually created and should be available
-next time. Note that hints affect both scanning and final disassembly
-(ASM or PRN output), and so should always be loaded (if present).
+<P>To save a complete record of the current disassembly,
+Use <B>File-&gt;Save-&gt;Save DZ</B>,
+<B>File-&gt;Save-&gt;Save Hints</B> (if hints were added),
+and <B>File-&gt;Save-&gt;Save Scan</B> (if code scanning was not completed).
 
 <H3>Resuming prior disassembly</H3>
 
 <P>To resume a prior disassembly session:
 
 <OL>
-<LI><B>File-&gt;New</B> and select COM file. This should also load the prior DZ file.
-<LI><B>File-&gt;Load Hints</B> and select hint file.
+<LI><B>File-&gt;New-&gt;...</B> and select the program file.
+This should also load any prior DZ  and DZH (hints) files.
+<LI>If scanning was started but not completed,
+use <B>File-&gt;Load-&gt;Load Scan</B> and select the scan file.
 <LI>If more scanning is required, start with the scan steps.
 <LI>Continue locating un-identified sections and identify them.
 </OL>

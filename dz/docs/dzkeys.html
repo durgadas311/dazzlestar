@@ -62,14 +62,17 @@ Resets search after "not found".</DD>
 <DT>Ctrl+F2</DT>
 <DD>Search next reference as set by Shift+F1 or Ctrl+F1.</DD>
 <DT>F3</DT>
-<DD>Locate next "orphaned" section of code, after a scan.
+<DD>Locate next "orphaned" section of program, after a scan.
 Search is confined to current segment.</DD>
 <DT>Shift+F3</DT>
-<DD>Locate next break in code. Any change of break, style or radix
+<DD>Locate next break in program. Any change of break, style or radix
 will stop search.
 Search is confined to current segment.</DD>
+<DT>Ctrl+F3</DT>
+<DD>Locate next symbol (address with defined label) in program.
+Search is confined to current segment.</DD>
 <DT>F4</DT>
-<DD>Locate next unknmown section of code, after all scanning.
+<DD>Locate next unknmown section of program, after all scanning.
 Search is confined to current segment.</DD>
 <DT>F5</DT>
 <DD>Cycle between program segments, if the program has more than one segment.</DD>
@@ -103,13 +106,29 @@ Not needed for files that contain relocation data.
 <DT>E</DT>
 <DD>Define current address to be an execution "entry point",
 e.g. a code orphan (found during scans) that is
-determined to be executable instructions.
+determined to be executable instructions.</DD>
+<DT>G</DT>
+<DD>Get the <U>target</U> of the current instruction or data item
+as an execution "entry point", which may not otherwise be
+followed during code scanning.
+If the cursor line does not contain a target address (within the program),
+this key is ignored.
+</DD>
+<DT>P</DT>
+<DD>Using the CALL at the currrent address, define an
+inline-parameter hint.
+If the cursor is not at a CALL instruction, this key is ignored.
+The call address is computed,
+only the inline-parameter field is entered.
+Hint is applied.
+See <A HREF="dzhints.html">Hint Syntax</A>.
+</DD>
 <P>
 <DT>I</DT>
 <DD>Set an Instruction break. (default)</DD>
 <DT>B</DT>
-<DD>Set a DB break. Length of each DB is 16 bytes maximum,
-or until the next break change.</DD>
+<DD>Set a DB break. Length of each DB line is limited to 80 columns,
+or until the next break change or defined symbol.</DD>
 <DT>C</DT>
 <DD>Set a DB character break. Same as 'B'.</DD>
 <DT>L</DT>
@@ -119,7 +138,7 @@ or until the next break change.</DD>
 <DT>Q</DT>
 <DD>Set a DW/DW table, word and label (address) break.</DD>
 <DT>S</DT>
-<DD>Set a DS field, until the next break change.</DD>
+<DD>Set a DS field, until the next break change or defined symbol.</DD>
 <DT>W</DT>
 <DD>Set a DW (word) numeric break.</DD>
 <DT>X</DT>
@@ -128,13 +147,13 @@ or until the next break change.</DD>
 <DD>Set a DW relative address break.</DD>
 <DT>$</DT>
 <DD>Set a DB '$'-terminated string break.
-Long lines are currently not split.</DD>
+Long lines are split as for 'B'.</DD>
 <DT>0</DT>
 <DD>Set a DB 0-terminated string break.
-Long lines are currently not split.</DD>
+Long lines are split as for 'B'.</DD>
 <DT>7</DT>
 <DD>Set a DB 7th-bit-terminated string break.
-Long lines are currently not split.</DD>
+Long lines are split as for 'B'.</DD>
 <P>
 <DT>M</DT>
 <DD>Set DB style to "Messages", i.e. character strings when possible.

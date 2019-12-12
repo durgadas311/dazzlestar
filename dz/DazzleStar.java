@@ -76,6 +76,9 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	JTextField cmt_txt;
 	JPanel hnt_pan;
 	JTextField hnt_txt;
+	JPanel cal_pan;
+	JLabel cal_lab;
+	JTextField cal_txt;
 	JPanel err_pan;
 	JEditorPane err_txt;
 	JLabel err_lbl;
@@ -504,6 +507,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		hnt_pan.add(new JLabel(" "));
 		hnt_pan.add(hnt_txt);
 
+		cal_pan = new JPanel();
+		cal_pan.setLayout(new BoxLayout(cal_pan, BoxLayout.X_AXIS));
+		cal_txt = new JTextField();
+		cal_txt.setPreferredSize(new Dimension(50, 20));
+		cal_txt.setEditable(true);
+		cal_lab = new JLabel();
+		cal_pan.add(cal_lab);
+		cal_pan.add(cal_txt);
+
 		err_pan = new JPanel();
 		err_pan.setLayout(new BoxLayout(err_pan, BoxLayout.Y_AXIS));
 		// TODO: need better handling, don't require focus in err_txt/pan.
@@ -714,6 +726,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		return -1;
 	}
 
+	private int nextSymbol(int a) {
+		while (++a < sg.end) {
+			if (prog.symbol(seg, a)) {
+				return a;
+			}
+		}
+		return -1;
+	}
+
 	private int nextOrphan(int a) {
 		while (++a < sg.end) {
 			if (sg.orphaned(a)) {
@@ -754,13 +775,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			Z80Dissed d = getDissed(sg, a, n, bk);
 			a += n;
 			if (d.addr >= 0) {
-				int f = prog.segAdr(sg.idx, d);
+				int f = prog.segAdr(seg, d);
 				int x = prog.segOf(f);
 				if (refSeg == x && refAdr == d.addr) {
 					return d.pc;
 				}
 			}
-			if (refSeg == sg.idx && refAdr == a) {
+			if (refSeg == seg && refAdr == a) {
 				// TODO: require label exists?
 				return a;
 			}
@@ -1093,10 +1114,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 		sg.putBrk(addr, bb);
 		if (n == 0) {
-			n = prog.read(sg.idx, addr) + 1;
+			n = prog.read(seg, addr) + 1;
 		} else if (n < 0) {
 			n = -n;
-			if ((prog.read(sg.idx, addr) & 0x80) == 0) {
+			if ((prog.read(seg, addr) & 0x80) == 0) {
 				++n;
 			}
 		}
@@ -1442,19 +1463,18 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			d = new Z80Dissed();
 			d.op = "dw";
 			d.fmt = "%s";
+			// We don't know if this is an instr or data label...
 			d.addr = z;
 			d.type = Z80Dissed.JMP; // good enough?
 			break;
 		case 'Q':
 			// assert: n == 4
+			// does not require multi-line...
 			y = prog.read(g.idx, a) | (prog.read(g.idx, a + 1) << 8);
 			z = prog.read(g.idx, a + 2) | (prog.read(g.idx, a + 3) << 8);
 			d.op = "dw";
-			d.fmt = fmtNum(y, rx, false);
-			zd.add(d);
-			d = new Z80Dissed();
-			d.op = "dw";
-			d.fmt = "%s";
+			d.fmt = fmtNum(y, rx, false) + ",%s";
+			// We don't know if this is an instr or data label...
 			d.addr = z;
 			d.type = Z80Dissed.JMP; // good enough?
 			break;
@@ -2328,7 +2348,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		while (true) {
 			int x = 0;
 			for (; x < val.length &&
-				(val[x] & 0xff) == prog.read(sg.idx, a + x);
+				(val[x] & 0xff) == prog.read(seg, a + x);
 				++x);
 			if (x == val.length) {
 				return a;
@@ -2708,12 +2728,65 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		code.repaint();
 	}
 
+	private void addCall() {
+		int bk = sg.activeBreak(sg.cursor);
+		if (bk == 0) bk = 'I';
+		if (bk != 'I') {
+			return;
+		}
+		Z80Dissed d = getDissed(sg, sg.cursor, sg.cur_len, bk);
+		if (d.type != Z80Dissed.CALL || d.addr < 0) {
+			return;
+		}
+		// assume unconditional call...
+		int sa = prog.segAdr(seg, d);
+		String pre = String.format("*%04x,", sa);
+		cal_lab.setText(pre);
+		cal_txt.setText("");
+		int res = FocusOptionPane.focusConfirmDialog(frame, cal_pan,
+					"Call Parm",
+					JOptionPane.OK_CANCEL_OPTION, cal_txt);
+		if (res != JOptionPane.OK_OPTION) {
+			return;
+		}
+		if (cal_txt.getText().length() == 0) {
+			return;
+		}
+		pre += cal_txt.getText();
+		if (!applyHint(pre)) {
+			PopupFactory.inform(frame, "Call Parm",
+				String.format("Hint failed \"%s\"", pre));
+			return;
+		}
+		stat5.setText(String.format("Scan: added call parm: %s %04x %s",
+				prog.segName(seg), sg.cursor, cal_txt.getText()));
+		// probably need to rebuild all breaks...???
+		resetBreaks();
+		code.repaint();
+	}
+
 	private void addCurrent() {
 		int sa = prog.segAdr(seg, sg.cursor);
 		codes.add(sa);
 		mi_sch.setEnabled(true);
-		stat5.setText(String.format("Scan: added entry %s %04x",
+		stat5.setText(String.format("Scan: added entry: %s %04x",
 					prog.segName(seg), sg.cursor));
+	}
+
+	// cursor should be on a L, R, T, Q break, or I for LXI/LDI
+	private void addVector() {
+		int bk = sg.activeBreak(sg.cursor);
+		if (bk == 0) bk = 'I';
+		Z80Dissed d = getDissed(sg, sg.cursor, sg.cur_len, bk);
+		if (d.addr < 0) return;
+		int sa = prog.segAdr(seg, d);
+		int x = prog.segOf(sa);
+		if (x >= nseg) return; // ignore ABS targets
+		int a = prog.adrOf(sa);
+		codes.add(sa);
+		mi_sch.setEnabled(true);
+		stat5.setText(String.format("Scan: added entry: %s %04x",
+					prog.segName(x), a));
 	}
 
 	private void buttonAction(JButton b) {
@@ -2757,7 +2830,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	private void pushPrev() {
 		// TODO: configure stack size limit
-		int sa = prog.segAdr(sg.idx, sg.cursor);
+		int sa = prog.segAdr(seg, sg.cursor);
 		prevs.push(sa);
 		if (prevs.size() > 100) {
 			prevs.setSize(100);
@@ -2782,7 +2855,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		int bk = sg.activeBreak(sg.cursor);
 		if (bk == 0) bk = 'I';
 		Z80Dissed d = getDissed(sg, sg.cursor, sg.cur_len, bk);
-		int f = prog.segAdr(sg.idx, d);
+		int f = prog.segAdr(seg, d);
 		int x = prog.segOf(f);
 		a = prog.adrOf(f);
 		if (x >= nseg || a < segs[x].base || a >= segs[x].end) return;
@@ -2806,6 +2879,8 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			doRefOperand();
 		} else if (k == KeyEvent.VK_F2) {
 			doRefNext();
+		} else if (k == KeyEvent.VK_F3) {
+			doNextSymbol();
 		}
 	}
 
@@ -2837,6 +2912,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			doNextBreak();
 		}
 	}
+
+	private void keyCtrlShifted(int k) {
+	}
+
 
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() instanceof JMenuItem) {
@@ -2898,6 +2977,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			popPrev();
 		} else if (c == 'E') {
 			addCurrent();
+		} else if (c == 'G') {
+			addVector();
+		} else if (c == 'P') {
+			addCall();
 		} else if (doBrkKey(c)) {
 			return;
 		} else {
@@ -2908,12 +2991,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void doConstant() {
 		int bk = sg.activeBreak(sg.cursor);
 		if (bk != 0 && bk != 'I') return;
-		Z80Dissed d = dis.disas(sg.idx, sg.cursor);
+		Z80Dissed d = dis.disas(seg, sg.cursor);
 		if (d.type != Z80Dissed.LXI) return;
 		// assert: d.addr >= 0
 		sg.toggleConst(sg.cursor);
 		if (!sg.constant(sg.cursor)) {
-			prog.mksym(sg.idx, d);
+			prog.mksym(seg, d);
 		}
 		code.repaint();
 	}
@@ -2932,6 +3015,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		if (!applyHint(hnt_txt.getText())) {
 			PopupFactory.inform(frame, "Apply Hint",
 				String.format("Hint failed \"%s\"", hnt_txt.getText()));
+			return;
 		}
 		resetBreaks();
 		code.repaint();
@@ -3032,6 +3116,19 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		goAdr(a);
 	}
 
+	private void doNextSymbol() {
+		int a;
+		a = nextSymbol(sg.cursor);
+		if (a < 0) {
+			// TODO: "Continue" or "Cancel" pop-up...
+			PopupFactory.inform(frame, "Symbol",
+				"At End of Segment. Resetting to Start for next.");
+			goAdr(sg.base);
+			return;
+		}
+		goAdr(a);
+	}
+
 	private void doOrphaned() {
 		int a;
 		a = nextOrphan(sg.cursor);
@@ -3058,7 +3155,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 
 	// Find reference (operand or L/T/Q/R) to current address.
 	private void doRefCur() {
-		setRef(sg.idx, sg.cursor);
+		setRef(seg, sg.cursor);
 		doRefNext();
 	}
 
@@ -3074,7 +3171,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				"No operand to reference.");
 			return;
 		}
-		int f = prog.segAdr(sg.idx, d);
+		int f = prog.segAdr(seg, d);
 		int x = prog.segOf(f);
 		setRef(x, d.addr);
 		doRefNext();
@@ -3121,6 +3218,10 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		dump.repaint();
 	}
 
+	// Mask for any/all modifier keys...
+	static final int ALL_MASK = (InputEvent.SHIFT_MASK |
+			InputEvent.CTRL_MASK | InputEvent.ALT_MASK |
+			InputEvent.META_MASK);
 	public void keyPressed(KeyEvent e) {
 		int k = e.getKeyCode();
 		int m = e.getModifiers();
@@ -3128,11 +3229,13 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			errKey(k, m);
 			return;
 		}
-		if ((m & InputEvent.SHIFT_MASK) != 0) {
+		if ((m & ALL_MASK) == InputEvent.SHIFT_MASK) {
 			keyShifted(k);
-		} else if ((m & InputEvent.CTRL_MASK) != 0) {
+		} else if ((m & ALL_MASK) == InputEvent.CTRL_MASK) {
 			keyCtrl(k);
-		} else if ((m & InputEvent.ALT_MASK) != 0) {
+		} else if ((m & ALL_MASK) == (InputEvent.CTRL_MASK|InputEvent.SHIFT_MASK)) {
+			keyCtrlShifted(k);
+		} else if ((m & ALL_MASK) == InputEvent.ALT_MASK) {
 			keyAlted(k);
 		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
 			lineDown();
