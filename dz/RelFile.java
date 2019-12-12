@@ -257,6 +257,9 @@ public class RelFile implements ProgramFile {
 		current = rel[pointer++] & 0xff;
 		// clear symtab arrays?
 		while (command() >= 0);
+		if (endStart >= 0) {
+			bldSym(endStart);
+		}
 		// Now go through remaining sites and create symbols...
 		for (int va : site.values()) {
 			bldSym(va);
@@ -557,7 +560,7 @@ public class RelFile implements ProgramFile {
 			initSegs();
 			xxx = value(t); // value on 'end' statement, or ABS-0
 			if (xxx < 0) throw new RuntimeException("REL sync error");
-			if (xxx != ABS_0) {
+			if (segOf(xxx) != SEG_ABS) {
 				endStart = xxx;
 			}
 			break;
