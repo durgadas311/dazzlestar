@@ -9,6 +9,7 @@ public class HexFile implements ProgramFile {
 	byte[] obj;
 	int _base = -1;
 	int _end = -1;
+	int _max = -1;
 	int _entry = -1;
 	Map<Integer,String> symtab;
 
@@ -16,6 +17,7 @@ public class HexFile implements ProgramFile {
 		scanHex(prog);	// scan for min/max
 		obj = new byte[_end - _base];
 		scanHex(prog);	// now load it
+		_max = _end;
 		symtab = new HashMap<Integer,String>();
 	}
 
@@ -83,7 +85,7 @@ public class HexFile implements ProgramFile {
 
 	public int endSeg(int seg) { return _end; }
 
-	public int maxSeg(int seg) { return _end; }
+	public int maxSeg(int seg) { return _max + 1; }
 
 	public int segAdr(int seg, int adr) { return adr; }
 	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
@@ -109,6 +111,7 @@ public class HexFile implements ProgramFile {
 		if (l == null) {
 			l = String.format("%c%04x", sgc, a);
 		}
+		if (a > _max) _max = a;
 		symtab.put(a, l);
 	}
 
@@ -121,7 +124,9 @@ public class HexFile implements ProgramFile {
 
 	public void mksym(int seg, Z80Dissed d) {
 		if (symbol(0, d.addr)) return;
-		if (d.addr < _base || d.addr > 0xc000) return;
+		// assume no dir refs beyond 8K past end...
+		if (d.addr < _base || d.addr > _end + 0x2000) return;
+		if (d.addr > _max) _max = d.addr;
 		symtab.put(d.addr, String.format("L%04x", d.addr));
 	}
 

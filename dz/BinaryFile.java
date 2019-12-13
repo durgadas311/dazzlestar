@@ -9,6 +9,7 @@ public class BinaryFile implements ProgramFile {
 	byte[] obj;
 	int _base;
 	int _end;
+	int _max;
 	Map<Integer,String> symtab;
 
 	public BinaryFile(File prog, int org) throws Exception {
@@ -19,6 +20,7 @@ public class BinaryFile implements ProgramFile {
 		symtab = new HashMap<Integer,String>();
 		_base = org;
 		_end = org + obj.length;
+		_max = _end;
 	}
 
 	public int numSeg() { return 1; }
@@ -29,7 +31,7 @@ public class BinaryFile implements ProgramFile {
 
 	public int endSeg(int seg) { return _end; }
 
-	public int maxSeg(int seg) { return _end; }
+	public int maxSeg(int seg) { return _max + 1; }
 
 	public int segAdr(int seg, int adr) { return adr; }
 	public int segAdr(int seg, Z80Dissed d) { return d.addr; }
@@ -55,6 +57,7 @@ public class BinaryFile implements ProgramFile {
 		if (l == null) {
 			l = String.format("%c%04x", sgc, a);
 		}
+		if (a > _max) _max = a;
 		symtab.put(a, l);
 	}
 
@@ -67,7 +70,9 @@ public class BinaryFile implements ProgramFile {
 
 	public void mksym(int seg, Z80Dissed d) {
 		if (symbol(0, d.addr)) return;
-		if (d.addr < _base || d.addr > 0xc000) return;
+		// assume no dir refs beyond 8K past end...
+		if (d.addr < _base || d.addr > _end + 0x2000) return;
+		if (d.addr > _max) _max = d.addr;
 		symtab.put(d.addr, String.format("L%04x", d.addr));
 	}
 

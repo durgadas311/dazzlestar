@@ -2240,7 +2240,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 				a += n;
 			}
 			n = g.end;
-			for (int a = g.end; a < g.max; ++a) {
+			for (int a = g.end; a < prog.maxSeg(x); ++a) {
 				l = prog.lookup(x, a);
 				if (l != null) {
 					if (a - n > 0) {

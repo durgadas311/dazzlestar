@@ -11,7 +11,6 @@ public class Segment {
 	public int idx;
 	public int base;
 	public int end;
-	public int max;
 	public int cursor;
 	public int cur_len;
 	public int cwin = -1;
@@ -35,7 +34,7 @@ public class Segment {
 		idx = x;
 		base = p.baseSeg(x);
 		end = p.endSeg(x);
-		max = p.maxSeg(x);
+		//max = p.maxSeg(x); // maxSeg() is dynamic, don't snapshot
 		brk = new byte[n];
 		rdx = new byte[n];
 		sty = new byte[n];
