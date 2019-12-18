@@ -15,6 +15,9 @@ The output mnemonics may be set to either
 MAC80 (default, CP/M MAC/RMAC with Z80.LIB macros),
 or Zilog.
 
+If you encounter problems, or have requests for enhancement, please open
+an issue on this github project.
+
 ![DZ Example](dz.png)
 
 [See Help file](http://sebhc.durgadas.com/dazzlestar/dzhelp.html)

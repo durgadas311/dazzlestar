@@ -1218,6 +1218,15 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	}
 
 	private void analyze(Vector<Integer> exe) {
+		// orphan counts were zeroed, but need to accout for
+		// current orhpans that will be removed...
+		// analyze() will change orphan flags, so do this first.
+		for (int sa : exe) {
+			int x = prog.segOf(sa);
+			int pc = prog.adrOf(sa);
+			Segment g = segs[x];
+			if (g.orphaned(pc)) ++g.orphans; // count this one
+		}
 		for (int sa : exe) {
 			int x = prog.segOf(sa);
 			int pc = prog.adrOf(sa);
@@ -2728,6 +2737,7 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void doAnalyze() {
 		scanning = true;
 		zeroOrphans();
+		if (sg.orphaned(sg.cursor)) ++sg.orphans; // count this one
 		// This will cross segment boundaries...
 		analyze(sg, sg.cursor);
 		updateOrphans();
