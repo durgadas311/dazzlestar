@@ -5,6 +5,33 @@
 <BODY>
 <H2>DazzleStar Workflow</H2>
 
+<P>A typical disassembly consists of two phases.
+First is the conversion of the object code to source code.
+Second is the interpretation of the raw source code, adding comments,
+meaningful label names, and formatting. Note that DazzleStar can
+generate assembly source code from the object code, but that the original
+program may have been written in some other (high-level) language.
+Identifying, and translating into, high-level languages is beyond
+the scope of DazzleStar.
+
+<P>The first phase is fairly mechanical, but still requires human guidance.
+DazzleStar TNG is intended to facilitate/automate the first phase.
+It is an iterative process, and a session can normally be saved and
+restarted later. Once the first phase is deemed "complete", a final
+copy of the assembly file will be generated and DazzleStar is typically not
+used again.
+
+<P>The second phase involves reading through the assembly code and
+determining the intent of the code, then adding comments, constants, and meaningful
+symbol names.  Once the second phase begins,
+DazzleStar would not normally be used again on this program.
+It is recommended that the assembly file being modified in the second phase
+is periodically assembled and the resulting binary compared to the original,
+to ensure the assembly file maintains it's integrity. It is thus
+recommended that modifications/enhancements not be made during phase two,
+and instead wait until after a sufficiently manageable source file for
+the original program exists.
+
 <H3>Starting from scratch</H3>
 
 <P>The general workflow when starting a new disassembly is:

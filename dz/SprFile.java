@@ -185,7 +185,8 @@ public class SprFile implements ProgramFile {
 
 	public String getsym(int seg, Z80Dissed d) {
 		String l = lookup(0, d.addr);
-		if (l != null) return l;
+		// TODO: what about ad-hoc symbols???
+		if (isReloc(d.pc + d.off + 1) && l != null) return l;
 		l = String.format("0%04xh", d.addr);
 		return l;
 	}
