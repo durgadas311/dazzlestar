@@ -27,6 +27,15 @@ and "REL" (upper/lower case) identify their respective file types.
 <P>The keyword "ZILOG" or "MAC80" may be given on the commandline,
 to override the default/initial instruction mnemonics.
 
+<P>The basic principal of disassembly uses "breaks" to establish
+the starting points for instructions or various types of data, as well
+as number style and radix (for data breaks). A break takes effect
+from the point it is set until the next break of the same type.
+In addition, data breaks will typically force a line break.
+In other words, setting a break forces a change
+in the flow of the disassembled code.
+Breaks are described in the <B>Keyboard Functions</B> section.
+
 <P>Sub-topics:
 
 <UL>
