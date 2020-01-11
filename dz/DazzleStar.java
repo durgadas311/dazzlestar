@@ -546,6 +546,36 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 		}
 	}
 
+	private void resize(int cl, int dl) {
+		boolean cc = (clines != cl);
+		boolean dc = (dlines != dl);
+		if (!cc && !dc) return;
+		if (cc) {
+			Dimension cd = new Dimension(_fw * ln_width + 2 * bd_width,
+						_fh * cl + 2 * bd_width);
+			code.setPreferredSize(cd);
+			code.revalidate();
+		}
+		if (dc) {
+			Dimension dd = new Dimension(_fw * ln_width + 2 * bd_width,
+						_fh * dl + 2 * bd_width);
+			dump.setPreferredSize(dd);
+			dump.revalidate();
+		}
+		// TODO: frame actions? pack()?
+		frame.pack();
+		if (cc) {
+			clines = cl;
+			setCodeWin(sg.cwin);
+			code.repaint();
+		}
+		if (dc) {
+			dlines = dl;
+			setDumpWin(sg.dwin);
+			dump.repaint();
+		}
+	}
+
 	private ProgramFile guessByType(File fi) throws Exception {
 		String t = fi.getName();
 		int x = t.lastIndexOf('.');
@@ -2906,6 +2936,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 	private void keyAlted(int k) {
 		if (k == KeyEvent.VK_HOME) {
 			goAdr(sg.cursor, true);
+		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
+			resize(clines, dlines + 1);
+		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
+			if (dlines > 2) {
+				resize(clines, dlines - 1);
+			}
 		}
 	}
 
@@ -2916,6 +2952,12 @@ public class DazzleStar implements DZCodePainter, DZDumpPainter, Memory,
 			doRefNext();
 		} else if (k == KeyEvent.VK_F3) {
 			doNextSymbol();
+		} else if (k == KeyEvent.VK_DOWN || k == KeyEvent.VK_KP_DOWN) {
+			resize(clines + 1, dlines);
+		} else if (k == KeyEvent.VK_UP || k == KeyEvent.VK_KP_UP) {
+			if (clines > 4) {
+				resize(clines - 1, dlines);
+			}
 		}
 	}
 
